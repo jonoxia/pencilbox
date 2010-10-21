@@ -82,7 +82,7 @@ $(function() {
 	$("#load-btn").bind("click", loadHandler);
 	$("#new-layer-btn").bind("click", function() { g_drawInterface.newLayer(); } );
 
-	$("#dialogue-edit-area").bind("change", function() {
+	$("#dialogue-edit-area").bind("keyup", function() {
 	  g_dialogue.makeBubblesFromText($("#dialogue-edit-area").val());
 	  g_toolInterface.setTool(textBalloonTool);
 	    });
