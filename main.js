@@ -52,10 +52,10 @@ function saveHandler() {
 		data: postArgs,
 		type: "POST",
 		success: function(data, textStatus) {
-                  $("#debug").html(data);
+		  $("#debug").html(data);
 	        },
 		error: function(req, textStatus, error) {
-		$("#debug").html("error " + textStatus + "; " + error);
+		  $("#debug").html("error " + textStatus + "; " + error);
 	        },
 		dataType: "html"});
     

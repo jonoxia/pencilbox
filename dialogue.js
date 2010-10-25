@@ -174,8 +174,7 @@ SpeechBubble.prototype = {
 			 right: interceptR,
 			 bottom: interceptB};
     },
-    render: function() {
-	let ctx = g_dialogue.dialogueLayer.getContext();
+    render: function(ctx) {
 	ctx.font = this.font;
 	ctx.textAlign = "start";
 	ctx.lineWidth = this.borderLineSize;
@@ -250,22 +249,11 @@ function DialogueManager() {
     this.bubbles = [];
     this.dialogueLayer = new Layer(-1);
     this.dialogueLayer.setName( "Text Layer");
-    // TODO
-    // Doing horrible violence to the layer encapsulation here
-    // should probably be a subclass.
-    let self = this;
+    let manager = this;
     let theLayer = this.dialogueLayer;
-    let ctx = this.dialogueLayer.displayContext;
-    this.dialogueLayer.updateDisplay = function() {
-	ctx.clearRect(0, 0, theLayer.width, theLayer.height);
-	ctx.save();
-	ctx.translate(
-	  theLayer._xTranslate + theLayer._center.x * (1-theLayer._scale),		
-	  theLayer._yTranslate + theLayer._center.y * (1-theLayer._scale));
-	ctx.scale(theLayer._scale, theLayer._scale);
-	self.renderAllBubbles();
-	ctx.restore();
-    },
+    theLayer.onRedraw = function(ctx) {
+	manager.renderAllBubbles(ctx);
+    }
     g_drawInterface.layers.push(theLayer);
 }
 DialogueManager.prototype = {
@@ -273,8 +261,7 @@ DialogueManager.prototype = {
 	this.bubbles.push( new SpeechBubble(text) );
     },
 
-    renderAllBubbles: function() {
-	let ctx = this.dialogueLayer.getContext();
+    renderAllBubbles: function(ctx) {
 	for (let i = 0; i < this.bubbles.length; i++) {
 	    this.bubbles[i].render(ctx);
 	}
@@ -296,7 +283,7 @@ DialogueManager.prototype = {
 	    this.bubbles = this.bubbles.slice(0, lines.length);
 	}
 	this.dialogueLayer.clearLayer();
-	this.renderAllBubbles();
+	this.renderAllBubbles(this.dialogueLayer.getContext());
     },
 
     getGrabPt: function(x, y) {

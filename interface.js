@@ -415,6 +415,7 @@ DrawAreaInterface.prototype = {
     exportAllLayers: function(exportCtx) {
 	for (let i = 0; i < this.layers.length; i++) {
 	    g_history.replayActionsForLayer(this.layers[i], exportCtx);
+	    this.layers[i].onRedraw(exportCtx);
 	}
     }
 };
