@@ -228,7 +228,9 @@ textBalloonTool.getStrokeStyle = function() {
     return null;
 };
 textBalloonTool.down = function(ctx, x, y) {
-    let grabbitation = g_dialogue.getGrabPt(x, y);
+    let layer = g_dialogue.dialogueLayer;
+    let worldPt = layer.screenToWorld(x, y);
+    let grabbitation = g_dialogue.getGrabPt(worldPt.x, worldPt.y);
     if (grabbitation) {
 	this.balloon = grabbitation.balloon;
 	this.controlPoint = grabbitation.controlPoint;
@@ -243,20 +245,22 @@ textBalloonTool.up = function(ctx, x, y) {
 };
 textBalloonTool.drag = function(ctx, x, y) {
     if (this.balloon && this.controlPoint) {
+	let layer = g_dialogue.dialogueLayer;
+	let worldPt = layer.screenToWorld(x, y);
 	switch (this.controlPoint) {
 	case "tailTip":
-	    this.balloon.setTailTip({x: x, y: y});
-            g_dialogue.dialogueLayer.updateDisplay();
+	    this.balloon.setTailTip(worldPt);
+            layer.updateDisplay();
 	    break;
 	case "main":
-            this.balloon.setCenter({x: x, y: y});
-            g_dialogue.dialogueLayer.updateDisplay();
+            this.balloon.setCenter(worldPt);
+            layer.updateDisplay();
 	    break;
 	case "leftEdge": case "rightEdge":
-            let dx = Math.abs(this.balloon.center.x - x);
+            let dx = Math.abs(this.balloon.center.x - worldPt.x);
 	    if (dx > this.balloon.cornerRadius) {
 		this.balloon.setWidth( 2 * dx );
-                g_dialogue.dialogueLayer.updateDisplay();
+                layer.updateDisplay();
             }
 	    break;
 	}

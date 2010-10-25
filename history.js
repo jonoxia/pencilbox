@@ -3,17 +3,10 @@ function DrawAction(layer, pointList, lineWidth, strokeStyle, fillStyle,
     this.layer = layer;
     this.ctx = layer.getContext();
     this.pts = [];
-    let scale = layer._scale;
-    let xTrans = layer._xTranslate;
-    let yTrans = layer._yTranslate;
-    let xCen = layer._center.x;
-    let yCen = layer._center.y;
     for each (let pt in pointList) {
-	    // This is an inverse transform to turn the point from
-	    // screen coordinates (in which it was drawn) back into
-	    // world coordinates.  Should be a method of Layer?
-	    this.pts.push( {x: (pt.x - xTrans - xCen* ( 1-scale))/ scale,
-			y: (pt.y - yTrans - yCen * (1-scale))/scale } );
+	    // Points are given in screen coordinates, but need to be
+	    // stored in world coordinates.
+	    this.pts.push( layer.screenToWorld(pt.x, pt.y) );
 	}
     this.lineWidth = lineWidth;
     this.strokeStyle = strokeStyle;

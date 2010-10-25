@@ -91,6 +91,17 @@ Layer.prototype = {
 	  this._yTranslate + this._center.y * (1-this._scale));
 	this.displayContext.scale(this._scale, this._scale);
     },
+    screenToWorld: function(x, y) {
+	// Inverse transform, turns screen coordinates into world
+	// coordinates.
+	let xTrans = this._xTranslate;
+	let yTrans = this._yTranslate;
+	let xCen = this._center.x;
+	let yCen = this._center.y;
+	let scale = this._scale;
+	return {x: (x - xTrans - xCen* ( 1-scale))/ scale,
+		y: (y - yTrans - yCen * (1-scale))/scale };
+    },
     clearLayer: function() {
 	this._everythingBrown();
 	this.displayContext.save();
