@@ -271,7 +271,7 @@ textBalloonTool.display = function(penCtx, x, y) {
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
-    img.src = "icons/ballon-quotation.png";
+    img.src = "icons/balloon-quotation.png";
 };
 textBalloonTool.drawCursor = function(penCtx, x, y) {
 };
