@@ -101,10 +101,12 @@ History.prototype = {
 	$("#debug").html(str);
     },
 
-    replayActionsForLayer: function(layer) {
+    replayActionsForLayer: function(layer, overrideCtx) {
+	// If overrideCtx is not provided, it will replay the actions
+	// to the layer's own context.
 	for (let i = 0; i < this.currPtr; i++) {
 	    if (this.actionList[i].layer == layer) {
-		this.actionList[i].replay(layer.getContext());
+		this.actionList[i].replay(overrideCtx); //layer.getContext());
 	    }
 	}
     },

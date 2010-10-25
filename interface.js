@@ -285,6 +285,9 @@ function DrawAreaInterface() {
     this.offsetX = cursorCanvas.offsetLeft;
     this.offsetY = cursorCanvas.offsetTop;
 
+    this.pageWidth = 750; // TODO need an interface for setting these...!
+    this.pageHeight = 1200;
+
     this.mouseIsDown = false;
 
     let self = this;    
@@ -322,6 +325,9 @@ DrawAreaInterface.prototype = {
     },
     getDrawCtx: function() {
 	return this.activeLayer.getContext();
+    },
+    getPageDimensions: function() {
+	return {width: this.pageWidth, height: this.pageHeight};
     },
     setActiveLayer: function(index) {
 	for (let i = 0; i < this.layers.length; i++) {
@@ -404,6 +410,11 @@ DrawAreaInterface.prototype = {
 	// TODO not used -- delete?
 	for (let i = 0; i < this.layers.length; i++) {
 	    this.layers[i].updateDisplay();
+	}
+    },
+    exportAllLayers: function(exportCtx) {
+	for (let i = 0; i < this.layers.length; i++) {
+	    g_history.replayActionsForLayer(this.layers[i], exportCtx);
 	}
     }
 };
