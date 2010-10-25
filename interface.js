@@ -6,7 +6,6 @@ function GestureInterpreter(gestureLibrary, offsetX, offsetY) {
     this.library = gestureLibrary;
     this.gestureDirections = [];
 
-    this.twoFingerMode = null;
     this.pinchFirstDist = null;
 }
 GestureInterpreter.prototype = {
@@ -56,7 +55,6 @@ GestureInterpreter.prototype = {
 	if (this.touchPointCount == 0) {
 	    this.finalizeGesture();
 	    this.gestureDirections = [];
-	    this.twoFingerMode = null;
 	    this.pinchFirstDist = null;
 	}
     },
@@ -117,28 +115,12 @@ GestureInterpreter.prototype = {
 	    if (!this.pinchFirstDist) {
 		this.pinchFirstDist = distPost;
 	    }
-	    // if twofingermode is undefined, decide it now
-	    if (!this.twoFingerMode) {
-		if (Math.abs(dist) > Math.abs(delta)) {
-		    //if (dxA * dxB > 0 && dyA * dyB > 0 && Math.abs(dist) > 0) {
-		    this.twoFingerMode = "drag";
-		    $("#debug").html("dist = " + dist + " delta = " + delta + " Set to drag.");
-		} else if (Math.abs(dist) > 0 && Math.abs(delta) > 0) {
-		    this.twoFingerMode = "pinch";
-		    $("#debug").html("dist = " + dist + " delta = " + delta + " Set to pinch.");
-		}
-		//If they are equal (e.g. both zero) then nothing
-		// will happen.
-	    }
 
-	    if (this.twoFingerMode == "drag" &&
-		this.library.twoFingers.drag) {
-		    this.library.twoFingers.drag((dxA + dxB)/4,
+	    if (this.library.twoFingers.drag) {
+		this.library.twoFingers.drag((dxA + dxB)/4,
 						 (dyA + dyB)/4);
-
 	    }
-	    if (this.twoFingerMode == "pinch" &&
-		this.library.twoFingers.pinch) {
+	    if (this.library.twoFingers.pinch) {
 		let ratio = (distPost + distPre) / (2 * distPre);
 		this.library.twoFingers.pinch(ratio);
 	    }
