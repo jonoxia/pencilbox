@@ -3,22 +3,6 @@ var g_toolInterface = null;
 var g_history = null;
 var g_dialogue = null;
 
-// Speech bubble improvements:
-
-// 4. Make a better way to switch to speech bubble tool
-// Why isn't speech bubble cursor icon appearing?
-// 6. Implement styles inside of speech bubbles (<code>, <em>, <whisper>)
-// 7. Conjoined bubbles (where tail of one merges into another?)
-
-// Initial stroke doesn't have scaled thickness (although it looks
-// correct after scaling)
-
-// Interface to set page boundary size? (is global)
-// Show page boundary (or rather, the grey void outside it) when panning
-// Layers.
-
-// After that: Adjustable layer transparency!
-
 function saveHandler() {
     // There's a securtiy exception that can happen if you try to
     // save a canvas that thinks it contains an image loaded from
