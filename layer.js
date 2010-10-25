@@ -76,9 +76,27 @@ Layer.prototype = {
 	this.visible = newVal;	
 	this.tag.css("display", newVal?"block":"none");
     },
-    clearLayer: function() {
-	this.displayContext.clearRect(0, 0, this.width, 
+    _everythingBrown: function() {
+	this.displayContext.fillStyle = "rgb(150, 100, 50)"; // Brownth!
+	this.displayContext.fillRect(0, 0, this.width, 
 				      this.height);
+    },
+    _clearPageArea: function() {
+	let dim = g_drawInterface.getPageDimensions();
+	this.displayContext.clearRect(0, 0, dim.width, dim.height);
+    },
+    _setTransformMatrix: function() {
+	this.displayContext.translate(
+	  this._xTranslate + this._center.x * (1-this._scale),		
+	  this._yTranslate + this._center.y * (1-this._scale));
+	this.displayContext.scale(this._scale, this._scale);
+    },
+    clearLayer: function() {
+	this._everythingBrown();
+	this.displayContext.save();
+	this._setTransformMatrix();
+	this._clearPageArea();
+	this.displayContext.restore();
     },
     onRedraw: function(ctx) {
 	// If the layer needs to do anything special besides
@@ -86,12 +104,10 @@ Layer.prototype = {
 	// this function.
     },
     updateDisplay: function() {
-	this.displayContext.clearRect(0, 0, this.width, this.height);
+	this._everythingBrown();
 	this.displayContext.save();
-	this.displayContext.translate(
-	  this._xTranslate + this._center.x * (1-this._scale),		
-	  this._yTranslate + this._center.y * (1-this._scale));
-	this.displayContext.scale(this._scale, this._scale);
+	this._setTransformMatrix();
+	this._clearPageArea();
 	g_history.replayActionsForLayer(this);
 	this.onRedraw(this.displayContext);
 	this.displayContext.restore();

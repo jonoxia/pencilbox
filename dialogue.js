@@ -282,8 +282,7 @@ DialogueManager.prototype = {
 	if (this.bubbles.length > lines.length) {
 	    this.bubbles = this.bubbles.slice(0, lines.length);
 	}
-	this.dialogueLayer.clearLayer();
-	this.renderAllBubbles(this.dialogueLayer.getContext());
+	this.dialogueLayer.updateDisplay();
     },
 
     getGrabPt: function(x, y) {

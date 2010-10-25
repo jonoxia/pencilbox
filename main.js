@@ -13,18 +13,11 @@ var g_dialogue = null;
 // Initial stroke doesn't have scaled thickness (although it looks
 // correct after scaling)
 
-// Improvements to export:
-// - Export all layers together (i.e. replay them all to a single canvas)
-//     Calling history.replayActionsForLayer for each layer (with a context override)
-//     will work, /except/ in the case of the dialuge layer, because the dialogue
-//     editing events are't in the undo history.  What we really want is a writeLayerTo
-//     Output method on each layer, and have it work differently on the text layer than
-//     on the others.
-// - Scale to 100% before exporting
-// - Make canvas big enough to include everything up to boundaries
-// (Note: that means we need boundaries!!)
+// Interface to set page boundary size? (is global)
+// Show page boundary (or rather, the grey void outside it) when panning
+// Layers.
 
-// After that: Adjustable transparency!
+// After that: Adjustable layer transparency!
 
 function saveHandler() {
     // There's a securtiy exception that can happen if you try to
@@ -96,4 +89,5 @@ $(function() {
 	  g_toolInterface.setTool(textBalloonTool);
 	    });
 
+	g_drawInterface.clearAllLayers();
 });
