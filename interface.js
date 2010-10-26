@@ -226,7 +226,7 @@ function ToolAreaInterface() {
 	}
     };
 
-    this.interpreter = new GestureInterpreter(this.library,
+    /*this.interpreter = new GestureInterpreter(this.library,
 					      this.offsetX,
 					      this.offsetY);
 
@@ -237,7 +237,25 @@ function ToolAreaInterface() {
     this.toolCanvas.addEventListener("MozTouchUp", function(evt) {
 	    self.interpreter.touchUp(evt); }, false);
     // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
-    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen
+    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
+
+    let self = this;
+    let itemList = [{name: "Pencil", icon: "icons/pencil.png",
+		     execute: function() {self.setTool(pen);}},
+		    {name: "Eraser", icon: "icons/eraser.png",
+		     execute: function() {self.setTool(eraser);}},
+		    {name: "Bucket", icon: "icons/paint-can.png",
+		     execute: function() {self.setTool(bucket);}},
+		    {name: "Line", icon: "icons/ruler.png",
+		     execute: function() {self.setTool(line);}}];
+		     
+    this.menu = new GridMenu( this.toolCanvas, itemList, 64, false );
+    this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
+	    self.menu.onMouseDown(evt); }, false);
+    this.toolCanvas.addEventListener("MozTouchMove", function(evt) {
+	    self.menu.onMouseMove(evt); }, false);
+    this.toolCanvas.addEventListener("MozTouchUp", function(evt) {
+	    self.menu.onMouseUp(evt); }, false);
 
 }
 ToolAreaInterface.prototype = {

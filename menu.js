@@ -1,4 +1,5 @@
-function GridMenu( canvas, squareSize, stringList, isSubMenu ) {
+function GridMenu( canvas, itemList, squareSize, isSubMenu ) {
+    // Each item in stringList has .name, .icon, and .execute
     this._left = 0;
     this._top = 0;
     this._timeDelay = 250; //ms -- if mouse released before this time elapsed, stay open and wait for a 
@@ -6,8 +7,12 @@ function GridMenu( canvas, squareSize, stringList, isSubMenu ) {
     this._squareSize = squareSize;
     //this._optionsList = optionsList;
     this._visible = false;
-    this._ctx = canvas.getContext("2d");
-    this._lastChosen = null;
+    this._ctx =canvas.getContext("2d");
+    this._offsetX = canvas.offsetLeft;
+    this._offsetY = canvas.offsetTop;
+    this._maxWidth = canvas.width;
+    this._maxHeight = canvas.height;
+
     this._oldCell = null;
     this._invokeTime = 0;
 
@@ -17,22 +22,22 @@ function GridMenu( canvas, squareSize, stringList, isSubMenu ) {
 	this._isSubMenu = false;
     }
 
-    if (stringList.length > 8 ) {
-	this._stringList = stringList.slice(0, 7);
-	this._stringList.push( ["Search...", null] );
-	this._subMenu = new GridMenu( canvas, squareSize, stringList.slice( 7 ), true );
+    if (itemList.length > 8 ) {
+	this._commands = itemList.slice(0, 7);
+	let subMenu = new GridMenu( canvas, squareSize, itemList.slice( 7 ), true );
+	this._commands.push( {name: "More...",
+		    icon: null, 
+		    execute: null,
+		    subMenu: subMenu} );
     } else {
-	this._stringList = stringList;
+	this._commands = itemList;
 	this._subMenu = null;
-    }
-
-    this._commands = [];
-    for( var i = 0; i < this._stringList.length; i++ ) {
-	this._commands.push( { name: this._stringList[i][0], icon: this._stringList[i][1]} );
     }
 }
 GridMenu.prototype = {
-    onMouseDown: function(x, y) {
+    onMouseDown: function(evt) {
+	let x = evt.pageX - this._offsetX;
+	let y = evt.pageY - this._offsetY;
 	if (this._visible) {
 	    return;
 	}
@@ -45,14 +50,14 @@ GridMenu.prototype = {
 	if (this._top < 0) {
 	    this._top = 0;
 	}
-	if (this._left > 600 - this._squareSize * 3 ) {
-	    this._left = 600 - this._squareSize * 3;
+	if (this._left > this._maxWidth - this._squareSize * 3 ) {
+	    this._left = this._maxWidth - this._squareSize * 3;
 	    if (this._isSubMenu) {
 		this._top += this._squareSize;
 	    }
 	}
-	if (this._top > 600 - this._squareSize * 3 ) {
-	    this._top = 600 - this._squareSize * 3;
+	if (this._top > this._maxHeight - this._squareSize * 3 ) {
+	    this._top = this._maxHeight - this._squareSize * 3;
 	    if (this._isSubMenu) {
 		this._left += this._squareSize;
 	    }
@@ -60,17 +65,26 @@ GridMenu.prototype = {
 	this._draw();
 	this._visible = true;
     },
-    onMouseUp: function(x, y) {
+    onMouseUp: function(evt) {
+	let x = evt.pageX - this._offsetX;
+	let y = evt.pageY - this._offsetY;
 	if (this._visible) {
 	    var now = new Date().getTime();
 	    if ( now - this._invokeTime > this._timeDelay ) {
-		redrawCanvas(this._ctx);
-		this._lastChosen = this._getCellNumFromPoint( x, y );
+		//erase:
+		this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
+		let index = this._getCellNumFromPoint( x, y );
+		// Execute!
+		if (index != null) {
+		    this._commands[index].execute();
+		}
 		this._visible = false;
 	    }
 	}
     },
-    onMouseMove: function(x, y) {
+    onMouseMove: function(evt) {
+	let x = evt.pageX - this._offsetX;
+	let y = evt.pageY - this._offsetY;
 	if (!this._visible) {
 	    return;
 	}
@@ -108,9 +122,6 @@ GridMenu.prototype = {
 	return this._colRowToCellNum(col, row);
     },
 
-    getLastChosen: function() {
-	return this._lastChosen;
-    },
 
     _draw: function() {
 	this._ctx.moveTo( this._left, this._top );
