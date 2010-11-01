@@ -2,6 +2,7 @@ var g_drawInterface = null;
 var g_toolInterface = null;
 var g_history = null;
 var g_dialogue = null;
+var g_selection = null;
 
 function saveHandler() {
     // There's a securtiy exception that can happen if you try to
@@ -59,6 +60,7 @@ $(function() {
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();
 	g_dialogue = new DialogueManager();
+	g_selection = new SelectionManager();
 
 	let loadHandler = function() {
 	    // TODO interface for picking a local image to upload

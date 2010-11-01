@@ -253,7 +253,9 @@ function ToolAreaInterface() {
 		    {name: "Paintbrush", icon: "icons/paint-brush.png",
 		     execute: function() {self.setTool(paintbrush);}},
 		    {name: "Select", icon: "icons/border.png",
-		     execute: function() {self.setTool(rectSelect);}}
+		     execute: function() {self.setTool(rectSelect);}},
+		    {name: "Move", icon: "icons/border.png",
+		     execute: function() {self.setTool(selectionMovingTool);}}
 	];
 		     
     this.menu = new GridMenu( this.toolCanvas, itemList, 64, false );

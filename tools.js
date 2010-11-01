@@ -394,8 +394,24 @@ rectSelect.down = function(ctx, x, y) {
     this.inProgress = true;
 };
 rectSelect.up = function(ctx, x, y) {
-    this.endX = x;
-    this.endY = y;
+    if (this.inProgress) {
+	this.endX = x;
+	this.endY = y;
+
+	let pointList = [];
+	let self = this;
+	pointList.push({x: self.startX, y: self.startY});
+	pointList.push({x: self.startX, y: self.endY});
+	pointList.push({x: self.endX, y: self.endY});
+	pointList.push({x: self.endX, y: self.startY});
+	pointList.push({x: self.startX, y: self.startY});
+	
+	if (g_selection) {
+	    let activeLayer = g_drawInterface.getActiveLayer();
+	    g_selection.createSelection(pointList,
+					activeLayer);
+	}
+    }
     this.inProgress = false;
 };
 rectSelect.drag = function(ctx, x, y) {

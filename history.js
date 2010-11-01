@@ -42,6 +42,34 @@ DrawAction.prototype = {
     }
 };
 
+function ClearRectAction(layer, rect) {
+    this.layer = layer;
+    this.ctx = layer.getContext();
+    let scale = layer._scale;
+    let xTrans = layer._xTranslate;
+    let yTrans = layer._yTranslate;
+    let xCen = layer._center.x;
+    let yCen = layer._center.y;
+    // reverse transform rectangle:
+
+    let topLeft = layer.screenToWorld(rect.left, rect.top);
+    let bottomRight = layer.screenToWorld(rect.right, rect.bottom);
+    this.left = topLeft.x;
+    this.top = topLeft.y;
+    this.right = bottomRight.x;
+    this.bottom = bottomRight.y;
+}
+ClearRectAction.prototype = {
+    replay: function(newCtx) {
+	// call with no arguments to replay in original context, or
+	// pass in a context to draw into that context.
+	let ctx = newCtx ? newCtx : this.ctx;
+	let width = this.right - this.left;
+	let height = this.bottom - this.top;
+	ctx.clearRect(this.left, this.top, width, height);
+    }
+};
+
 function ImportImageAction(layer, img, x, y) {
     this.layer = layer;
     this.ctx = layer.getContext();
@@ -51,13 +79,13 @@ function ImportImageAction(layer, img, x, y) {
     let xCen = layer._center.x;
     let yCen = layer._center.y;
     // reverse transform import point
-    this.importPt = ( {x: (x - xTrans - xCen* ( 1-scale))/ scale,
-			y: (y - yTrans - yCen * (1-scale))/scale } );
+    this.importPt = layer.screenToWorld(x, y);
     this.img = img;
 }
 ImportImageAction.prototype = {
     replay: function(newCtx) {
 	let ctx = newCtx ? newCtx : this.ctx;
+	// TODO error here with data: no
 	ctx.drawImage(this.img, this.importPt.x, this.importPt.y);
     }
 };

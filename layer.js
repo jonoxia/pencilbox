@@ -143,5 +143,48 @@ Layer.prototype = {
 	this._xTranslate += xFactor; ///this._scale;
 	this._yTranslate += yFactor; ///this._scale;
 	this.updateDisplay();
+    },
+
+    pngSnapshot: function(parentLayer, clipRect, clipPath) {
+	// the clipRect is just the convex bounding rectangle
+	// of the clipPath.
+
+	// Return a dataURL png of the part of the layer contents
+	// inside the clipPath.
+	// (...How the hell do we do this??)
+
+	// shrink canvas to just size of boundary rectangle
+	// for the .png conversion:
+	let oldWidth = this.displayCanvas.width;
+	let oldHeight = this.displayCanvas.height;
+	let width = clipRect.right - clipRect.left;
+	let height = clipRect.bottom - clipRect.top;
+	this.displayCanvas.width = width;
+	this.displayCanvas.height = height;
+
+	this.displayContext.save();
+	this.displayContext.translate( -1 * clipRect.left,
+	-1 * clipRect.top);
+
+	// Set clipping path:
+	this.displayContext.beginPath();
+	this.displayContext.moveTo(clipPath[0].x,
+				  clipPath[0].y);
+	for (let i = 1; i < clipPath.length; i++) {
+	    this.displayContext.lineTo(clipPath[i].x,
+				      clipPath[i].y);
+	}
+	this.displayContext.clip();
+
+	// Replay all the history now, with that transform applied
+	g_history.replayActionsForLayer(parentLayer,
+					this.displayContext);
+	let dataUrl = this.displayCanvas.toDataURL("image/png");
+
+	// Return canvas to original size:
+	this.displayContext.restore();
+	this.displayCanvas.width = oldWidth;
+	this.displayCanvas.height = oldHeight;
+	return dataUrl;
     }
 };

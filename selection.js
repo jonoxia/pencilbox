@@ -44,10 +44,47 @@
 
 // ctx.clip();  is our new best friend.
 
+
+// Have to figure out how these Actions can work
+// during export-replay as well as undo/redo replay.
+
+/* 1. Don't export the selection layer!
+ * 2. We don't want to actually recalculate the clipping contents
+ *     as part of the action!!!  That's because if we recaculate when
+ *     replaying into the export context, we'll grab stuff we don't
+ *     want (e.g. contents of lower layers).
+ * 3.  Instead, we can make the dropSelectionAction belong to the
+ *     target layer, and have the action itself store the bitmap data,
+ *     and so when the target layer replays that it gets exactly what
+ *     you expect to be pasted in.
+ * 4.  The moveSelectionAction meanwhile can *belong* to the
+ *     selection layer.  Since we don't replay the selection layer
+ *     or draw anything from it when rendering to export context,
+ *     these will be ignored.  But they will still get undone when
+ *     you use the undo command right after.  Perfect!
+ * 5.  The create selection action, therfore, just has to *remove*
+ *     the expected stuff from the target layer, so that it won't
+ *     be there when we replay it.  (it should belong to the target
+ *     layer as well).  It can also add the selection to the
+ *     selection layer (to implement undo/redo replay)
+ *     Actually this also presents a problem with export replay
+ *     because the removal would remove everything from the underlying
+ *     layers that had already been rendered.
+ *     The only solution I can think of is that when doing export
+ *     replay we lay down each layer before beginning to render the
+ *     next layer, meaning turn each layer to a bitmap and then plop
+ *     the bitmaps one on top another.  Ugh!  Worry about this later.
+ */
+
 function SelectionManager() {
     this._selectionPresent = false;
-
+    this._selectionImg = null;
     this._clippingPath = null;
+    // For now let's just do rectangluar selections since they're
+    // way, way easier.
+    this._clipRect = {left: null, top: null, right: null,
+			  bottom: null};
+
     this._parentLayer = null; // the layer the selection came from
     this._selectionContentsSnapshot = null;
 
@@ -58,12 +95,15 @@ function SelectionManager() {
     this.selectionLayer = new Layer(-1);
     this.selectionLayer.setName("Selection");
     let manager = this;
-    this.selectionLayer.onRedraw = function() {
-	if (manager.selectionPresent()) {
-	    manager.drawSelection();
+    this.selectionLayer.onRedraw = function(ctx) {
+	if (manager._selectionImg) {
+            ctx.drawImage(manager._selectionImg,
+	                  manager._clipRect.left,
+                          manager._clipRect.top);
 	}
-    }
+    };
     g_drawInterface.layers.push(this.selectionLayer);
+    this._selectionCtx = this.selectionLayer.getContext();
 }
 SelectionManager.prototype = {
     get selectionPresent() {
@@ -76,9 +116,29 @@ SelectionManager.prototype = {
 	
 	// But basically the interface can call this to know whether
 	// it should be doing a moveSelection or what...
+
     },
     isScreenPtInsideSelection: function(x, y) {
 	// TODO
+    },
+
+    _getBoundingRectForPath: function(clippingPath) {
+	let clipRect = {left:  clippingPath[0].x,
+			right: clippingPath[0].x,
+			top: clippingPath[0].y,
+			bottom: clippingPath[0].y};
+
+	for (let i = 1; i < clippingPath.length; i++) {
+	    if (clipRect.left > clippingPath[i].x) 
+		clipRect.left = clippingPath[i].x;
+	    if (clipRect.right < clippingPath[i].x) 
+		clipRect.right = clippingPath[i].x;
+	    if (clipRect.top > clippingPath[i].y) 
+		clipRect.top = clippingPath[i].y;
+	    if (clipRect.bottom < clippingPath[i].y) 
+		clipRect.bottom = clippingPath[i].y;
+	}
+	return clipRect;
     },
 
     createSelection: function(clippingPath, parentLayer) {
@@ -88,28 +148,59 @@ SelectionManager.prototype = {
 	    this.dropSelection();
 	}
 	this._selectionPresent = true;
-	// TODO
-	/* This does two things:
-	 * Delete inside the clipping path in the parent layer
-         * (Do this in a reversible way! - if we cancelSelection
-	 * parent layer needs to undelete it)
 
-	 * And then the second thing: rerun all of the parent layer's
-	 * history till now, into the selectionLayer, with the clip
-	 * path set so we only see the part inside the clipping path.
+	// For now assume clippingPath is a rectangle.
+	// what we actually get passed is a list of points.
+	this._clippingPath = clippingPath;
+	let clipRect = this._getBoundingRectForPath(clippingPath);
+	this._clipRect = clipRect;
+	this._parentLayer = parentLayer;
 
-	 * At some point we'll need to snapshot the contents inside
-	 * the clipping path so that we can redraw those contents
-	 * without replaying EVERYTHING from the parent layer.
-	 * (Might as well snapshot it now?) */
+	// Replay all of the parent layer's history (minus the
+	// clearing of the region, of course!) into the selection
+	// context with the clip region set, then snapshot that
+	// as a PNG:
+	let imgDataUrl = this.selectionLayer.pngSnapshot(parentLayer,
+							 clipRect,
+							 clippingPath);
+
+	//$("#debug").html("<img src=\"" + imgDataUrl + "\"/>");
+	// Clear clipping path on parent layer!
+	let clear = new ClearRectAction(parentLayer, clipRect);
+	g_history.pushAction(clear);
+	clear.replay(); // to execute it immediately
+	
+	// TODO need a ClearRegionAction which can
+	// clear any shape region, not just a rectangle.
+
+	// Draw image in selection layer:
+	this._selectionImg = new Image();
+	let self = this;
+	this._selectionImg.onload = function() {
+	    self.selectionLayer.getContext().drawImage(
+					     self._selectionImg,
+					     clipRect.left,
+					     clipRect.top);
+	}
+	this._selectionImg.src = imgDataUrl;
     },
 
     moveSelection: function(dx, dy) {
-	// TODO  this will change the transform on the selectionLayer
-	// and redraw
+	this._clipRect.left += dx;
+	this._clipRect.right += dx;
+	this._clipRect.top += dy;
+	this._clipRect.bottom += dy;
+	this.selectionLayer.updateDisplay();
+	// todo
+	// updateDisplay, which calls replayActionsForLayer,
+	// which we may or may not want, as well as
+	// everythingBrown, which we may not want.
+	// (it also calls onRedraw, which calls drawSelection(),
+	// so we don't need to call anything else here.
     },
 
     cancelSelection: function() {
+	// TODO 
 	// Clear the selection,
 	// and tell the parent layer to stop hiding whatever was
 	// inside the clipping path.
@@ -123,23 +214,82 @@ SelectionManager.prototype = {
 	// originally came from) if not specified.
 	targetLayer = toLayer ? toLayer : this._parentLayer
 
-	// TODO  Take the selection layer's image, and
-	// create an event in the target layer's history importing
-	// that image.
-	// Then clear the selection.
-	this._selectionPresent = false;
-	this._clippingPath = null;
-	this._parentLayer = null; 
-	this._selectionContentsSnapshot = null;
+	this.selectionLayer.clearLayer();
 
+	// Create a new action in history importing the dropped
+	// selection picture contents into the target layer.
+	let action = new ImportImageAction(targetLayer,
+					   this._selectionImg,
+					   this._clipRect.left,
+					   this._clipRect.top);
+	g_history.pushAction(action);
+
+	targetLayer.getContext().drawImage(this._selectionImg,
+					   this._clipRect.left,
+					   this._clipRect.top);
+
+	// Reset all selection-related state.
+	self._selectionPresent = false;
+	self._clippingPath = null;
+	self._parentLayer = null;
+	self._clipRect = null;
+	self._selectionImg = null;
     },
 
     drawSelection: function() {
-	// TODO
-	// This will execute the parent layer's drawing in the
-	// selectionLayer, with the clip path set so that only the
-	// part inside the path gets drawn, and with the selection
-	// layer's transform applied.  (Applied to the clip path too
-	// I guess?)
+	    // Don't need to do anything special?
     }
+};
+
+/* When user mousedowns within the selection and drags, then
+ call the selectionMovingTool instead of the real tool.
+
+ (At least, for now.  There should be a way to draw within the
+ selection, using the selection as a clipping region, so that means
+ there eventually needs to be a way of using other tools inside
+ the selection region...  still some stuff to figure out here.)
+
+ Oh, what if a click with any selection tool inside an existing
+ selection turns into the selectionMovingTool?  But clicks with other
+ drawing tools draw normally using the selection as a clipping region?
+ That sounds workable.
+*/
+
+selectionMovingTool = new Tool(0);
+selectionMovingTool.display = function(penCtx, x, y) {
+};
+selectionMovingTool.down = function(ctx, x, y) {
+    this.startX = x;
+    this.startY = y;
+    this.lastX = x;
+    this.lastY = y;
+    this.inProgress = true;
+};
+selectionMovingTool.up = function(ctx, x, y) {
+    if (this.inProgress) {
+	this.endX = x;
+	this.endY = y;
+	this.inProgress = false;
+	if (g_selection.selectionPresent) {
+	    g_selection.dropSelection(); 
+	}
+    }
+};
+selectionMovingTool.drag = function(ctx, x, y) {
+    if (this.inProgress) {
+	if (g_selection.selectionPresent) {
+	    g_selection.moveSelection(x - this.lastX,
+				      y - this.lastY);
+	    this.lastX = x;
+	    this.lastY = y;
+	}
+    }
+};
+selectionMovingTool.drawCursor = function(ctx, x, y) {
+};
+selectionMovingTool.getRecordedAction = function() {
+    // Nothing to do here?
+    return null; 
+};
+selectionMovingTool.resetRecordedAction = function() {
 };
