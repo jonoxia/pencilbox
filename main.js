@@ -46,6 +46,15 @@ function saveHandler() {
 $(function() {
         document.multitouchData = true;
 
+	// Set widths and heights dynamically to make optimal
+	// use of screen dimensions.
+	let screenWidth = window.innerWidth;
+	let screenHeight = window.innerHeight;
+	$("#the-canvas").attr("width", screenWidth * 0.6);
+	$("#the-canvas").attr("height", screenHeight);
+	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
+	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
+
 	g_history = new History();
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();

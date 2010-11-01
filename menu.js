@@ -1,3 +1,6 @@
+// TODO menu isn't getting erased properly and is leaving cruft all the heck over the place.
+// Sometimes there's a partial menu drawn 
+
 function GridMenu( canvas, itemList, squareSize, isSubMenu ) {
     // Each item in stringList has .name, .icon, and .execute
     this._left = 0;
@@ -36,6 +39,7 @@ function GridMenu( canvas, itemList, squareSize, isSubMenu ) {
 }
 GridMenu.prototype = {
     onMouseDown: function(evt) {
+	this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
 	let x = evt.pageX - this._offsetX;
 	let y = evt.pageY - this._offsetY;
 	if (this._visible) {
@@ -75,7 +79,7 @@ GridMenu.prototype = {
 		this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
 		let index = this._getCellNumFromPoint( x, y );
 		// Execute!
-		if (index != null) {
+		if (index != null && index < this._commands.length) {
 		    this._commands[index].execute();
 		}
 		this._visible = false;

@@ -13,8 +13,32 @@ Color.prototype = {
     },
     toStr: function() {
 	return "(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
+    },
+    toStyle: function() {
+	return "rgba(" + this.r + "," + this.g + "," + this.b + "," +
+	this.a + ")";
+    },
+    copy: function() {
+        return new Color(this.r, this.g, this.b, this.a);
+    },
+    get style() {
+	return this.toStyle();
     }
 };
+
+var Colors = {
+    brown: new Color(150, 100, 50, 1),
+    white: new Color(255, 255, 255, 1),
+    black: new Color(0, 0, 0, 1),
+    red: new Color(255, 0, 0, 1),
+    transparent: new Color(0, 0, 0, 0),
+    translucentBlack: new Color(0, 0, 0, 0.2)
+};
+
+Colors.pen = Colors.black;
+Colors.paint = Colors.red;
+Colors.erase = Colors.white;
+Colors.desk = Colors.brown;
 
 function move(pt, dir) {
     switch (dir) {

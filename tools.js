@@ -4,7 +4,7 @@ function Tool(defaultSize) {
 }
 Tool.prototype = {
     getStrokeStyle: function() {
-	return "rgb(0, 0, 0)"; 
+	return Colors.pen.style;
     },
 
     down: function(ctx, x, y) {
@@ -64,29 +64,29 @@ let pen = new Tool(1.0);
 pen.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle="rgb(0, 0, 0)"; 
+    penCtx.fillStyle = Colors.pen.style;
     penCtx.fill();
 };
 pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
 eraser.getStrokeStyle = function() {
-    return "rgb(255, 255, 255)";
+    return Colors.erase.style;
 }
 eraser.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle="rgb(255, 255, 255)";
+    penCtx.fillStyle=Colors.white.style;
     penCtx.fill();
     penCtx.lineWidth = 1.0;
-    penCtx.strokeStyle="rgb(0, 0, 0)"; 
+    penCtx.strokeStyle=Colors.black.style;
     penCtx.stroke();
 };
 eraser.drawCursor = eraser.display;
 
 let line = new Tool(1.0);
 line.display = function(penCtx, x, y) {
-    penCtx.strokeStyle="rgb(0, 0, 0)"; 
+    penCtx.strokeStyle= this.getStrokeStyle();
     penCtx.lineWidth = this.size;
     penCtx.beginPath();
     penCtx.moveTo(x - 20, y - 20);
@@ -114,7 +114,7 @@ line.drag = function(ctx, x, y) {
 line.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "crosshair");
     if (this.inProgress) {
-      ctx.strokeStyle="rgb(0, 0, 0)"; 
+      ctx.strokeStyle=this.getStrokeStyle();
       ctx.lineWidth = this.size;
       ctx.beginPath();
       ctx.moveTo(this.startX, this.startY);
@@ -193,12 +193,11 @@ bucket.edgeFindingAlgorithm = function(data, x, y) {
     return megaList;
 };
 bucket.up = function(ctx, x, y) {
-    let fillColor = new Color(255, 0, 0, 255);
     let bm = new BitManipulator(ctx, 950, 600);
     this.lastDrawCtx = ctx;
 
     this.actionPoints = bucket.edgeFindingAlgorithm(bm, x, y);
-    ctx.fillStyle = "rgb(255,0,0)";
+    ctx.fillStyle = Colors.paint.style;
     ctx.beginPath();
     ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
     for (let i = 1; i < this.actionPoints.length; i++) {
@@ -218,7 +217,7 @@ bucket.getRecordedAction = function() {
 			  this.actionPoints,
 			  null,
 			  null,
-			  "rgb(255,0,0)",
+			  Colors.paint.style,
 			  true);
 };
 
@@ -284,3 +283,168 @@ textBalloonTool.getRecordedAction = function() {
 textBalloonTool.resetRecordedAction = function() {
     // TODO
 };
+
+
+let rectangle = new Tool(1.0);
+rectangle.display = function(penCtx, x, y) {
+    penCtx.strokeStyle=this.getStrokeStyle();
+    penCtx.lineWidth = this.size;
+    penCtx.beginPath();
+    penCtx.moveTo(x - 20, y - 20);
+    penCtx.lineTo(x+ 20, y-20);
+    penCtx.lineTo(x+ 20, y+20);
+    penCtx.lineTo(x- 20, y+20);
+    penCtx.lineTo(x- 20, y-20);
+    penCtx.stroke();
+};
+rectangle.down = function(ctx, x, y) {
+    this.startX = x;
+    this.startY = y;
+    this.inProgress = true;
+};
+rectangle.up = function(ctx, x, y) {
+    ctx.lineWidth = this.size;
+    ctx.strokeStyle=this.getStrokeStyle();
+    ctx.beginPath();
+    ctx.moveTo(this.startX, this.startY);
+    ctx.lineTo(this.startX, y);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x, this.startY);
+    ctx.lineTo(this.startX, this.startY);
+    ctx.stroke();
+    this.endX = x;
+    this.endY = y;
+    this.lastDrawCtx = ctx;
+    this.inProgress = false;
+};
+rectangle.drag = function(ctx, x, y) {
+};
+rectangle.drawCursor = function(ctx, x, y) {
+    $("#the-canvas").css("cursor", "crosshair");
+    if (this.inProgress) {
+      ctx.strokeStyle=this.getStrokeStyle();
+      ctx.beginPath();
+      ctx.moveTo(this.startX, this.startY);
+      ctx.lineTo(this.startX, y);
+      ctx.lineTo(x, y);
+      ctx.lineTo(x, this.startY);
+      ctx.lineTo(this.startX, this.startY);
+      ctx.stroke();
+    }
+};
+rectangle.getRecordedAction = function() {
+    let activeLayer = g_drawInterface.getActiveLayer();
+    let pointList = [];
+    let self = this;
+    pointList.push({x: self.startX, y: self.startY});
+    pointList.push({x: self.startX, y: self.endY});
+    pointList.push({x: self.endX, y: self.endY});
+    pointList.push({x: self.endX, y: self.startY});
+    pointList.push({x: self.startX, y: self.startY});
+    return new DrawAction(activeLayer,
+			  pointList,
+			  this.size,
+			  this.getStrokeStyle(),
+			  null,
+			  false);
+    // TODO Later
+    // Implement filled rectangle simply by setting that last
+    // false to a true
+};
+rectangle.resetRecordedAction = function() {
+    // Nothing to do
+};
+
+
+let paintbrush = new Tool(10.0);
+// TODO paintbrush needs a way to set color and opacity as well
+// as size.  Also when drawing it looks more opaque than it really
+// is because it's going back over its own path so many times.
+// Should probably make the end of the strokes rounded instead of
+// square too.
+paintbrush.getStrokeStyle = function() {
+    this.transparency = 0.5;
+    let color = Colors.paint.copy();
+    color.a = this.transparency;
+    return color.style;
+}
+paintbrush.display = function(penCtx, x, y) {
+    penCtx.beginPath();
+    penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
+    penCtx.fillStyle=Colors.paint.style;
+    penCtx.fill();
+    penCtx.lineWidth = 1.0;
+    penCtx.strokeStyle=Colors.black.style;
+    penCtx.stroke();
+};
+paintbrush.drawCursor = paintbrush.display;
+
+
+rectSelect = new Tool(0);
+rectSelect.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = 'icons/border.png'; 
+};
+rectSelect.down = function(ctx, x, y) {
+    this.startX = x;
+    this.startY = y;
+    this.inProgress = true;
+};
+rectSelect.up = function(ctx, x, y) {
+    this.endX = x;
+    this.endY = y;
+    this.inProgress = false;
+};
+rectSelect.drag = function(ctx, x, y) {
+};
+rectSelect.drawCursor = function(ctx, x, y) {
+    // Not a fan of the marching ants thing -
+    // let's show a translucent black rectangle over what you
+    // have selected.
+    $("#the-canvas").css("cursor", "crosshair");
+    if (this.inProgress) {
+	ctx.fillStyle = Colors.translucentBlack.style;
+	ctx.beginPath();
+	ctx.moveTo(this.startX, this.startY);
+	ctx.lineTo(this.startX, y);
+	ctx.lineTo(x, y);
+	ctx.lineTo(x, this.startY);
+	ctx.lineTo(this.startX, this.startY);
+	ctx.fill();
+    }
+};
+rectSelect.getRecordedAction = function() {
+
+   
+};
+rectSelect.resetRecordedAction = function() {
+    // Nothing to do
+};
+
+
+// More tools:
+// Filled rect (an option on rect tool?)
+// Porygon (like pencil but adds a new point to actionPoints list
+// only when you click)
+// Eyedropper (sets fg color to clicked pixel - implement after we
+//             have color-setting interface!!)
+
+// Three colors: erasure color, fill color, and pen color.
+// Any of these colors can be "transparent" (although it dont make
+// much sense for pen) which really means "Delete pixels here instead
+// of drawing them."
+
+// Until I think of a better interface, I guess we're just going
+// to have to have three swatches of color on display, and clicking
+// one brings up the whole set of possibilities.
+
+// In general, tools need individualized setting controls beyond
+// the all-purpose color and line width controls.  Bucket needs to
+// be able to set sensitivity, paintbush transparency (and noise!)
+// rectangle filled-or-not-filledness, etc.  Eraser could have
+// shortcuts for white or transparent.
+
+// But what I really want to play with is... selections!!!

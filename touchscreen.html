@@ -12,22 +12,21 @@
 </head>
 <!-- Icons by Yusuke Kamiyamane, http://p.yusukekamiyamane.com, CC Attribution 3.0 license -->
 <body>
-<div id="control-div" style="float: left; width: 250;">
-Debug: <span id="debug"></span><br/>
+<div id="control-div" style="float: left;">
+<canvas id="pen-size-canvas" style="border-style:solid;"></canvas>
+<br/>
 <button id="load-btn">Import</button>
 <button id="save-btn">Export</button>
-<button id="new-layer-btn">New Layer</button>
-<br/>
-<canvas id="pen-size-canvas" width="200" height="400" style="border-style:solid;"></canvas>
-<br/>
+<button id="new-layer-btn">New Layer</button><br/>
+Debug: <span id="debug"></span><br/>
 <table id="layers-table" border="true">
 </table>
 </div>
 <div id="canvas-div" style="float: left;">
-<canvas id="the-canvas" width="950" height="600" style="border-style:solid;"></canvas>
+<canvas id="the-canvas" style="border-style:solid;"></canvas>
 </div>
 <div id="text-div" style="float: left;">
-<textarea rows="30" cols="30" id="dialogue-edit-area"></textarea>
+<textarea rows="30" id="dialogue-edit-area"></textarea>
 </div>
 </body>
 </html>

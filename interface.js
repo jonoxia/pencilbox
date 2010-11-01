@@ -247,7 +247,14 @@ function ToolAreaInterface() {
 		    {name: "Bucket", icon: "icons/paint-can.png",
 		     execute: function() {self.setTool(bucket);}},
 		    {name: "Line", icon: "icons/ruler.png",
-		     execute: function() {self.setTool(line);}}];
+		     execute: function() {self.setTool(line);}},
+		    {name: "Rectangle", icon: "icons/ruler-crop.png",
+		     execute: function() {self.setTool(rectangle);}},
+		    {name: "Paintbrush", icon: "icons/paint-brush.png",
+		     execute: function() {self.setTool(paintbrush);}},
+		    {name: "Select", icon: "icons/border.png",
+		     execute: function() {self.setTool(rectSelect);}}
+	];
 		     
     this.menu = new GridMenu( this.toolCanvas, itemList, 64, false );
     this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
