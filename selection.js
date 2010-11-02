@@ -36,45 +36,50 @@
   * Filter (invert, blur, etc)
   * Rotate
   * Resize
+  * Mirror
   * Skew (free trasnformation)
   * Return to original (and deselect)
   * Drop here (and deselect)
 
   */
 
-// ctx.clip();  is our new best friend.
-
 
 // Have to figure out how these Actions can work
 // during export-replay as well as undo/redo replay.
 
-/* 1. Don't export the selection layer!
- * 2. We don't want to actually recalculate the clipping contents
- *     as part of the action!!!  That's because if we recaculate when
- *     replaying into the export context, we'll grab stuff we don't
- *     want (e.g. contents of lower layers).
- * 3.  Instead, we can make the dropSelectionAction belong to the
- *     target layer, and have the action itself store the bitmap data,
- *     and so when the target layer replays that it gets exactly what
- *     you expect to be pasted in.
- * 4.  The moveSelectionAction meanwhile can *belong* to the
- *     selection layer.  Since we don't replay the selection layer
- *     or draw anything from it when rendering to export context,
- *     these will be ignored.  But they will still get undone when
- *     you use the undo command right after.  Perfect!
- * 5.  The create selection action, therfore, just has to *remove*
- *     the expected stuff from the target layer, so that it won't
- *     be there when we replay it.  (it should belong to the target
- *     layer as well).  It can also add the selection to the
- *     selection layer (to implement undo/redo replay)
- *     Actually this also presents a problem with export replay
- *     because the removal would remove everything from the underlying
- *     layers that had already been rendered.
- *     The only solution I can think of is that when doing export
- *     replay we lay down each layer before beginning to render the
- *     next layer, meaning turn each layer to a bitmap and then plop
- *     the bitmaps one on top another.  Ugh!  Worry about this later.
+/* A select-move-drop sequence currently gets recorded to history
+ * as two actions:  A clearRect action that removes it from original
+ * location, and an importImage action that inserts it to the new
+ * location.
+
+ *  There are two things potentially wrong with this.
+ *  1. When replaying all actions for export,the clearRect will
+ *    delete chunks of underlying layers that we don't want
+ *    deleted.
+ *  2. If you drag, drop, and then undo, it undoes the drop, but
+ *    it does not undo the clear in the original location; it also
+ *    doesn't recreate the selection state, so the content will
+ *    appear to be gone (you can undo again to restore to the original
+ *    state).  One undo should undo both actions OR it should
+ *    undo the drop but put the selection back into play.
  */
+
+// BIG TODO:  Non-rectangular selection areas (requires
+// a function to clear arbitrary area, and a function to determine
+// if point is within arbitrary area.)
+
+// BUG:  If you make selection while zoomed in:
+//    1. when selection is drawn upon creation, it is too small
+//          (like it was not zoomed)
+//    2. The area that's cleared is double-too-small.
+//            (like it was double not zoomed)
+//    3. When you start dragging the selection around, it appears
+//           right size (but moves double-fast)
+//    4. when you drop it, it again appears too-small.
+
+//   note: clearRectAction does screenToWorld transform.
+//    importImageAction does screenToWorld for x, y points but
+//     does nothing about size.
 
 function SelectionManager() {
     this._selectionPresent = false;
@@ -96,11 +101,7 @@ function SelectionManager() {
     this.selectionLayer.setName("Selection");
     let manager = this;
     this.selectionLayer.onRedraw = function(ctx) {
-	if (manager._selectionImg) {
-            ctx.drawImage(manager._selectionImg,
-	                  manager._clipRect.left,
-                          manager._clipRect.top);
-	}
+	manager.drawSelection(ctx);
     };
     g_drawInterface.layers.push(this.selectionLayer);
     this._selectionCtx = this.selectionLayer.getContext();
@@ -111,15 +112,20 @@ SelectionManager.prototype = {
     },
 
     isWorldPtInsideSelection: function(x, y) {
-	// TODO  // Nontrivial if selection region has a complex
-	// shape!
-	
-	// But basically the interface can call this to know whether
-	// it should be doing a moveSelection or what...
-
+	if (!this._selectionPresent) {
+	    return false;
+	} else if (this._clipRect) {
+	    // TODO  // Nontrivial if selection region has a complex
+	    // shape!
+	    return (x >= this._clipRect.left &&
+		    x <= this._clipRect.right &&
+		    y >= this._clipRect.top &&
+		    y <= this._clipRect.bottom);
+	}
     },
     isScreenPtInsideSelection: function(x, y) {
-	// TODO
+	let pt = this.selectionLayer.screenToWorld(x, y);
+	return this.isWorldPtInsideSelection(pt.x, pt.y);
     },
 
     _getBoundingRectForPath: function(clippingPath) {
@@ -164,7 +170,6 @@ SelectionManager.prototype = {
 							 clipRect,
 							 clippingPath);
 
-	//$("#debug").html("<img src=\"" + imgDataUrl + "\"/>");
 	// Clear clipping path on parent layer!
 	let clear = new ClearRectAction(parentLayer, clipRect);
 	g_history.pushAction(clear);
@@ -177,10 +182,8 @@ SelectionManager.prototype = {
 	this._selectionImg = new Image();
 	let self = this;
 	this._selectionImg.onload = function() {
-	    self.selectionLayer.getContext().drawImage(
-					     self._selectionImg,
-					     clipRect.left,
-					     clipRect.top);
+	    let ctx = self.selectionLayer.getContext();
+	    self.drawSelection(ctx);
 	}
 	this._selectionImg.src = imgDataUrl;
     },
@@ -191,20 +194,10 @@ SelectionManager.prototype = {
 	this._clipRect.top += dy;
 	this._clipRect.bottom += dy;
 	this.selectionLayer.updateDisplay();
-	// todo
-	// updateDisplay, which calls replayActionsForLayer,
-	// which we may or may not want, as well as
-	// everythingBrown, which we may not want.
-	// (it also calls onRedraw, which calls drawSelection(),
-	// so we don't need to call anything else here.
     },
 
     cancelSelection: function() {
 	// TODO 
-	// Clear the selection,
-	// and tell the parent layer to stop hiding whatever was
-	// inside the clipping path.
-
 	// Does this need to be implemented or can we accomplish
 	// the same thing by undoing the selection?
     },
@@ -229,15 +222,29 @@ SelectionManager.prototype = {
 					   this._clipRect.top);
 
 	// Reset all selection-related state.
-	self._selectionPresent = false;
-	self._clippingPath = null;
-	self._parentLayer = null;
-	self._clipRect = null;
-	self._selectionImg = null;
+	this._selectionPresent = false;
+	this._clippingPath = null;
+	this._parentLayer = null;
+	this._clipRect = null;
+	this._selectionImg = null;
     },
 
-    drawSelection: function() {
+    drawSelection: function(ctx) {
 	    // Don't need to do anything special?
+	if (!this._selectionPresent || !this._selectionImg) {
+	    return;
+	}
+	let clipRect = this._clipRect;
+	ctx.drawImage(this._selectionImg, clipRect.left, clipRect.top);
+	// Draw translucent black square around selection
+	ctx.fillStyle = Colors.translucentBlack.style;
+	ctx.beginPath();
+	ctx.moveTo(clipRect.left, clipRect.top);
+	ctx.lineTo(clipRect.right, clipRect.top);
+	ctx.lineTo(clipRect.right, clipRect.bottom);
+	ctx.lineTo(clipRect.left, clipRect.bottom);
+	ctx.lineTo(clipRect.left, clipRect.top);
+	ctx.fill();
     }
 };
 
@@ -259,18 +266,20 @@ selectionMovingTool = new Tool(0);
 selectionMovingTool.display = function(penCtx, x, y) {
 };
 selectionMovingTool.down = function(ctx, x, y) {
-    this.startX = x;
-    this.startY = y;
-    this.lastX = x;
-    this.lastY = y;
-    this.inProgress = true;
+    if (g_selection.selectionPresent) {
+	this.startX = x;
+	this.startY = y;
+	this.lastX = x;
+	this.lastY = y;
+	this.inProgress = true;
+    }
 };
 selectionMovingTool.up = function(ctx, x, y) {
     if (this.inProgress) {
-	this.endX = x;
-	this.endY = y;
-	this.inProgress = false;
 	if (g_selection.selectionPresent) {
+	    this.endX = x;
+	    this.endY = y;
+	    this.inProgress = false;
 	    g_selection.dropSelection(); 
 	}
     }
@@ -292,4 +301,77 @@ selectionMovingTool.getRecordedAction = function() {
     return null; 
 };
 selectionMovingTool.resetRecordedAction = function() {
+};
+
+
+rectSelect = new Tool(0);
+rectSelect._moveMode = false;
+rectSelect.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = 'icons/border.png'; 
+};
+rectSelect.down = function(ctx, x, y) {
+    if (g_selection.isScreenPtInsideSelection(x, y)) {
+	this._moveMode = true;
+	selectionMovingTool.down(ctx, x, y);
+    } else {
+	this.startX = x;
+	this.startY = y;
+	this.inProgress = true;
+    }
+};
+rectSelect.up = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.up(ctx, x, y);
+    } else if (this.inProgress) {
+	this.endX = x;
+	this.endY = y;
+
+	let pointList = [];
+	let transform = g_selection.selectionLayer.screenToWorld;
+	//let transform = function(x, y) { return {x: x, y: y}; };
+	pointList.push(transform(this.startX, this.startY));
+	pointList.push(transform(this.startX, this.endY));
+	pointList.push(transform(this.endX, this.endY));
+	pointList.push(transform(this.endX, this.startY));
+	pointList.push(transform(this.startX, this.startY));
+	
+	if (g_selection) {
+	    let activeLayer = g_drawInterface.getActiveLayer();
+	    g_selection.createSelection(pointList,
+					activeLayer);
+	}
+    }
+    this.inProgress = false;
+    this._moveMode = false;
+};
+rectSelect.drag = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.drag(ctx, x, y);
+    }
+};
+rectSelect.drawCursor = function(ctx, x, y) {
+    // Not a fan of the marching ants thing -
+    // let's show a translucent black rectangle over what you
+    // have selected.
+    $("#the-canvas").css("cursor", "crosshair");
+    if (this.inProgress) {
+	ctx.fillStyle = Colors.translucentBlack.style;
+	ctx.beginPath();
+	ctx.moveTo(this.startX, this.startY);
+	ctx.lineTo(this.startX, y);
+	ctx.lineTo(x, y);
+	ctx.lineTo(x, this.startY);
+	ctx.lineTo(this.startX, this.startY);
+	ctx.fill();
+    }
+};
+rectSelect.getRecordedAction = function() {
+    return null;
+};
+rectSelect.resetRecordedAction = function() {
+    // Nothing to do
 };

@@ -380,66 +380,6 @@ paintbrush.display = function(penCtx, x, y) {
 paintbrush.drawCursor = paintbrush.display;
 
 
-rectSelect = new Tool(0);
-rectSelect.display = function(penCtx, x, y) {
-    let img = new Image();  
-    img.onload = function(){  
-	penCtx.drawImage(img, 60, 60);  
-    }  
-    img.src = 'icons/border.png'; 
-};
-rectSelect.down = function(ctx, x, y) {
-    this.startX = x;
-    this.startY = y;
-    this.inProgress = true;
-};
-rectSelect.up = function(ctx, x, y) {
-    if (this.inProgress) {
-	this.endX = x;
-	this.endY = y;
-
-	let pointList = [];
-	let self = this;
-	pointList.push({x: self.startX, y: self.startY});
-	pointList.push({x: self.startX, y: self.endY});
-	pointList.push({x: self.endX, y: self.endY});
-	pointList.push({x: self.endX, y: self.startY});
-	pointList.push({x: self.startX, y: self.startY});
-	
-	if (g_selection) {
-	    let activeLayer = g_drawInterface.getActiveLayer();
-	    g_selection.createSelection(pointList,
-					activeLayer);
-	}
-    }
-    this.inProgress = false;
-};
-rectSelect.drag = function(ctx, x, y) {
-};
-rectSelect.drawCursor = function(ctx, x, y) {
-    // Not a fan of the marching ants thing -
-    // let's show a translucent black rectangle over what you
-    // have selected.
-    $("#the-canvas").css("cursor", "crosshair");
-    if (this.inProgress) {
-	ctx.fillStyle = Colors.translucentBlack.style;
-	ctx.beginPath();
-	ctx.moveTo(this.startX, this.startY);
-	ctx.lineTo(this.startX, y);
-	ctx.lineTo(x, y);
-	ctx.lineTo(x, this.startY);
-	ctx.lineTo(this.startX, this.startY);
-	ctx.fill();
-    }
-};
-rectSelect.getRecordedAction = function() {
-
-   
-};
-rectSelect.resetRecordedAction = function() {
-    // Nothing to do
-};
-
 
 // More tools:
 // Filled rect (an option on rect tool?)
