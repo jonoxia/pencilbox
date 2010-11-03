@@ -42,31 +42,39 @@ DrawAction.prototype = {
     }
 };
 
-function ClearRectAction(layer, rect) {
+function ClearRegionAction(layer, pointsList) {
     this.layer = layer;
     this.ctx = layer.getContext();
-    let scale = layer._scale;
-    let xTrans = layer._xTranslate;
-    let yTrans = layer._yTranslate;
-    let xCen = layer._center.x;
-    let yCen = layer._center.y;
-    // reverse transform rectangle:
+    this.points = pointsList; //[];
 
-    let topLeft = layer.screenToWorld(rect.left, rect.top);
-    let bottomRight = layer.screenToWorld(rect.right, rect.bottom);
-    this.left = topLeft.x;
-    this.top = topLeft.y;
-    this.right = bottomRight.x;
-    this.bottom = bottomRight.y;
+    // reverse transform rectangle:
+    /*let topLeft = layer.screenToWorld(rect.left, rect.top);
+      let bottomRight = layer.screenToWorld(rect.right, rect.bottom);*/
+    /*for (let i= 0; i < pointsList.length; i++) {
+	this.points.push(layer.screenToWorld(pointsList[i].x,
+					     pointsList[i].y));
+					     }*/
 }
-ClearRectAction.prototype = {
+ClearRegionAction.prototype = {
     replay: function(newCtx) {
 	// call with no arguments to replay in original context, or
 	// pass in a context to draw into that context.
 	let ctx = newCtx ? newCtx : this.ctx;
-	let width = this.right - this.left;
+	/*let width = this.right - this.left;
 	let height = this.bottom - this.top;
-	ctx.clearRect(this.left, this.top, width, height);
+	ctx.clearRect(this.left, this.top, width, height);*/
+	ctx.save();
+	// erase to transparent by setting composite operation to
+	// copy.
+	ctx.globalCompositeOperation = 'destination-out';
+	//ctx.fillStyle = 'rgba(0,0,0,0)';
+	ctx.beginPath();
+	ctx.moveTo(this.points[0].x, this.points[0].y);
+        for (let i= 1; i < this.points.length; i++) {
+	    ctx.lineTo(this.points[i].x, this.points[i].y);
+	}
+	ctx.fill();
+	ctx.restore();
     }
 };
 

@@ -171,13 +171,10 @@ SelectionManager.prototype = {
 							 clippingPath);
 
 	// Clear clipping path on parent layer!
-	let clear = new ClearRectAction(parentLayer, clipRect);
+	let clear = new ClearRegionAction(parentLayer, clippingPath);
 	g_history.pushAction(clear);
 	clear.replay(); // to execute it immediately
 	
-	// TODO need a ClearRegionAction which can
-	// clear any shape region, not just a rectangle.
-
 	// Draw image in selection layer:
 	this._selectionImg = new Image();
 	let self = this;
@@ -239,11 +236,10 @@ SelectionManager.prototype = {
 	// Draw translucent black square around selection
 	ctx.fillStyle = Colors.translucentBlack.style;
 	ctx.beginPath();
-	ctx.moveTo(clipRect.left, clipRect.top);
-	ctx.lineTo(clipRect.right, clipRect.top);
-	ctx.lineTo(clipRect.right, clipRect.bottom);
-	ctx.lineTo(clipRect.left, clipRect.bottom);
-	ctx.lineTo(clipRect.left, clipRect.top);
+	ctx.moveTo(this._clippingPath[0].x, this._clippingPath[0].y);
+        for (let i= 1; i < this._clippingPath.length; i++) {
+	    ctx.lineTo(this._clippingPath[i].x, this._clippingPath[i].y);
+	}
 	ctx.fill();
     }
 };
@@ -331,13 +327,12 @@ rectSelect.up = function(ctx, x, y) {
 	this.endY = y;
 
 	let pointList = [];
-	let transform = g_selection.selectionLayer.screenToWorld;
-	//let transform = function(x, y) { return {x: x, y: y}; };
-	pointList.push(transform(this.startX, this.startY));
-	pointList.push(transform(this.startX, this.endY));
-	pointList.push(transform(this.endX, this.endY));
-	pointList.push(transform(this.endX, this.startY));
-	pointList.push(transform(this.startX, this.startY));
+	let layer = g_selection.selectionLayer;
+	pointList.push(layer.screenToWorld(this.startX, this.startY));
+	pointList.push(layer.screenToWorld(this.startX, this.endY));
+	pointList.push(layer.screenToWorld(this.endX, this.endY));
+	pointList.push(layer.screenToWorld(this.endX, this.startY));
+	pointList.push(layer.screenToWorld(this.startX, this.startY));
 	
 	if (g_selection) {
 	    let activeLayer = g_drawInterface.getActiveLayer();
@@ -373,5 +368,72 @@ rectSelect.getRecordedAction = function() {
     return null;
 };
 rectSelect.resetRecordedAction = function() {
+    // Nothing to do
+};
+
+lasso = new Tool(0);
+lasso._moveMode = false;
+lasso.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = 'icons/wand.png'; 
+};
+lasso.down = function(ctx, x, y) {
+    if (g_selection.isScreenPtInsideSelection(x, y)) {
+	this._moveMode = true;
+	selectionMovingTool.down(ctx, x, y);
+    } else {
+	this.points = [];
+	this.points.push({x: x, y: y});
+	this.inProgress = true;
+    }
+};
+lasso.up = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.up(ctx, x, y);
+    } else if (this.inProgress) {
+	let layer = g_selection.selectionLayer;
+	this.points.push({x: x, y: y});
+
+	let worldPts = [];
+        for (let i= 0; i < this.points.length; i++) {
+	    worldPts.push(layer.screenToWorld(this.points[i].x,
+					      this.points[i].y));
+	}	
+	if (g_selection) {
+	    let activeLayer = g_drawInterface.getActiveLayer();
+	    g_selection.createSelection(worldPts, activeLayer);
+	}
+    }
+    this.inProgress = false;
+    this._moveMode = false;
+};
+lasso.drag = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.drag(ctx, x, y);
+    } else {
+	// TODO this is drawing on draw context, should draw on
+	// pen/cursor context.
+	ctx.beginPath();
+	ctx.fillStyle = Colors.pen.style;
+	let lastPt = this.points[this.points.length - 1];
+	ctx.moveTo(lastPt.x, lastPt.y);
+	ctx.lineTo(x, y);
+	ctx.stroke();
+	this.points.push({x: x, y: y});
+    }
+};
+lasso.drawCursor = function(ctx, x, y) {
+    // Not a fan of the marching ants thing -
+    // let's show a translucent black rectangle over what you
+    // have selected.
+    $("#the-canvas").css("cursor", "crosshair");
+};
+lasso.getRecordedAction = function() {
+    return null;
+};
+lasso.resetRecordedAction = function() {
     // Nothing to do
 };

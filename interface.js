@@ -167,7 +167,7 @@ GestureInterpreter.prototype = {
 	    }
 	  } 
 	}
-    },
+    }
 };
 
 function ToolAreaInterface() {
@@ -254,8 +254,8 @@ function ToolAreaInterface() {
 		     execute: function() {self.setTool(paintbrush);}},
 		    {name: "Select", icon: "icons/border.png",
 		     execute: function() {self.setTool(rectSelect);}},
-		    {name: "Move", icon: "icons/border.png",
-		     execute: function() {self.setTool(selectionMovingTool);}}
+		    {name: "Lasso", icon: "icons/wand.png",
+		     execute: function() {self.setTool(lasso);}}
 	];
 		     
     this.menu = new GridMenu( this.toolCanvas, itemList, 64, false );
