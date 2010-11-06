@@ -1,33 +1,5 @@
-/* Things to decide about how selections work.
 
- is *creating* the selection  an undoable action?  (In which case
-  unselecting is probably undoable as well?)
-
- Or is it a no-op as far as history is concerned and only 
-  things you apply to the selection (e.g. moving it) are undoable?
-
-  I could see either way.
-
-
-  Where do we draw the selection while it's a selection?  In its
-  own layer perhaps?  If not, then where -- in the parent layer?
-  In the pen canvas?
-
-  I think we should give it its own layer.  That way we can move,
-  scale, and rotate the selection by calling those methods on the
-  layer containing it. (Ew, but then how do we know the clipping
-  path to use for putting it back in to the layer it's dropped to?)
-
-
-  Is there a separate "Do things with selections" tool?
-
-  Or do all selection tools act as a "do things with this
-  selection" as soon as they get mouseDowned inside an
-  existing selection?  (In which case if you want to make a new
-  selection including part of a current selection, you have to
-  click outside first?  Acceptable, I guess.)
-
-  How do we bring up the menu for advanced selection actions?
+/*  How do we bring up the menu for advanced selection actions?
    (e.g. everything except moving the selection)
     
   * Send to different layer (including possibility of new layer)
@@ -42,10 +14,6 @@
   * Drop here (and deselect)
 
   */
-
-
-// Have to figure out how these Actions can work
-// during export-replay as well as undo/redo replay.
 
 /* A select-move-drop sequence currently gets recorded to history
  * as two actions:  A clearRect action that removes it from original
@@ -65,47 +33,15 @@
  */
 
 
-// Known problem: For non-rectangular selections, a click anywhere
-// in the bounding rectangle is currently treated as "inside" the
-// selection b/c we don't have a function for "is point in arbitrary
-// polygon?"
+/* Known problem: For non-rectangular selections, a click anywhere
+ * in the bounding rectangle is currently treated as "inside" the
+ * selection b/c we don't have a function for "is point in arbitrary
+ * polygon?" 
 
-/* BUG:  If you make selection while zoomed in:
- *    1. when selection is drawn upon creation, it is too small
- *          (like it was not zoomed)
- *              (I think it's a general problem with ImportImageAction)
- *    2. The area that's cleared is double-too-small.
- *            (like it was double not zoomed - or transformed wrong
- *                    way)
- *    3. When you start dragging the selection around, it appears
- *           right size (but moves double-fast)  (FIXED)
- *    4. when you drop it, it again appears too-small.
- *       (Think it's the same problem with ImportImageAction)
- */
-
-/* Fixed those bugs (layer's transform matrix was not applied
- * when the action was done - wrote layer.doActionNow() to fix this
-
- * But now there are new bugs -- clearing is not permanent, and
- * dropped selection ends up in the wrong place... (Oh, were not
- * deep copying clipping path, so changing it changed the one in
- * the clearRegionAction too.)
- *
- * OK last (apparently last) bug is that while drawSelection draws
- * it in the right place, dropSelection drops it in the wrong
- * place. Are we screenToWorld-ing it one too many times?
-
-*/
-
-//   Image import is not *initially* scaled correctly to the current
-//     zoom level, but as soon as you change the scale, the imported
-//     image corrects itself.  So the problem is really in the
-//     initial draw, not the replay.
-
-//   note: clearRectAction does screenToWorld transform.
-//    importImageAction does screenToWorld for x, y points but
-//     does nothing about size.
-
+ * Moved image chunks turn fuzzy (because they're scaled bitmaps).
+ * It's because regardless of zoom, layer.pngSnapshot takes the
+ * snapshot at 100% scale. Maybe take the snapshot at a higher
+ * scale (or at the current zoom scale) to preserve more resolution?*/
 
 
 /* Awesome gesture idea:

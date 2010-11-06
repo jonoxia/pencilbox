@@ -2,6 +2,7 @@ var g_drawInterface = null;
 var g_toolInterface = null;
 var g_history = null;
 var g_dialogue = null;
+var g_panels = null;
 var g_selection = null;
 
 function saveHandler() {
@@ -61,6 +62,7 @@ $(function() {
 	g_drawInterface = new DrawAreaInterface();
 	g_dialogue = new DialogueManager();
 	g_selection = new SelectionManager();
+	g_panels = new PanelManager();
 
 	let loadHandler = function() {
 	    // TODO interface for picking a local image to upload
