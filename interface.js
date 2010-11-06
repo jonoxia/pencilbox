@@ -315,7 +315,6 @@ function DrawAreaInterface() {
 	    }
 	}
     };
-
     this.interpreter = new GestureInterpreter(library,
 					      this.offsetX,
 					      this.offsetY);

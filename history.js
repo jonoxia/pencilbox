@@ -43,17 +43,11 @@ DrawAction.prototype = {
 };
 
 function ClearRegionAction(layer, pointsList) {
+    // Note: This expects pointsList in world coordinates.
     this.layer = layer;
     this.ctx = layer.getContext();
     this.points = pointsList; //[];
 
-    // reverse transform rectangle:
-    /*let topLeft = layer.screenToWorld(rect.left, rect.top);
-      let bottomRight = layer.screenToWorld(rect.right, rect.bottom);*/
-    /*for (let i= 0; i < pointsList.length; i++) {
-	this.points.push(layer.screenToWorld(pointsList[i].x,
-					     pointsList[i].y));
-					     }*/
 }
 ClearRegionAction.prototype = {
     replay: function(newCtx) {
@@ -79,15 +73,10 @@ ClearRegionAction.prototype = {
 };
 
 function ImportImageAction(layer, img, x, y) {
+    // Note: This expects x, y in world coordinates.
     this.layer = layer;
     this.ctx = layer.getContext();
-    let scale = layer._scale;
-    let xTrans = layer._xTranslate;
-    let yTrans = layer._yTranslate;
-    let xCen = layer._center.x;
-    let yCen = layer._center.y;
-    // reverse transform import point
-    this.importPt = layer.screenToWorld(x, y);
+    this.importPt = {x: x, y: y};
     this.img = img;
 }
 ImportImageAction.prototype = {

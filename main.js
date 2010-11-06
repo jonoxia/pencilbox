@@ -64,14 +64,17 @@ $(function() {
 
 	let loadHandler = function() {
 	    // TODO interface for picking a local image to upload
+	    // TODO also need a way of moving imported image
+	    // where we want it!!  Maybe treat it as a selection?
+
+	    // TODO trying to select this gives me a security
+	    // error!!!
 	    var img = new Image();   // Create new Image object  
 	    img.onload = function(){  
-		g_drawInterface.getDrawCtx().drawImage(img, 0, 0);
-		g_history.pushAction(
-	          new ImportImageAction(
-                    g_drawInterface.getActiveLayer(), img, 0, 0
-		  )
-                );
+		let layer = g_drawInterface.getActiveLayer();
+		let action = new ImportImageAction(layer, img, 0, 0);
+		g_history.pushAction(action);
+		layer.doActionNow(action);
 	    }  
 	    img.src = 'myImage.png';
 	};

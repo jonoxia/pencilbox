@@ -144,14 +144,18 @@ Layer.prototype = {
 	this._yTranslate += yFactor; ///this._scale;
 	this.updateDisplay();
     },
-
+    doActionNow: function(action) {
+	this.displayContext.save();
+	this._setTransformMatrix();
+	action.replay(this.displayContext);
+	this.displayContext.restore();
+    },
     pngSnapshot: function(parentLayer, clipRect, clipPath) {
 	// the clipRect is just the convex bounding rectangle
 	// of the clipPath.
 
 	// Return a dataURL png of the part of the layer contents
 	// inside the clipPath.
-	// (...How the hell do we do this??)
 
 	// shrink canvas to just size of boundary rectangle
 	// for the .png conversion:
@@ -186,5 +190,10 @@ Layer.prototype = {
 	this.displayCanvas.width = oldWidth;
 	this.displayCanvas.height = oldHeight;
 	return dataUrl;
+	/* TODO this is fuzzier than expected when doing it to
+	 * a zoomed-in layer, because it's grabbing the pixels
+	 * from 100% zoom and then blowing up the bitmap; instead,
+	 * should turn vector to bitmap at current zoom if
+	 * possible.  */
     }
 };

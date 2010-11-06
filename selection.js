@@ -64,22 +64,57 @@
  *    undo the drop but put the selection back into play.
  */
 
-// BIG TODO:  Non-rectangular selection areas (requires
-// a function to clear arbitrary area, and a function to determine
-// if point is within arbitrary area.)
 
-// BUG:  If you make selection while zoomed in:
-//    1. when selection is drawn upon creation, it is too small
-//          (like it was not zoomed)
-//    2. The area that's cleared is double-too-small.
-//            (like it was double not zoomed)
-//    3. When you start dragging the selection around, it appears
-//           right size (but moves double-fast)
-//    4. when you drop it, it again appears too-small.
+// Known problem: For non-rectangular selections, a click anywhere
+// in the bounding rectangle is currently treated as "inside" the
+// selection b/c we don't have a function for "is point in arbitrary
+// polygon?"
+
+/* BUG:  If you make selection while zoomed in:
+ *    1. when selection is drawn upon creation, it is too small
+ *          (like it was not zoomed)
+ *              (I think it's a general problem with ImportImageAction)
+ *    2. The area that's cleared is double-too-small.
+ *            (like it was double not zoomed - or transformed wrong
+ *                    way)
+ *    3. When you start dragging the selection around, it appears
+ *           right size (but moves double-fast)  (FIXED)
+ *    4. when you drop it, it again appears too-small.
+ *       (Think it's the same problem with ImportImageAction)
+ */
+
+/* Fixed those bugs (layer's transform matrix was not applied
+ * when the action was done - wrote layer.doActionNow() to fix this
+
+ * But now there are new bugs -- clearing is not permanent, and
+ * dropped selection ends up in the wrong place... (Oh, were not
+ * deep copying clipping path, so changing it changed the one in
+ * the clearRegionAction too.)
+ *
+ * OK last (apparently last) bug is that while drawSelection draws
+ * it in the right place, dropSelection drops it in the wrong
+ * place. Are we screenToWorld-ing it one too many times?
+
+*/
+
+//   Image import is not *initially* scaled correctly to the current
+//     zoom level, but as soon as you change the scale, the imported
+//     image corrects itself.  So the problem is really in the
+//     initial draw, not the replay.
 
 //   note: clearRectAction does screenToWorld transform.
 //    importImageAction does screenToWorld for x, y points but
 //     does nothing about size.
+
+
+
+/* Awesome gesture idea:
+ * Grasp with all (4 or 5) fingers to make a selectoin -- draw selection path between those 4 or 5 points. (Hard part: How do we know order to
+  connect the points in?  
+
+  * Sadly it seems that this particular hardware doesn't support
+  * more than 2 touchpoints
+ */
 
 function SelectionManager() {
     this._selectionPresent = false;
@@ -147,6 +182,14 @@ SelectionManager.prototype = {
 	return clipRect;
     },
 
+    deepCopyPath: function(path) {
+	let newPath = [];
+	for (let i = 0; i < path.length; i++) {
+	    newPath.push({x: path[i].x, y: path[i].y});
+	}
+	return newPath;
+    },
+
     createSelection: function(clippingPath, parentLayer) {
 	if (this._selectionPresent) {
 	    // There was already a selection; drop that one
@@ -171,16 +214,16 @@ SelectionManager.prototype = {
 							 clippingPath);
 
 	// Clear clipping path on parent layer!
-	let clear = new ClearRegionAction(parentLayer, clippingPath);
+	let clearPath = this.deepCopyPath(clippingPath);
+	let clear = new ClearRegionAction(parentLayer, clearPath);
 	g_history.pushAction(clear);
-	clear.replay(); // to execute it immediately
+	parentLayer.doActionNow(clear);
 	
 	// Draw image in selection layer:
 	this._selectionImg = new Image();
 	let self = this;
 	this._selectionImg.onload = function() {
-	    let ctx = self.selectionLayer.getContext();
-	    self.drawSelection(ctx);
+	    self.selectionLayer.updateDisplay();
 	}
 	this._selectionImg.src = imgDataUrl;
     },
@@ -190,6 +233,10 @@ SelectionManager.prototype = {
 	this._clipRect.right += dx;
 	this._clipRect.top += dy;
 	this._clipRect.bottom += dy;
+        for (let i= 0; i < this._clippingPath.length; i++) {
+	    this._clippingPath[i].x += dx;
+	    this._clippingPath[i].y += dy;
+	}
 	this.selectionLayer.updateDisplay();
     },
 
@@ -213,10 +260,7 @@ SelectionManager.prototype = {
 					   this._clipRect.left,
 					   this._clipRect.top);
 	g_history.pushAction(action);
-
-	targetLayer.getContext().drawImage(this._selectionImg,
-					   this._clipRect.left,
-					   this._clipRect.top);
+	targetLayer.doActionNow(action);
 
 	// Reset all selection-related state.
 	this._selectionPresent = false;
@@ -227,7 +271,6 @@ SelectionManager.prototype = {
     },
 
     drawSelection: function(ctx) {
-	    // Don't need to do anything special?
 	if (!this._selectionPresent || !this._selectionImg) {
 	    return;
 	}
@@ -283,8 +326,13 @@ selectionMovingTool.up = function(ctx, x, y) {
 selectionMovingTool.drag = function(ctx, x, y) {
     if (this.inProgress) {
 	if (g_selection.selectionPresent) {
-	    g_selection.moveSelection(x - this.lastX,
-				      y - this.lastY);
+	    // convert screen to world so the drag distance
+	    // is correct even if zoomed
+	    let layer = g_selection.selectionLayer;
+	    let oldPt = layer.screenToWorld(this.lastX, this.lastY);
+	    let newPt = layer.screenToWorld(x, y);
+	    g_selection.moveSelection(newPt.x - oldPt.x,
+				      newPt.y - oldPt.y);
 	    this.lastX = x;
 	    this.lastY = y;
 	}
