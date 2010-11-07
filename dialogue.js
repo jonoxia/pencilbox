@@ -9,9 +9,11 @@ function SpeechBubble(text) {
     
     // These are instance specific (and need an interface for setting)
     this.text = text;
-    this.center = {x: Math.floor(Math.random() * 900 + 1),
-		   y: Math.floor(Math.random() * 600 + 1)};
-    this.tailTip = {x: 500, y: 600};
+    
+    // Pick a place to start out the bubble:
+    let x = 25 * g_dialogue.numBubbles;
+    this.center = g_dialogue.dialogueLayer.screenToWorld(200 + x, 200);
+    this.tailTip = g_dialogue.dialogueLayer.screenToWorld(300 + x, 400);
     this.maxLineWidth = 200;
 
     // Call these to recalc when data changes:
@@ -317,5 +319,9 @@ DialogueManager.prototype = {
 	    }
 	}
 	return null;
+    },
+
+    get numBubbles() {
+	return this.bubbles.length;
     }
 };
