@@ -62,7 +62,7 @@ $(function() {
 	g_drawInterface = new DrawAreaInterface();
 	g_dialogue = new DialogueManager();
 	g_selection = new SelectionManager();
-	g_panels = new PanelManager();
+	//g_panels = new PanelManager();
 
 	let loadHandler = function() {
 	    // TODO interface for picking a local image to upload

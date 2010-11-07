@@ -31,6 +31,7 @@ var Colors = {
     white: new Color(255, 255, 255, 1),
     black: new Color(0, 0, 0, 1),
     red: new Color(255, 0, 0, 1),
+    grey: new Color(100, 100, 100, 1),
     transparent: new Color(0, 0, 0, 0),
     translucentBlack: new Color(0, 0, 0, 0.2)
 };
@@ -83,6 +84,8 @@ function BitManipulator(context, width, height) {
     this.context = context;
     this.width = width;
     this.height = height;
+    // TODO paint bucket stopped working at all -- this now gest
+    // invalid or illegal string error every time.
     this.dataBlob = this.context.getImageData(0, 0, width, height);
 }
 BitManipulator.prototype = {
