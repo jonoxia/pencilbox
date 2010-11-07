@@ -7,8 +7,13 @@ function GestureInterpreter(gestureLibrary, offsetX, offsetY) {
     this.gestureDirections = [];
 
     this.pinchFirstDist = null;
+
+    this.pieMenu = null;
 }
 GestureInterpreter.prototype = {
+    addPieMenu: function(menu) {
+	this.pieMenu = menu;
+    },
     touchDown: function(evt) {
 	let id = evt.streamId;
 	let x = evt.pageX - this.offsetX;
@@ -19,6 +24,13 @@ GestureInterpreter.prototype = {
 				 oldY: y,
 				 id: id};
 	this.touchPointCount ++;
+
+	if (this.touchPointCount == 1 && this.pieMenu) {
+	    this.pieMenu.onMouseDown(evt);
+	}
+	if (this.touchPointCount == 2 && this.pieMenu) {
+	    this.pieMenu.cancel();
+	}
     },
 
     touchMove: function(evt) {
@@ -30,15 +42,12 @@ GestureInterpreter.prototype = {
 	    pt.oldY = pt.newY;
 	    pt.newX = evt.pageX - this.offsetX;
 	    pt.newY = evt.pageY - this.offsetY;
-	    // following lines are debug:
-	    /*if (this.ctx) {
-            	    this.ctx.strokeStyle = pt.color;
-		    this.ctx.beginPath();
-		    this.ctx.moveTo(pt.oldX, pt.oldY);
-		    this.ctx.lineTo(pt.newX, pt.newY);
-		    this.ctx.stroke();
-		    }*/
-	    this.interpretGesture(id);
+
+	    if (this.touchPointCount == 1 && this.pieMenu) {
+		this.pieMenu.onMouseMove(evt);
+	    } else {
+		this.interpretGesture(id);
+	    }
 	} else {
 	    $("#debug").html("NOT POINT");
 	}
@@ -47,15 +56,14 @@ GestureInterpreter.prototype = {
     touchUp: function(evt) {
 	let id = evt.streamId;
 	delete this.touchPoints[id];
-	/*let self = this;
-	let x;
-	let remainPts = [x for (x in self.touchPoints)];
-	$("#debug").html("Deleted pt " + id + "; points remaining: " + remainPts.join(", "));*/
 	this.touchPointCount --;
 	if (this.touchPointCount == 0) {
 	    this.finalizeGesture();
 	    this.gestureDirections = [];
 	    this.pinchFirstDist = null;
+	    if (this.pieMenu && this.pieMenu.visible) {
+		this.pieMenu.onMouseUp(evt);
+	    }
 	}
     },
 
@@ -86,31 +94,11 @@ GestureInterpreter.prototype = {
 	    let dyA = ptA.newY - ptA.oldY;
 	    let dxB = ptB.newX - ptB.oldX;
 	    let dyB = ptB.newY - ptB.oldY;
-	    /*$("#debug").html("dxA = " + dxA + ", dyA = " + dyA + 
-	      "dxB = " + dxB + ", dyB = " + dyB );*/
-	    /*$("#debug").html(ptA.id + ": " + ptA.oldX + ", " + ptA.oldY + " -> " +
-			     ptA.newX + ", " + ptA.newY + "<br/>" +
-			     ptB.id + ": " + ptB.oldX + ", " + ptB.oldY + " -> " +
-			     ptB.newX + ", " + ptB.newY + "moved one: " + movedId);*/
 
 	    // either pan OR zoom, don't do both.  Pan if the drag
 	    // distance > change in distance between fingers.
 	    let dist = (Math.sqrt(dxA*dxA + dyA*dyA) +
 			Math.sqrt(dxB*dxB + dyB*dyB)) / 2;
-
-	    /*let sign = function(x) {
-		if (x>0) return 1;
-		if (x<0) return -1;
-		if (x==0) return 0;
-		}*/
-
-	    //$("#debug").html("2fing drag distance " + dist + " vs" +
-	    //		     " delta is " + delta );
-
-	    /*+ "same x direction? " +
-			     (sign(dxA) == sign(dxB)?"yes":"no") + 
-			     "same y direction? " + 
-			     (sign(dyA) == sign(dyB)?"yes":"no"));*/
 
 	    if (!this.pinchFirstDist) {
 		this.pinchFirstDist = distPost;
@@ -200,22 +188,6 @@ function ToolAreaInterface() {
              command: function() {
 		    g_history.redo();
 		    //$("#debug").html("Redo");
-		}},
-            {directions: ["up"],
-	     command: function() {
-		    self.setTool(pen);
-		}},
-            {directions: ["down"],
- 	     command: function() {
-		    self.setTool(eraser);
-		}},
-            {directions: ["left"],
-	     command: function() {
-		    self.setTool(line);
-		}},
-            {directions: ["right"],
-	     command: function() {
-		    self.setTool(bucket);
 		}}
 	],
 	twoFingers: {
@@ -226,18 +198,9 @@ function ToolAreaInterface() {
 	}
     };
 
-    /*this.interpreter = new GestureInterpreter(this.library,
+    this.interpreter = new GestureInterpreter(this.library,
 					      this.offsetX,
 					      this.offsetY);
-
-    this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
-	    self.interpreter.touchDown(evt); }, false);
-    this.toolCanvas.addEventListener("MozTouchMove", function(evt) {
-	    self.interpreter.touchMove(evt); }, false);
-    this.toolCanvas.addEventListener("MozTouchUp", function(evt) {
-	    self.interpreter.touchUp(evt); }, false);
-    // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
-    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
 
     let self = this;
     let itemList = [{name: "Pencil", icon: "icons/pencil.png",
@@ -256,15 +219,22 @@ function ToolAreaInterface() {
 		     execute: function() {self.setTool(rectSelect);}},
 		    {name: "Lasso", icon: "icons/wand.png",
 		     execute: function() {self.setTool(lasso);}}
-	];
-		     
-    this.menu = new GridMenu( this.toolCanvas, itemList, 64, false );
+	];		     
+    let menu = new GridMenu( this.toolCanvas, itemList, 64, false );
+    // Allow tool menu and pinch gesture to coexist:
+    // Send events primarily to GestureInterpreter, do the pie
+    // menu in response to the one finger thing.  (If a second
+    // finger goes down, cancel the pie menu)
+    this.interpreter.addPieMenu(menu);
+
     this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
-	    self.menu.onMouseDown(evt); }, false);
+	    self.interpreter.touchDown(evt); }, false);
     this.toolCanvas.addEventListener("MozTouchMove", function(evt) {
-	    self.menu.onMouseMove(evt); }, false);
+	    self.interpreter.touchMove(evt); }, false);
     this.toolCanvas.addEventListener("MozTouchUp", function(evt) {
-	    self.menu.onMouseUp(evt); }, false);
+	    self.interpreter.touchUp(evt); }, false);
+    // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
+    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
 
 }
 ToolAreaInterface.prototype = {

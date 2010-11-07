@@ -38,6 +38,9 @@ function GridMenu( canvas, itemList, squareSize, isSubMenu ) {
     }
 }
 GridMenu.prototype = {
+    get visible() {
+	return this._visible;
+    },
     onMouseDown: function(evt) {
 	this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
 	let x = evt.pageX - this._offsetX;
@@ -223,5 +226,12 @@ GridMenu.prototype = {
 	this._ctx.stroke();
 	if (cellNum < this._commands.length )
 	    this._renderTextInSquare(this._commands[cellNum], cellNum);
+    },
+
+    cancel: function() {
+	if (this._visible) {
+	    this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
+	}
+	this._visible = false;
     }
 };
