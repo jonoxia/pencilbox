@@ -9,26 +9,26 @@ Tool.prototype = {
 
     down: function(ctx, x, y) {
 	this.resetRecordedAction();
-	ctx.beginPath();
-	ctx.moveTo(x, y);
 	this.actionPoints.push( {x: x, y: y} );
     },
 
     up: function(ctx, x, y) {
 	// TODO actually multiply lineWidth by current scaling factor
-	ctx.lineWidth = this.size;
-	ctx.strokeStyle = this.getStrokeStyle();
-        ctx.lineTo(x, y);
-	ctx.stroke();
 	this.actionPoints.push( {x: x, y: y} );
     },
 
     drag: function(ctx, x, y) {
 	// TODO actually multiply lineWidth by current scaling factor
-	ctx.lineWidth = this.size;
-	ctx.strokeStyle = this.getStrokeStyle();
-	ctx.lineTo(x, y);
-	ctx.stroke();
+	if (this.actionPoints.length > 0) {
+	    ctx.lineWidth = this.size;
+	    ctx.strokeStyle = this.getStrokeStyle();
+	    ctx.beginPath();
+	    let last = this.actionPoints.length - 1;
+	    ctx.moveTo(this.actionPoints[last].x,
+		       this.actionPoints[last].y);
+	    ctx.lineTo(x, y);
+	    ctx.stroke();
+	}
 	this.actionPoints.push( {x: x, y: y} );
     },
 
