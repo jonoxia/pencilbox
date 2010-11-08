@@ -197,37 +197,66 @@ GestureInterpreter.prototype = {
     }
 };
 
-function ColorMenu(x, y, width, height, defaultColor) {
+function ColorMenu(ctx, x, y, width, height, defaultColor) {
+    this.ctx = ctx;
     this.color = defaultColor;
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
+    this.allTheColors = [Colors.black,
+			 Colors.white,
+			 Colors.red,
+			 Colors.green,
+			 Colors.blue,
+			 Colors.yellow,
+			 Colors.cyan,
+			 Colors.magenta,
+			 Colors.grey,
+			 Colors.brown
+			 ];
+
+    this.boxSize = this.width;
+    this.boxesPerRow = 5; // TODO adjust dynamically to width of
+    // canvas
 }
 ColorMenu.prototype = {
     redraw: function(ctx) {
-	ctx.beginPath();
-	ctx.moveTo(this.x, this.y);
-	ctx.lineTo(this.x + this.width, this.y);
-	ctx.lineTo(this.x + this.width, this.y + this.height);
-	ctx.lineTo(this.x, this.y + this.height);
-	ctx.lineTo(this.x, this.y);
 	ctx.fillStyle = this.color.style;
-	ctx.fill();
 	ctx.strokeStyle = Colors.black.style;
-	ctx.stroke();
+	ctx.fillRect(this.x, this.y, this.width, this.height);
+	ctx.strokeRect(this.x, this.y, this.width, this.height);
     },
 
     onMouseDown: function(evt) {
-	$("#debug").html("Color menu mousedown");
+	this.startColor = this.color;
+	let rowNum = 0;
+	let x = 0;
+	let y = this.y - this.boxSize;
+	for (let i = 0; i < this.allTheColors.length; i++) {
+	    let theColor = this.allTheColors[i];
+	    let x = ( i % this.boxesPerRow ) * this.boxSize;
+	    let y = this.y - (1 + Math.floor(i / this.boxesPerRow)) * this.boxSize;
+	    this.ctx.fillStyle = theColor.style;
+	    this.ctx.fillRect(x, y, this.boxSize, this.boxSize);
+	    this.ctx.strokeRect(x, y, this.boxSize, this.boxSize);
+	}
     },
 
     onMouseMove: function(evt) {
-	$("#debug").html("Color menu mousemove");
+	let x = Math.floor(evt.pageX / this.boxSize);
+	let y = Math.floor(( this.y - evt.pageY) / this.boxSize);
+	let index = y * this.boxesPerRow + x;
+	if (index >= 0 && index < this.allTheColors.length) {
+	    this.color = this.allTheColors[index];
+	} else {
+	    this.color = this.startColor;
+	}
+	this.redraw(this.ctx);
     },
 
     onMouseUp: function(evt) {
-	$("#debug").html("Color menu mouseup");
+	g_toolInterface.updateToolImage();
     },
 
     isPtInside: function(x, y) {
@@ -271,11 +300,11 @@ function ToolAreaInterface() {
 
     // Make color menus
     let bottom = this.toolCanvas.height - 60;
-    let penColorMenu = new ColorMenu(10, bottom, 50, 50,
+    let penColorMenu = new ColorMenu(this.penCtx, 10, bottom, 50, 50,
 				      Colors.black);
-    let paintColorMenu = new ColorMenu(70, bottom, 50, 50,
+    let paintColorMenu = new ColorMenu(this.penCtx, 70, bottom, 50, 50,
 					Colors.red);
-    let bgColorMenu = new ColorMenu(130, bottom, 50, 50,
+    let bgColorMenu = new ColorMenu(this.penCtx, 130, bottom, 50, 50,
 				     Colors.white);
     this.colorMenus = [penColorMenu, paintColorMenu, bgColorMenu];
 
@@ -337,7 +366,8 @@ ToolAreaInterface.prototype = {
     },
 
     updateToolImage: function() {
-	this.penCtx.clearRect(0, 0, this.toolCanvas.width, this.toolCanvas.height);
+	this.penCtx.clearRect(0, 0, this.toolCanvas.width,
+			      this.toolCanvas.height);
 	this.selectedTool.display(this.penCtx, 60, 60);
 	this.redrawMenus();
     },
@@ -346,6 +376,16 @@ ToolAreaInterface.prototype = {
 	for (let i = 0; i < this.colorMenus.length; i++) {
 	    this.colorMenus[i].redraw(this.penCtx);
 	}
+    },
+    
+    getPenColor: function() {
+	return this.colorMenus[0].color;
+    },
+    getPaintColor: function() {
+	return this.colorMenus[1].color;
+    },
+    getEraseColor: function() {
+	return this.colorMenus[2].color;
     }
 };
 
@@ -370,9 +410,12 @@ function DrawAreaInterface() {
     this.mouseIsDown = false;
 
     let self = this;    
-    $("#the-canvas").bind("mousedown", function(evt) { self.mouseDownHandler(evt); });
-    $("#the-canvas").bind("mouseup", function(evt) {self.mouseUpHandler(evt); });
-    $("#the-canvas").bind("mousemove", function(evt) {self.mouseMoveHandler(evt); });
+    $("#the-canvas").bind("mousedown", function(evt) { 
+	    self.mouseDownHandler(evt); });
+    $("#the-canvas").bind("mouseup", function(evt) {
+	    self.mouseUpHandler(evt); });
+    $("#the-canvas").bind("mousemove", function(evt) {
+	    self.mouseMoveHandler(evt); });
 
     let library = {
 	oneFinger: [],

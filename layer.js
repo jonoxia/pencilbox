@@ -77,7 +77,7 @@ Layer.prototype = {
 	this.tag.css("display", newVal?"block":"none");
     },
     _everythingBrown: function() {
-	this.displayContext.fillStyle = Colors.desk.toStyle();
+	this.displayContext.fillStyle = Colors.brown.toStyle();
 	this.displayContext.fillRect(0, 0, this.width, 
 				      this.height);
     },

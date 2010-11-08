@@ -31,15 +31,15 @@ var Colors = {
     white: new Color(255, 255, 255, 1),
     black: new Color(0, 0, 0, 1),
     red: new Color(255, 0, 0, 1),
+    blue: new Color(0, 0, 255, 1),
+    green: new Color(0, 255, 0, 1),
+    yellow: new Color(255, 255, 0, 1),
+    cyan: new Color(0, 255, 255, 1),
+    magenta: new Color(255, 0, 255, 1),
     grey: new Color(100, 100, 100, 1),
     transparent: new Color(0, 0, 0, 0),
     translucentBlack: new Color(0, 0, 0, 0.2)
 };
-
-Colors.pen = Colors.black;
-Colors.paint = Colors.red;
-Colors.erase = Colors.white;
-Colors.desk = Colors.brown;
 
 function move(pt, dir) {
     switch (dir) {

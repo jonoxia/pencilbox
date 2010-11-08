@@ -4,7 +4,7 @@ function Tool(defaultSize) {
 }
 Tool.prototype = {
     getStrokeStyle: function() {
-	return Colors.pen.style;
+	return g_toolInterface.getPenColor().style;
     },
 
     down: function(ctx, x, y) {
@@ -64,14 +64,14 @@ let pen = new Tool(1.0);
 pen.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle = Colors.pen.style;
+    penCtx.fillStyle = g_toolInterface.getPenColor().style;
     penCtx.fill();
 };
 pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
 eraser.getStrokeStyle = function() {
-    return Colors.erase.style;
+    return g_toolInterface.getEraseColor().style;
 }
 eraser.display = function(penCtx, x, y) {
     penCtx.beginPath();
@@ -197,7 +197,7 @@ bucket.up = function(ctx, x, y) {
     this.lastDrawCtx = ctx;
 
     this.actionPoints = bucket.edgeFindingAlgorithm(bm, x, y);
-    ctx.fillStyle = Colors.paint.style;
+    ctx.fillStyle = g_toolInterface.getPaintColor().style;
     ctx.beginPath();
     ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
     for (let i = 1; i < this.actionPoints.length; i++) {
@@ -217,7 +217,7 @@ bucket.getRecordedAction = function() {
 			  this.actionPoints,
 			  null,
 			  null,
-			  Colors.paint.style,
+			  g_toolInterface.getPaintColor().style,
 			  true);
 };
 
@@ -364,14 +364,14 @@ let paintbrush = new Tool(10.0);
 // square too.
 paintbrush.getStrokeStyle = function() {
     this.transparency = 0.5;
-    let color = Colors.paint.copy();
+    let color = g_toolInterface.getPaintColor().copy();
     color.a = this.transparency;
     return color.style;
 }
 paintbrush.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle=Colors.paint.style;
+    penCtx.fillStyle=this.getStrokeStyle();
     penCtx.fill();
     penCtx.lineWidth = 1.0;
     penCtx.strokeStyle=Colors.black.style;
