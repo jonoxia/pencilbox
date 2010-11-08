@@ -9,10 +9,20 @@ function GestureInterpreter(gestureLibrary, offsetX, offsetY) {
     this.pinchFirstDist = null;
 
     this.pieMenu = null;
+    this.locMenus = null;
+    this.activeMenu = null;
+    if (gestureLibrary.oneFinger) {
+	if (gestureLibrary.oneFinger.pieMenu) {
+	    this.pieMenu = gestureLibrary.oneFinger.pieMenu;
+	}
+	if (gestureLibrary.oneFinger.locationMenus) {
+	    this.locMenus = gestureLibrary.oneFinger.locationMenus;
+	}
+    }
 }
 GestureInterpreter.prototype = {
-    addPieMenu: function(menu) {
-	this.pieMenu = menu;
+    hasMenus: function() {
+	return (this.pieMenu || this.locMenus);
     },
     touchDown: function(evt) {
 	let id = evt.streamId;
@@ -25,11 +35,30 @@ GestureInterpreter.prototype = {
 				 id: id};
 	this.touchPointCount ++;
 
-	if (this.touchPointCount == 1 && this.pieMenu) {
-	    this.pieMenu.onMouseDown(evt);
+	if (this.touchPointCount == 1 && this.hasMenus()) {
+	    this.menuMouseDown(evt);
 	}
 	if (this.touchPointCount == 2 && this.pieMenu) {
-	    this.pieMenu.cancel();
+	    this.activeMenu.cancel();
+	    this.activeMenu = null;
+	}
+    },
+
+    menuMouseDown: function(evt) {
+	let x = evt.pageX - this.offsetX;
+	let y = evt.pageY - this.offsetY;
+	if (this.locMenus) {
+	    for (let i = 0; i < this.locMenus.length; i++) {
+		if (this.locMenus[i].isPtInside(x, y)) {
+		    this.locMenus[i].onMouseDown(evt);
+		    this.activeMenu = this.locMenus[i];
+		    return;
+		}
+	    }
+	}
+	if (this.pieMenu) {
+	    this.pieMenu.onMouseDown(evt);
+	    this.activeMenu = this.pieMenu;
 	}
     },
 
@@ -43,8 +72,8 @@ GestureInterpreter.prototype = {
 	    pt.newX = evt.pageX - this.offsetX;
 	    pt.newY = evt.pageY - this.offsetY;
 
-	    if (this.touchPointCount == 1 && this.pieMenu) {
-		this.pieMenu.onMouseMove(evt);
+	    if (this.touchPointCount == 1 && this.activeMenu) {
+		this.activeMenu.onMouseMove(evt);
 	    } else {
 		this.interpretGesture(id);
 	    }
@@ -61,8 +90,9 @@ GestureInterpreter.prototype = {
 	    this.finalizeGesture();
 	    this.gestureDirections = [];
 	    this.pinchFirstDist = null;
-	    if (this.pieMenu && this.pieMenu.visible) {
-		this.pieMenu.onMouseUp(evt);
+	    if (this.activeMenu) {
+		this.activeMenu.onMouseUp(evt);
+		this.activeMenu = null;
 	    }
 	}
     },
@@ -136,7 +166,16 @@ GestureInterpreter.prototype = {
     },
 
     finalizeGesture: function() {
-	for each (let gestureCmd in this.library.oneFinger) {
+	// Look for one-finger directional gestures matching the
+	// directions you moved in.
+	if (!this.library.oneFinger) {
+	    return;
+	}
+	let gestures = this.library.oneFinger.directionalGestures;
+	if (!gestures) {
+	    return;
+	}
+	for each (let gestureCmd in gestures) {
           let curDir = "";
           let matched = 0;
 	  let pattern = gestureCmd.directions;
@@ -158,6 +197,45 @@ GestureInterpreter.prototype = {
     }
 };
 
+function ColorMenu(x, y, width, height, defaultColor) {
+    this.color = defaultColor;
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+}
+ColorMenu.prototype = {
+    redraw: function(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(this.x, this.y);
+	ctx.lineTo(this.x + this.width, this.y);
+	ctx.lineTo(this.x + this.width, this.y + this.height);
+	ctx.lineTo(this.x, this.y + this.height);
+	ctx.lineTo(this.x, this.y);
+	ctx.fillStyle = this.color.style;
+	ctx.fill();
+	ctx.strokeStyle = Colors.black.style;
+	ctx.stroke();
+    },
+
+    onMouseDown: function(evt) {
+	$("#debug").html("Color menu mousedown");
+    },
+
+    onMouseMove: function(evt) {
+	$("#debug").html("Color menu mousemove");
+    },
+
+    onMouseUp: function(evt) {
+	$("#debug").html("Color menu mouseup");
+    },
+
+    isPtInside: function(x, y) {
+	return (x >= this.x && x <= this.x + this.width &&
+		y >= this.y && y <= this.y + this.height);
+    }
+};
+
 function ToolAreaInterface() {
     this.toolCanvas = $("#pen-size-canvas").get(0);
     this.penCtx = this.toolCanvas.getContext("2d");
@@ -167,8 +245,46 @@ function ToolAreaInterface() {
     this.offsetY = this.toolCanvas.offsetTop;
     this.selectedTool = pen;
 
+    let self = this;
+    let itemList = [{name: "Pencil", icon: "icons/pencil.png",
+		     execute: function() {self.setTool(pen);}},
+		    {name: "Eraser", icon: "icons/eraser.png",
+		     execute: function() {self.setTool(eraser);}},
+		    {name: "Bucket", icon: "icons/paint-can.png",
+		     execute: function() {self.setTool(bucket);}},
+		    {name: "Line", icon: "icons/ruler.png",
+		     execute: function() {self.setTool(line);}},
+		    {name: "Rectangle", icon: "icons/ruler-crop.png",
+		     execute: function() {self.setTool(rectangle);}},
+		    {name: "Paintbrush", icon: "icons/paint-brush.png",
+		     execute: function() {self.setTool(paintbrush);}},
+		    {name: "Select", icon: "icons/border.png",
+		     execute: function() {self.setTool(rectSelect);}},
+		    {name: "Lasso", icon: "icons/wand.png",
+		     execute: function() {self.setTool(lasso);}}
+	];		     
+    let toolMenu = new GridMenu( this.toolCanvas, itemList, 64, false );
+    // Allow tool menu and pinch gesture to coexist:
+    // Send events primarily to GestureInterpreter, do the pie
+    // menu in response to the one finger thing.  (If a second
+    // finger goes down, cancel the pie menu)
+
+    // Make color menus
+    let bottom = this.toolCanvas.height - 60;
+    let penColorMenu = new ColorMenu(10, bottom, 50, 50,
+				      Colors.black);
+    let paintColorMenu = new ColorMenu(70, bottom, 50, 50,
+					Colors.red);
+    let bgColorMenu = new ColorMenu(130, bottom, 50, 50,
+				     Colors.white);
+    this.colorMenus = [penColorMenu, paintColorMenu, bgColorMenu];
+
     this.library = {
-	oneFinger: [
+	oneFinger: {
+	    pieMenu: toolMenu,
+	    locationMenus: [penColorMenu, paintColorMenu,
+			    bgColorMenu],
+	    directionalGestures: [
 	    {directions: ["left", "down", "right", "up"],
              command: function() {
 		    g_history.undo();
@@ -189,7 +305,7 @@ function ToolAreaInterface() {
 		    g_history.redo();
 		    //$("#debug").html("Redo");
 		}}
-	],
+				  ]},
 	twoFingers: {
 	    pinch: function(ratio) {
 		self.selectedTool.changeSize( ratio );
@@ -202,30 +318,6 @@ function ToolAreaInterface() {
 					      this.offsetX,
 					      this.offsetY);
 
-    let self = this;
-    let itemList = [{name: "Pencil", icon: "icons/pencil.png",
-		     execute: function() {self.setTool(pen);}},
-		    {name: "Eraser", icon: "icons/eraser.png",
-		     execute: function() {self.setTool(eraser);}},
-		    {name: "Bucket", icon: "icons/paint-can.png",
-		     execute: function() {self.setTool(bucket);}},
-		    {name: "Line", icon: "icons/ruler.png",
-		     execute: function() {self.setTool(line);}},
-		    {name: "Rectangle", icon: "icons/ruler-crop.png",
-		     execute: function() {self.setTool(rectangle);}},
-		    {name: "Paintbrush", icon: "icons/paint-brush.png",
-		     execute: function() {self.setTool(paintbrush);}},
-		    {name: "Select", icon: "icons/border.png",
-		     execute: function() {self.setTool(rectSelect);}},
-		    {name: "Lasso", icon: "icons/wand.png",
-		     execute: function() {self.setTool(lasso);}}
-	];		     
-    let menu = new GridMenu( this.toolCanvas, itemList, 64, false );
-    // Allow tool menu and pinch gesture to coexist:
-    // Send events primarily to GestureInterpreter, do the pie
-    // menu in response to the one finger thing.  (If a second
-    // finger goes down, cancel the pie menu)
-    this.interpreter.addPieMenu(menu);
 
     this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
 	    self.interpreter.touchDown(evt); }, false);
@@ -236,6 +328,7 @@ function ToolAreaInterface() {
     // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
     // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
 
+    this.redrawMenus();
 }
 ToolAreaInterface.prototype = {
     setTool: function(newTool) {
@@ -246,6 +339,13 @@ ToolAreaInterface.prototype = {
     updateToolImage: function() {
 	this.penCtx.clearRect(0, 0, this.toolCanvas.width, this.toolCanvas.height);
 	this.selectedTool.display(this.penCtx, 60, 60);
+	this.redrawMenus();
+    },
+    
+    redrawMenus: function() {
+	for (let i = 0; i < this.colorMenus.length; i++) {
+	    this.colorMenus[i].redraw(this.penCtx);
+	}
     }
 };
 
