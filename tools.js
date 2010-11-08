@@ -193,7 +193,8 @@ bucket.edgeFindingAlgorithm = function(data, x, y) {
     return megaList;
 };
 bucket.up = function(ctx, x, y) {
-    let bm = new BitManipulator(ctx, 950, 600);
+    let layer = g_drawInterface.getActiveLayer();
+    let bm = new BitManipulator(ctx, layer.width, layer.height);
     this.lastDrawCtx = ctx;
 
     this.actionPoints = bucket.edgeFindingAlgorithm(bm, x, y);
