@@ -538,5 +538,40 @@ DrawAreaInterface.prototype = {
 	    g_history.replayActionsForLayer(this.layers[i], exportCtx);
 	    this.layers[i].onRedraw(exportCtx);
 	}
+    },
+
+    getLayerByName: function(name) {
+	for (let i = 0; i < this.layers.length; i++) {
+	    if (this.layers[i].name == name) {
+		return this.layers[i];
+	    }
+	}
+	return null;
+    },
+
+    serializeLayers: function() {
+	let layerObj = [];
+	for (let i = 0; i < this.layers.length; i++) {
+	    let layer = this.layers[i];
+	    layerObj.push({index: layer.getIndex(),
+			visible: layer.visible,
+			name: layer.getName()
+			});
+	}
+	return JSON.stringify(layerObj);
+    },
+    
+    recreateLayers: function(layerString) {
+	let layerObj = JSON.parse(layerString);
+	for (let i = 0; i < layerObj.length; i++) {
+	    /* Ignore instructions to recreate any layer with a
+	     * name we already have (e.g. special layers - 
+	     * dialogue layer, panel layer, etc.) */
+	    if (this.getLayerByName(layerObj[i].name) == null) {
+		let newLayer = new Layer(layerObj[i].index);
+		newLayer.setVisible(layerObj[i].visible);
+		newLayer.setName(layerObj[i].name);
+	    }
+	}
     }
 };

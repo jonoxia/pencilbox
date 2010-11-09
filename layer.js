@@ -63,6 +63,12 @@ Layer.prototype = {
 	return this.index;
     },
     setName: function(newName) {
+	if (g_drawInterface.getLayerByName(newName) != null) {
+	    /* Don't allow name to be set to the same name as
+	     * any other layer -- layer names are used as keys for
+	     * history serialization! */
+	    return;
+	}
 	this.name = newName;
 	this.titleCell.html(newName);
     },

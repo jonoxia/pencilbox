@@ -41,6 +41,19 @@ DrawAction.prototype = {
 		ctx.stroke();
 	    }
 	}
+    },
+
+    toJSON: function() {
+	let self = this;
+	/* Can't save the layer to json as it's a live object ref
+	 * Instead, save the layerName which we can use to match
+	 * the action back up to the layer when reconstructing. */
+	return {type: "draw",
+		layerName: self.layer.getName(),
+		points: self.pts,  // already json more or less
+		styleInfo: self.styleInfo,
+		isFill: self.isFill
+		};
     }
 };
 
@@ -48,7 +61,7 @@ function ClearRegionAction(layer, pointsList) {
     // Note: This expects pointsList in world coordinates.
     this.layer = layer;
     this.ctx = layer.getContext();
-    this.points = pointsList; //[];
+    this.points = pointsList;
 
 }
 ClearRegionAction.prototype = {
@@ -71,6 +84,17 @@ ClearRegionAction.prototype = {
 	}
 	ctx.fill();
 	ctx.restore();
+    },
+
+    toJSON: function() {
+	let self = this;
+	/* Can't save the layer to json as it's a live object ref
+	 * Instead, save the layerName which we can use to match
+	 * the action back up to the layer when reconstructing. */
+	return {type: "clear",
+		layerName: self.layer.getName(),
+		points: self.pts
+		};
     }
 };
 
@@ -86,12 +110,27 @@ ImportImageAction.prototype = {
 	let ctx = newCtx ? newCtx : this.ctx;
 	// TODO error here with data: no
 	ctx.drawImage(this.img, this.importPt.x, this.importPt.y);
+    },
+
+    toJSON: function() {
+	/* TODO This is going to be hard.  The image may not have come
+	 * from a URL so we have to actually save the pixel level
+	 * data and serialize that to a string to store it in JSON! */
+	let self = this;
+	return {type: "image",
+		layerName: self.layer.getName(),
+		point: self.importPt
+		};
     }
+
 };
 
 function History() {
     this.actionList = [];
     this.currPtr = 0;
+    // On page load, if there is data in local storage,
+    // restore history from that data:
+    this.loadFromLocalStorage();
 }
 History.prototype = {
     debug: function() {
@@ -110,6 +149,7 @@ History.prototype = {
 	}
 	this.actionList.push(action);
 	this.currPtr = this.actionList.length;
+
     },
 
     replayActions: function() {
@@ -118,7 +158,6 @@ History.prototype = {
 	    this.actionList[i].replay();
 	    str += i + ", ";
 	}
-	$("#debug").html(str);
     },
 
     replayActionsForLayer: function(layer, overrideCtx) {
@@ -144,5 +183,89 @@ History.prototype = {
 	    this.currPtr += 1;
 	    this.actionList[this.currPtr - 1].replay();
 	}
+    },
+
+    serialize: function() {
+	/* Turn the whole history into a giant JSON string!
+	 * (For perf reasons, at some point in the future we'll probably
+	 * need to turn the history into an image at some point and
+	 * serialize the checkpoint bitmap plus any actions past
+	 * the checkpoint...) */
+
+	let historyObj = {};
+	historyObj.currPtr = this.currPtr;
+	historyObj.actions = [];
+	for (let i = 0; i < this.actionList.length; i++) {
+	    let jsonObj = this.actionList[i].toJSON();
+	    historyObj.actions.push(jsonObj);
+	}
+	return JSON.stringify(historyObj);
+    },
+
+    recreate: function(historyString) {
+	let historyObj = JSON.parse(historyString);
+	// Layers must already have been recreated when this
+	// is called.
+	this.actionList = [];
+	for (let i = 0; i < historyObj.actions.length; i++) {
+	    let layerName = historyObj[i].layerName;
+	    let layer = g_drawInterface.getLayerByName(layerName);
+	    let action;
+	    switch (historyObj[i].type) {
+	    case "draw":
+		action = new DrawAction(layer,
+					historyObj[i].points,
+					historyObj[i].styleInfo,
+					historyObj[i].isFill);
+		/* DrawAction constructor transforms points to world
+		 * coords (this is inconsistent with other actions!)
+		 * The following line is a workaround: */
+		action.pts = historyObj[i].points;
+		break;
+	    case "clear":
+		action = new ClearRegionAction(layer,
+					       historyObj[i].points);
+		break;
+	    case "image":
+		let img = null; // TODO 
+		let pt = historyObj[i].point;
+		action = new ImportImageAction(layer, img, pt.x, pt.y);
+		break;
+	    }
+	    this.actionList.push(action);
+	}
+
+	this.currPtr = historyObj.currPtr;
+    },
+
+    saveToLocalStorage: function() {
+	$("#debug").html("Saving to local storage...");
+	let historyString = this.serialize();
+	let layerString = g_drawInterface.serializeLayers();
+	window.localStorage.setItem("history", historyString);
+	window.localStorage.setItem("layers", layerString);
+	$("#debug").html("Saved.");
+    },
+
+    loadFromLocalStorage: function() {
+	$("#debug").html("Loading from local storage...");
+	let layerString = window.localStorage.getItem("layers");
+	let historyString = window.localStorage.getItem("history");
+	// TODO how do we tell if an item is not set?  Will it
+	// return empty string?
+	if (!layerString || !historyString) {
+	    $("#debug").html("Nothing in local storage.");
+	    return;
+	}
+	g_drawInterface.recreateLayers(layerString);
+	this.recreate(historyString);
+	$("#debug").html("Loaded.");
     }
 };
+
+/* TODO need to call g_history.serialize() automatically on some
+ * sort of timer and put the results in localStorage.
+ * The timer should be perhaps 10 seconds after you add an action?
+ * (if you add more actions in those 10 seconds the timer resets.)
+ * So it's saving whenever the action list has changed AND you're
+ * idle for 10 seconds.*/

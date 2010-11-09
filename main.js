@@ -5,7 +5,7 @@ var g_dialogue = null;
 var g_panels = null;
 var g_selection = null;
 
-function saveHandler() {
+function export() {
     // There's a securtiy exception that can happen if you try to
     // save a canvas that thinks it contains an image loaded from
     // a different server...
@@ -57,14 +57,17 @@ $(function() {
 	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
 	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
 
-	g_history = new History();
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();
+	g_drawInterface.clearAllLayers();
 	g_dialogue = new DialogueManager();
 	g_selection = new SelectionManager();
 	//g_panels = new PanelManager();
+	// History must get started last b/c it will try to
+	// restore everything else from localstorage.
+	g_history = new History();
 
-	let loadHandler = function() {
+	let importImage = function() {
 	    // TODO interface for picking a local image to upload
 	    // TODO also need a way of moving imported image
 	    // where we want it!!  Maybe treat it as a selection?
@@ -80,14 +83,17 @@ $(function() {
 	    }  
 	    img.src = 'myImage.png';
 	};
-	$("#save-btn").bind("click", saveHandler);
-	$("#load-btn").bind("click", loadHandler);
-	$("#new-layer-btn").bind("click", function() { g_drawInterface.newLayer(); } );
+	$("#export-btn").bind("click", export);
+	$("#import-btn").bind("click", importImage);
+	$("#save-btn").bind("click", function() {
+		g_history.saveToLocalStorage();
+	    });
+	$("#new-layer-btn").bind("click", function() {
+		g_drawInterface.newLayer(); 
+	    });
 
 	$("#dialogue-edit-area").bind("keyup", function() {
 	  g_dialogue.makeBubblesFromText($("#dialogue-edit-area").val());
 	  g_toolInterface.setTool(textBalloonTool);
 	    });
-
-	g_drawInterface.clearAllLayers();
 });

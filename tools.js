@@ -24,9 +24,9 @@ Tool.prototype = {
     },
 
     drag: function(ctx, x, y) {
-	$("#debug").html( this.size + ((this.size / 2 == Math.floor(this.size/2))?
-				       "even": "odd"));
 	// TODO actually multiply lineWidth by current scaling factor
+	// TODO offset by half-pixel if odd?  See
+	// https://developer.mozilla.org/en/Canvas_tutorial/Applying_styles_and_colors#A_lineWidth_example
 	if (this.actionPoints.length > 0) {
 	    ctx.lineWidth = this.size;
 	    ctx.lineCap = this.getLineCap();
