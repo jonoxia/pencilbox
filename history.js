@@ -208,27 +208,28 @@ History.prototype = {
 	// is called.
 	this.actionList = [];
 	for (let i = 0; i < historyObj.actions.length; i++) {
-	    let layerName = historyObj[i].layerName;
+	    let actionData = historyObj.actions[i];
+	    let layerName = actionData.layerName;
 	    let layer = g_drawInterface.getLayerByName(layerName);
 	    let action;
-	    switch (historyObj[i].type) {
+	    switch (actionData.type) {
 	    case "draw":
 		action = new DrawAction(layer,
-					historyObj[i].points,
-					historyObj[i].styleInfo,
-					historyObj[i].isFill);
+					actionData.points,
+					actionData.styleInfo,
+					actionData.isFill);
 		/* DrawAction constructor transforms points to world
 		 * coords (this is inconsistent with other actions!)
 		 * The following line is a workaround: */
-		action.pts = historyObj[i].points;
+		action.pts = actionData.points;
 		break;
 	    case "clear":
 		action = new ClearRegionAction(layer,
-					       historyObj[i].points);
+					       actionData.points);
 		break;
 	    case "image":
 		let img = null; // TODO 
-		let pt = historyObj[i].point;
+		let pt = actionData.point;
 		action = new ImportImageAction(layer, img, pt.x, pt.y);
 		break;
 	    }
