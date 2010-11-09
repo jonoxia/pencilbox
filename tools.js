@@ -7,7 +7,13 @@ Tool.prototype = {
 	return g_toolInterface.getPenColor().style;
     },
 
+    getLineCap: function() {
+	return "butt";
+    },
+
     down: function(ctx, x, y) {
+	// round up size to next whole number:
+	this.size = Math.ceil(this.size);
 	this.resetRecordedAction();
 	this.actionPoints.push( {x: x, y: y} );
     },
@@ -18,9 +24,12 @@ Tool.prototype = {
     },
 
     drag: function(ctx, x, y) {
+	$("#debug").html( this.size + ((this.size / 2 == Math.floor(this.size/2))?
+				       "even": "odd"));
 	// TODO actually multiply lineWidth by current scaling factor
 	if (this.actionPoints.length > 0) {
 	    ctx.lineWidth = this.size;
+	    ctx.lineCap = this.getLineCap();
 	    ctx.strokeStyle = this.getStrokeStyle();
 	    ctx.beginPath();
 	    let last = this.actionPoints.length - 1;
@@ -40,18 +49,19 @@ Tool.prototype = {
 
     changeSize: function(ratio) {
 	this.size *= ratio;
-	if (this.size < 0.5) {
-	    this.size = 0.5;
+	// minimum:
+	if (this.size < 1.0) {
+	    this.size = 1.0;
 	}
     },
 
     getRecordedAction: function() {
 	let activeLayer = g_drawInterface.getActiveLayer();
-	return new DrawAction(activeLayer,
-			      this.actionPoints,
-			      this.size,
-			      this.getStrokeStyle(),
-			      null,
+	let self = this;
+	let styles = {lineWidth: self.size,
+		      strokeStyle: this.getStrokeStyle(),
+		      lineCap: this.getLineCap()};
+	return new DrawAction(activeLayer, this.actionPoints, styles,
 			      false);
     },
 
@@ -214,11 +224,10 @@ bucket.drawCursor = function(ctx, x, y) {
 };
 bucket.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
+    let style = {fillStyle: g_toolInterface.getPaintColor().style};
     return new DrawAction(activeLayer,
 			  this.actionPoints,
-			  null,
-			  null,
-			  g_toolInterface.getPaintColor().style,
+			  style,
 			  true);
 };
 
@@ -342,12 +351,10 @@ rectangle.getRecordedAction = function() {
     pointList.push({x: self.endX, y: self.endY});
     pointList.push({x: self.endX, y: self.startY});
     pointList.push({x: self.startX, y: self.startY});
-    return new DrawAction(activeLayer,
-			  pointList,
-			  this.size,
-			  this.getStrokeStyle(),
-			  null,
-			  false);
+    let styles = {strokeStyle: self.getStrokeStyle(),
+		  lineWidth: self.size,
+		  lineCap: self.getLineCap()}
+    return new DrawAction(activeLayer, pointList, styles, false);
     // TODO Later
     // Implement filled rectangle simply by setting that last
     // false to a true
@@ -361,14 +368,15 @@ let paintbrush = new Tool(10.0);
 // TODO paintbrush needs a way to set color and opacity as well
 // as size.  Also when drawing it looks more opaque than it really
 // is because it's going back over its own path so many times.
-// Should probably make the end of the strokes rounded instead of
-// square too.
 paintbrush.getStrokeStyle = function() {
     this.transparency = 0.5;
     let color = g_toolInterface.getPaintColor().copy();
     color.a = this.transparency;
     return color.style;
-}
+};
+paintbrush.getLineCap = function() {
+    return "round";
+};
 paintbrush.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);

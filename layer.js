@@ -138,10 +138,8 @@ Layer.prototype = {
 	this.updateDisplay();
     },
     pan: function(xFactor, yFactor) {
-	// Use scale factor because e.g. if you pan 100 screen pixels when zoomed in to 2x,
-	// we only need to move 50 real pixels to get an effect matching your gesture.
-	this._xTranslate += xFactor; ///this._scale;
-	this._yTranslate += yFactor; ///this._scale;
+	this._xTranslate += xFactor;
+	this._yTranslate += yFactor;
 	this.updateDisplay();
     },
     doActionNow: function(action) {

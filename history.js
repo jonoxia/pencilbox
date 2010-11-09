@@ -1,5 +1,4 @@
-function DrawAction(layer, pointList, lineWidth, strokeStyle, fillStyle,
-		    isFill) {
+function DrawAction(layer, pointList, styleInfo, isFill) {
     this.layer = layer;
     this.ctx = layer.getContext();
     this.pts = [];
@@ -8,9 +7,9 @@ function DrawAction(layer, pointList, lineWidth, strokeStyle, fillStyle,
 	    // stored in world coordinates.
 	    this.pts.push( layer.screenToWorld(pt.x, pt.y) );
 	}
-    this.lineWidth = lineWidth;
-    this.strokeStyle = strokeStyle;
-    this.fillStyle = fillStyle;
+    this.styleInfo = styleInfo;
+    // styleInfo is an object that can contain:
+    // .lineWidth, .strokeStyle, .fillStyle, .lineCap
     this.isFill = isFill;
 }
 DrawAction.prototype = {
@@ -20,14 +19,17 @@ DrawAction.prototype = {
 	let ctx = newCtx ? newCtx : this.ctx;
         if (this.pts.length > 0) {
 	    ctx.beginPath();
-	    if (this.strokeStyle) {
-		ctx.strokeStyle = this.strokeStyle;
+	    if (this.styleInfo.strokeStyle) {
+		ctx.strokeStyle = this.styleInfo.strokeStyle;
 	    }
-	    if (this.fillStyle) {
-		ctx.fillStyle = this.fillStyle;
+	    if (this.styleInfo.fillStyle) {
+		ctx.fillStyle = this.styleInfo.fillStyle;
 	    }
-	    if (this.lineWidth) {
-		ctx.lineWidth = this.lineWidth;
+	    if (this.styleInfo.lineWidth) {
+		ctx.lineWidth = this.styleInfo.lineWidth;
+	    }
+	    if (this.styleInfo.lineCap) {
+		ctx.lineCap = this.styleInfo.lineCap;
 	    }
 	    ctx.moveTo(this.pts[0].x, this.pts[0].y);
 	    for (let i = 1; i < this.pts.length; i++) {
