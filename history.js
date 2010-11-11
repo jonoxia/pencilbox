@@ -18,12 +18,21 @@ DrawAction.prototype = {
 	// pass in a context to draw into that context.
 	let ctx = newCtx ? newCtx : this.ctx;
         if (this.pts.length > 0) {
+	    // TODO next line is slightly wrong: it always uses
+	    // this.layer - in some cases actions are replayed to
+	    // different layers than they started in so need to take
+	    // that into account.
+	    let opacity = this.layer.getOpacity();
 	    ctx.beginPath();
 	    if (this.styleInfo.strokeStyle) {
-		ctx.strokeStyle = this.styleInfo.strokeStyle;
+		let strokeColor = this.styleInfo.strokeStyle.copy();
+		strokeColor.a *= opacity;
+		ctx.strokeStyle = strokeColor.style;
 	    }
 	    if (this.styleInfo.fillStyle) {
-		ctx.fillStyle = this.styleInfo.fillStyle;
+		let fillColor = this.styleInfo.fillStyle.copy();
+		fillColor.a *= opacity;
+		ctx.fillStyle = fillColor.style;
 	    }
 	    if (this.styleInfo.lineWidth) {
 		ctx.lineWidth = this.styleInfo.lineWidth;

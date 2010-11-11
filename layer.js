@@ -20,6 +20,7 @@ function Layer(index) {
   // Set up layer drawing properties
   this.index = index;
   this.visible = true;
+  this.opacity = 1.0;
   this._scale = 1.0;
   this._xTranslate = 0;
   this._yTranslate = 0;
@@ -51,6 +52,18 @@ function Layer(index) {
       });
   cell.append(checkBox);
   this.tableRow.append(cell);
+
+  cell = $("<td></td>");
+  let selector = $("<select><option value='1.0'>1.0</option>" +
+		   "<option value='0.75'>0.75</option>" +
+		   "<option value='0.50'>0.50</option>" +
+		   "<option value='0.25'>0.25</option></select>");
+  selector.change(function(){
+	  let selected = selector.children("option:selected").first();
+	  self.setOpacity(parseFloat(selected.val()));
+      });
+  cell.append(selector);
+  this.tableRow.append(cell);
   this.tableRow.appendTo("#layers-table");
 }
 Layer.prototype = {
@@ -74,6 +87,14 @@ Layer.prototype = {
     },
     getName: function() {
 	return this.name;
+    },
+    setOpacity: function(opacity) {
+	$("#debug").html("Opacity set to " + opacity);
+	this.opacity = opacity;
+	this.updateDisplay();
+    },
+    getOpacity: function() {
+	return this.opacity;
     },
     getContext: function() {
 	return this.displayContext;

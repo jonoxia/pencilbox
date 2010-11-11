@@ -4,7 +4,7 @@ function Tool(defaultSize) {
 }
 Tool.prototype = {
     getStrokeStyle: function() {
-	return g_toolInterface.getPenColor().style;
+	return g_toolInterface.getPenColor();
     },
 
     getLineCap: function() {
@@ -30,7 +30,7 @@ Tool.prototype = {
 	if (this.actionPoints.length > 0) {
 	    ctx.lineWidth = this.size;
 	    ctx.lineCap = this.getLineCap();
-	    ctx.strokeStyle = this.getStrokeStyle();
+	    ctx.strokeStyle = this.getStrokeStyle().style;
 	    ctx.beginPath();
 	    let last = this.actionPoints.length - 1;
 	    ctx.moveTo(this.actionPoints[last].x,
@@ -81,7 +81,7 @@ pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
 eraser.getStrokeStyle = function() {
-    return g_toolInterface.getEraseColor().style;
+    return g_toolInterface.getEraseColor();
 }
 eraser.display = function(penCtx, x, y) {
     penCtx.beginPath();
@@ -96,7 +96,7 @@ eraser.drawCursor = eraser.display;
 
 let line = new Tool(1.0);
 line.display = function(penCtx, x, y) {
-    penCtx.strokeStyle= this.getStrokeStyle();
+    penCtx.strokeStyle= this.getStrokeStyle().style;
     penCtx.lineWidth = this.size;
     penCtx.beginPath();
     penCtx.moveTo(x - 20, y - 20);
@@ -124,7 +124,7 @@ line.drag = function(ctx, x, y) {
 line.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "crosshair");
     if (this.inProgress) {
-      ctx.strokeStyle=this.getStrokeStyle();
+      ctx.strokeStyle=this.getStrokeStyle().style;
       ctx.lineWidth = this.size;
       ctx.beginPath();
       ctx.moveTo(this.startX, this.startY);
@@ -224,7 +224,7 @@ bucket.drawCursor = function(ctx, x, y) {
 };
 bucket.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
-    let style = {fillStyle: g_toolInterface.getPaintColor().style};
+    let style = {fillStyle: g_toolInterface.getPaintColor()};
     return new DrawAction(activeLayer,
 			  this.actionPoints,
 			  style,
@@ -297,7 +297,7 @@ textBalloonTool.resetRecordedAction = function() {
 
 let rectangle = new Tool(1.0);
 rectangle.display = function(penCtx, x, y) {
-    penCtx.strokeStyle=this.getStrokeStyle();
+    penCtx.strokeStyle=this.getStrokeStyle().style;
     penCtx.lineWidth = this.size;
     penCtx.beginPath();
     penCtx.moveTo(x - 20, y - 20);
@@ -314,7 +314,7 @@ rectangle.down = function(ctx, x, y) {
 };
 rectangle.up = function(ctx, x, y) {
     ctx.lineWidth = this.size;
-    ctx.strokeStyle=this.getStrokeStyle();
+    ctx.strokeStyle=this.getStrokeStyle().style;
     ctx.beginPath();
     ctx.moveTo(this.startX, this.startY);
     ctx.lineTo(this.startX, y);
@@ -332,7 +332,7 @@ rectangle.drag = function(ctx, x, y) {
 rectangle.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "crosshair");
     if (this.inProgress) {
-      ctx.strokeStyle=this.getStrokeStyle();
+      ctx.strokeStyle=this.getStrokeStyle().style;
       ctx.beginPath();
       ctx.moveTo(this.startX, this.startY);
       ctx.lineTo(this.startX, y);
@@ -372,7 +372,7 @@ paintbrush.getStrokeStyle = function() {
     this.transparency = 0.5;
     let color = g_toolInterface.getPaintColor().copy();
     color.a = this.transparency;
-    return color.style;
+    return color;
 };
 paintbrush.getLineCap = function() {
     return "round";
@@ -380,7 +380,7 @@ paintbrush.getLineCap = function() {
 paintbrush.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle=this.getStrokeStyle();
+    penCtx.fillStyle=this.getStrokeStyle().style;
     penCtx.fill();
     penCtx.lineWidth = 1.0;
     penCtx.strokeStyle=Colors.black.style;

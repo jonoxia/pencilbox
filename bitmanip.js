@@ -23,7 +23,7 @@ Color.prototype = {
     },
     get style() {
 	return this.toStyle();
-    }
+    }    
 };
 
 var Colors = {
