@@ -35,10 +35,7 @@ const SNAP_GRID_PIXELS = 10;
 
 function Panel(path) {
     this.borderWidth = 2.0;
-    this.left = left;
-    this.top = top;
-    this.right = right;
-    this.bottom = bottom;
+    this.borderPath = path;
 }
 Panel.protoype = {
     setCorner: function(whichCorner, newPoint) {
@@ -62,26 +59,26 @@ Panel.protoype = {
 	}
     },
     move: function(dx, dy) {
-	this.left += dx;
-	this.right += dx;
-	this.top += dy;
-	this.bottom += dy;
+	for (let i = 1; i < this.borderPath.length; i++) {
+	    this.borderPath[i].x += dx;
+	    this.borderPath[i].y += dy;
+	}
 	// TODO IMPL move everything inside the panel too!
     },
-    draw: function(context) {
-	context.save();
-	context.beginPath();
-	context.strokeWidth = this.borderWidth;
-	context.moveTo(this.left, this.top);
-	context.lineTo(this.right, this.top);
-	context.lineTo(this.right, this.bottom);
-	context.lineTo(this.left, this.bottom);
-	context.lineTo(this.left, this.top);
+    draw: function(ctx) {
+	ctx.save();
+	ctx.beginPath();
+	ctx.moveTo(this.borderPath[0].x, this.borderPath[0].y);
+	for (let i = 1; i < this.borderPath.length; i++) {
+	    ctx.lineTo(this.borderPath[i].x, this.borderPath[i].y);
+	}
 	// Make sure inside of path is transparent:
-	context.globalCompositeOperation = 'destination-out';
+	/*context.globalCompositeOperation = 'destination-out';
 	context.fill();
-	context.restore();
-	context.stroke();
+	context.restore();*/
+	ctx.strokeWidth = this.borderWidth;
+	ctx.strokeStyle = this.getStrokeStyle().style;
+	ctx.stroke();
     }
 };
 
@@ -100,11 +97,23 @@ PanelManager.prototype = {
     getGrabPt: function(x, y) {
 	// TODO IMPLEMENT return reference to the grabbed panel and
 	// one of "nw", "ne", "sw", "se", or "main".
-	return {panel: null,
-		controlPoint: ""};
+	/*return {panel: null,
+	  controlPoint: ""};*/
+	return null;
     },
     createPanel: function( borderPath ) {
 	this.panels.push( new Panel(borderPath) );
+    },
+    createRectanglePanel: function(startPt, endPt) {
+	let pointList = [];
+	// TODO does this need a screenToWorld transform or do we
+	// get startPt and endPt already in world coords?
+	pointList.push({x: startPt.x, y: startPt.y});
+	pointList.push({x: startPt.x, y: endPt.y});
+	pointList.push({x: endPt.x, y: endPt.y});
+	pointList.push({x: endPt.x, y: startPt.y});
+	pointList.push({x: startPt.x, y: startPt.y});
+	this.createPanel(pointList);
     },
     drawEverything: function( context ) {
 	// fill in gutter:
@@ -123,6 +132,7 @@ panelTool.getStrokeStyle = function() {
     return Colors.black;
 };
 panelTool.down = function(ctx, x, y) {
+    let layer = g_panels.panelLayer;
     let worldPt = layer.screenToWorld(x, y);
     let grabbitation = g_panels.getGrabPt(worldPt.x, worldPt.y);
     if (grabbitation) {
@@ -133,7 +143,7 @@ panelTool.down = function(ctx, x, y) {
 	this.panel = null;
 	this.controlPoint = null;
 	this.mode = "draw";
-	this.drawStartPoint = {x: x, y: y};
+	this.drawStartPt = {x: x, y: y};
     }
 };
 panelTool.up = function(ctx, x, y) {
@@ -161,9 +171,8 @@ panelTool.drag = function(ctx, x, y) {
 	    break;
 	}
     } else if (this.mode == "draw") {
-	this.drawEndPoint = worldPt;
-	
-	// TODO IMPL draw the thing
+	$("#debug").html("Drawing!");
+	this.drawEndPt = worldPt;
     }
 };
 panelTool.display = function(penCtx, x, y) {
@@ -173,8 +182,19 @@ panelTool.display = function(penCtx, x, y) {
     }  
     img.src = "icons/ruler-crop.png";
 };
-panelTool.drawCursor = function(penCtx, x, y) {
+panelTool.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "crosshair");
+    if (this.mode == "draw" && this.drawEndPt) {
+      ctx.strokeStyle=this.getStrokeStyle().style;
+      ctx.lineWidth = this.size;
+      ctx.beginPath();
+      ctx.moveTo(this.drawStartPt.x, this.drawStartPt.y);
+      ctx.lineTo(this.drawStartPt.x, this.drawEndPt.y);
+      ctx.lineTo(this.drawEndPt.x, this.drawEndPt.y);
+      ctx.lineTo(this.drawEndPt.x, this.drawStartPt.y);
+      ctx.lineTo(this.drawStartPt.x, this.drawStartPt.y);
+      ctx.stroke();
+    }
 };
 panelTool.changeSize = function(delta) {
     // Let's not have interface for changing panel line weight-

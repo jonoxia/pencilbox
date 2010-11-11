@@ -62,7 +62,7 @@ $(function() {
 	g_drawInterface.clearAllLayers();
 	g_dialogue = new DialogueManager();
 	g_selection = new SelectionManager();
-	//g_panels = new PanelManager();
+	g_panels = new PanelManager();
 	// History must get started last b/c it will try to
 	// restore everything else from localstorage.
 	g_history = new History();

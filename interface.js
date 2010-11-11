@@ -283,15 +283,19 @@ function ToolAreaInterface() {
 		     execute: function() {self.setTool(bucket);}},
 		    {name: "Line", icon: "icons/ruler.png",
 		     execute: function() {self.setTool(line);}},
-		    {name: "Rectangle", icon: "icons/ruler-crop.png",
-		     execute: function() {self.setTool(rectangle);}},
 		    {name: "Paintbrush", icon: "icons/paint-brush.png",
 		     execute: function() {self.setTool(paintbrush);}},
 		    {name: "Select", icon: "icons/border.png",
 		     execute: function() {self.setTool(rectSelect);}},
-		    {name: "Lasso", icon: "icons/wand.png",
-		     execute: function() {self.setTool(lasso);}}
+	            {name: "Rectangle", icon: "icons/ruler-crop.png",
+		     execute: function() {self.setTool(rectangle);}},
+	            {name: "Panel", icon: "icons/ruler-crop.png",
+		     execute: function() {self.setTool(panelTool);}}
 	];		     
+	/*	            {name: "Lasso", icon: "icons/wand.png",
+		     execute: function() {self.setTool(lasso);}},
+*/
+
     let toolMenu = new GridMenu( this.toolCanvas, itemList, 64, false );
     // Allow tool menu and pinch gesture to coexist:
     // Send events primarily to GestureInterpreter, do the pie
