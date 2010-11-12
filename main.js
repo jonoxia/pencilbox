@@ -44,18 +44,37 @@ function export() {
     $(exportCanvas).remove();
 }
 
+function adjustToScreen() {
+    // Set widths and heights dynamically to make optimal
+    // use of screen dimensions.
+    let screenWidth = window.innerWidth;
+    let screenHeight = window.innerHeight;
+    $("#the-canvas").attr("width", screenWidth * 0.6);
+    $("#the-canvas").attr("height", screenHeight);
+    $("#pen-size-canvas").attr("width", screenWidth * 0.2);
+    $("#pen-size-canvas").attr("height", screenHeight * 0.7);
+}
+
+function importImage() {
+    // TODO interface for picking a local image to upload
+    // TODO also need a way of moving imported image
+    // where we want it!!  Maybe treat it as a selection?
+
+    // TODO trying to select this gives me a security
+    // error!!!
+    var img = new Image();   // Create new Image object  
+    img.onload = function(){  
+	let layer = g_drawInterface.getActiveLayer();
+	let action = new ImportImageAction(layer, img, 0, 0);
+	g_history.pushAction(action);
+	layer.doActionNow(action);
+    }  
+    img.src = 'myImage.png';
+}
 
 $(function() {
         document.multitouchData = true;
-
-	// Set widths and heights dynamically to make optimal
-	// use of screen dimensions.
-	let screenWidth = window.innerWidth;
-	let screenHeight = window.innerHeight;
-	$("#the-canvas").attr("width", screenWidth * 0.6);
-	$("#the-canvas").attr("height", screenHeight);
-	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
-	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
+	adjustToScreen();
 
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();
@@ -67,31 +86,31 @@ $(function() {
 	// restore everything else from localstorage.
 	g_history = new History();
 
-	let importImage = function() {
-	    // TODO interface for picking a local image to upload
-	    // TODO also need a way of moving imported image
-	    // where we want it!!  Maybe treat it as a selection?
-
-	    // TODO trying to select this gives me a security
-	    // error!!!
-	    var img = new Image();   // Create new Image object  
-	    img.onload = function(){  
-		let layer = g_drawInterface.getActiveLayer();
-		let action = new ImportImageAction(layer, img, 0, 0);
-		g_history.pushAction(action);
-		layer.doActionNow(action);
-	    }  
-	    img.src = 'myImage.png';
-	};
-	$("#export-btn").bind("click", export);
-	$("#import-btn").bind("click", importImage);
-	$("#save-btn").bind("click", function() {
-		g_history.saveToLocalStorage();
+	// Set up the main menu:
+	$("#main-menu").change(function() {
+		switch($(this).val()) {
+		case "import-item":
+		    importImage();
+		    break;
+		case "export-item":
+		    export();
+		    break;
+		case "save-item":
+		    g_history.saveToLocalStorage();
+		    break;
+		case "new-layer-item":
+		    g_drawInterface.newLayer(); 
+		    break;
+		case "clear-item":
+		    
+		    // TODO implement a "clear-everything" function
+		    break;
+		case "adjust-item":
+		    adjustToScreen();
+		    break;
+		}
+		$(this).val("none");
 	    });
-	$("#new-layer-btn").bind("click", function() {
-		g_drawInterface.newLayer(); 
-	    });
-
 	$("#dialogue-edit-area").bind("keyup", function() {
 	  g_dialogue.makeBubblesFromText($("#dialogue-edit-area").val());
 	  g_toolInterface.setTool(textBalloonTool);

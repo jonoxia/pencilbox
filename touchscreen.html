@@ -17,10 +17,15 @@
 <div id="control-div" style="float: left;">
 <canvas id="pen-size-canvas" style="border-style:solid;"></canvas>
 <br/>
-<button id="import-btn">Import</button>
-<button id="export-btn">Export</button>
-<button id="save-btn">Save</button>
-<button id="new-layer-btn">New Layer</button><br/>
+<select id="main-menu">
+<option value="none" selected="true">Menu</option>
+<option value="import-item">Import Image</option>
+<option value="export-item">Export Image</option>
+<option value="save-item">Save</option>
+<option value="new-layer-item">New Layer</option>
+<option value="clear-item">Clear</option>
+<option value="adjust-item">Adjust to Screen</option>
+</select><br/>
 Debug: <span id="debug"></span><br/>
 <table id="layers-table" border="true">
 </table>
