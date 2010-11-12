@@ -11,11 +11,18 @@ Tool.prototype = {
 	return "butt";
     },
 
+    getLineJoin: function() {
+	return "miter";
+    },
+
     down: function(ctx, x, y) {
 	// round up size to next whole number:
 	this.size = Math.ceil(this.size);
 	this.resetRecordedAction();
 	this.actionPoints.push( {x: x, y: y} );
+	ctx.beginPath();
+	ctx.moveTo(x, y);
+
     },
 
     up: function(ctx, x, y) {
@@ -24,20 +31,15 @@ Tool.prototype = {
     },
 
     drag: function(ctx, x, y) {
-	// TODO actually multiply lineWidth by current scaling factor
 	// TODO offset by half-pixel if odd?  See
 	// https://developer.mozilla.org/en/Canvas_tutorial/Applying_styles_and_colors#A_lineWidth_example
-	if (this.actionPoints.length > 0) {
-	    ctx.lineWidth = this.size;
-	    ctx.lineCap = this.getLineCap();
-	    ctx.strokeStyle = this.getStrokeStyle().style;
-	    ctx.beginPath();
-	    let last = this.actionPoints.length - 1;
-	    ctx.moveTo(this.actionPoints[last].x,
-		       this.actionPoints[last].y);
-	    ctx.lineTo(x, y);
-	    ctx.stroke();
-	}
+	// Multiply lineWidth by current scaling factor to know what
+	// width todraw the preview at:
+	ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
+	ctx.lineCap = this.getLineCap();
+	ctx.strokeStyle = this.getStrokeStyle().style;
+	ctx.lineTo(x, y);
+	ctx.stroke();
 	this.actionPoints.push( {x: x, y: y} );
     },
 
@@ -60,7 +62,8 @@ Tool.prototype = {
 	let self = this;
 	let styles = {lineWidth: self.size,
 		      strokeStyle: this.getStrokeStyle(),
-		      lineCap: this.getLineCap()};
+		      lineCap: this.getLineCap(),
+	              lineJoin: this.getLineJoin()};
 	return new DrawAction(activeLayer, this.actionPoints, styles,
 			      false);
     },
@@ -80,9 +83,18 @@ pen.display = function(penCtx, x, y) {
 pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
+// TODO other eraser options: square-edged eraser?
+// Erase to transparent instead of white? (erase to transparent should
+// actually be the default I think)
 eraser.getStrokeStyle = function() {
     return g_toolInterface.getEraseColor();
 }
+eraser.getLineCap = function() {
+    return "round";
+};
+eraser.getLineJoin = function() {
+    return "round";
+};
 eraser.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
@@ -93,6 +105,30 @@ eraser.display = function(penCtx, x, y) {
     penCtx.stroke();
 };
 eraser.drawCursor = eraser.display;
+eraser.drag = function(ctx, x, y) {
+    // Don't scale up eraser, so it stays the same size on the screen
+    // when you zoom in.
+    ctx.lineWidth = this.size;
+    ctx.lineCap = this.getLineCap();
+    ctx.strokeStyle = this.getStrokeStyle().style;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    this.actionPoints.push( {x: x, y: y} );
+};
+eraser.getRecordedAction = function() {
+    let activeLayer = g_drawInterface.getActiveLayer();
+    let self = this;
+    // Scale down the eraser when you zoom in, so it stays the
+    // same size on screen and you can do precision erasing:
+    let width = self.size / g_drawInterface.getZoomLevel();
+    let styles = {lineWidth: width,
+		  strokeStyle: this.getStrokeStyle(),
+		  lineCap: this.getLineCap(),
+		  lineJoin: this.getLineJoin()};
+    return new DrawAction(activeLayer, this.actionPoints, styles,
+			  false);
+};
+
 
 let line = new Tool(1.0);
 line.display = function(penCtx, x, y) {
@@ -377,9 +413,13 @@ paintbrush.getStrokeStyle = function() {
 paintbrush.getLineCap = function() {
     return "round";
 };
+paintbrush.getLineJoin = function() {
+    return "round";
+};
 paintbrush.display = function(penCtx, x, y) {
+    let displaySize = this.size * g_drawInterface.getZoomLevel();
     penCtx.beginPath();
-    penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
+    penCtx.arc(x, y, displaySize/2, 0, 2*Math.PI, true);
     penCtx.fillStyle=this.getStrokeStyle().style;
     penCtx.fill();
     penCtx.lineWidth = 1.0;
@@ -387,7 +427,23 @@ paintbrush.display = function(penCtx, x, y) {
     penCtx.stroke();
 };
 paintbrush.drawCursor = paintbrush.display;
+paintbrush.drag = function(ctx, x, y) {
+    // Multiply lineWidth by current scaling factor for preview width:
+    ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
+    ctx.lineCap = this.getLineCap();
+    ctx.lineJoin = this.getLineJoin();
+    ctx.beginPath();
+    ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
+    for (let i = 1; i < this.actionPoints.length; i++) {
+	ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
+    }
 
+    ctx.strokeStyle = g_toolInterface.getEraseColor().style;
+    ctx.stroke();
+    ctx.strokeStyle = this.getStrokeStyle().style;
+    ctx.stroke();
+    this.actionPoints.push( {x: x, y: y} );
+};
 
 
 // More tools:

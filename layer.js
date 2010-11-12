@@ -99,6 +99,9 @@ Layer.prototype = {
     getContext: function() {
 	return this.displayContext;
     },
+    getZoomLevel: function() {
+	return this._scale;
+    },
     setVisible: function(newVal) {
 	this.visible = newVal;	
 	this.tag.css("display", newVal?"block":"none");

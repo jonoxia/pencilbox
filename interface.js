@@ -38,7 +38,7 @@ GestureInterpreter.prototype = {
 	if (this.touchPointCount == 1 && this.hasMenus()) {
 	    this.menuMouseDown(evt);
 	}
-	if (this.touchPointCount == 2 && this.pieMenu) {
+	if (this.touchPointCount == 2 && this.activeMenu) {
 	    this.activeMenu.cancel();
 	    this.activeMenu = null;
 	}
@@ -577,5 +577,9 @@ DrawAreaInterface.prototype = {
 		newLayer.setName(layerObj[i].name);
 	    }
 	}
+    },
+
+    getZoomLevel: function() {
+	return this.activeLayer.getZoomLevel();
     }
 };

@@ -40,6 +40,9 @@ DrawAction.prototype = {
 	    if (this.styleInfo.lineCap) {
 		ctx.lineCap = this.styleInfo.lineCap;
 	    }
+	    if (this.styleInfo.lineCap) {
+		ctx.lineJoin = this.styleInfo.lineJoin;
+	    }
 	    ctx.moveTo(this.pts[0].x, this.pts[0].y);
 	    for (let i = 1; i < this.pts.length; i++) {
 		ctx.lineTo(this.pts[i].x, this.pts[i].y);
