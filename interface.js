@@ -581,5 +581,14 @@ DrawAreaInterface.prototype = {
 
     getZoomLevel: function() {
 	return this.activeLayer.getZoomLevel();
+    },
+
+    resetDimensions: function(newX, newY, newWidth, newHeight) {
+	this.offsetX = newX;
+	this.offsetY = newY;
+	for (let i = 0; i < this.layers.length; i++) {
+	    this.layers[i].resetDimensions(newX, newY,
+					   newWidth, newHeight);
+	}
     }
 };

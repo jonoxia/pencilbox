@@ -49,10 +49,32 @@ function adjustToScreen() {
     // use of screen dimensions.
     let screenWidth = window.innerWidth;
     let screenHeight = window.innerHeight;
-    $("#the-canvas").attr("width", screenWidth * 0.6);
-    $("#the-canvas").attr("height", screenHeight);
-    $("#pen-size-canvas").attr("width", screenWidth * 0.2);
-    $("#pen-size-canvas").attr("height", screenHeight * 0.7);
+
+    let mainCanvasWidth, mainCanvasHeight;
+    if (screenHeight > screenWidth) {
+	// Portrait mode screen
+	mainCanvasWidth = screenWidth;
+	mainCanvasHeight = screenHeight * 0.65;
+	$("#pen-size-canvas").attr("width", screenWidth * 0.4);
+	$("#pen-size-canvas").attr("height", screenHeight * 0.25);
+    } else {
+	// Landscape mode screen
+	mainCanvasWidth = screenWidth * 0.6;
+	mainCanvasHeight = screenHeight;
+	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
+	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
+    }
+    $("#the-canvas").attr("width", mainCanvasWidth);
+    $("#the-canvas").attr("height", mainCanvasHeight);
+
+
+    if (g_drawInterface) {
+	g_drawInterface.resetDimensions($("#the-canvas").offset().left,
+					$("#the-canvas").offset().top,
+					mainCanvasWidth,
+					mainCanvasHeight);
+	g_drawInterface.updateAllLayerDisplays();
+    }
 }
 
 function importImage() {
@@ -102,7 +124,6 @@ $(function() {
 		    g_drawInterface.newLayer(); 
 		    break;
 		case "clear-item":
-		    
 		    // TODO implement a "clear-everything" function
 		    break;
 		case "adjust-item":

@@ -223,5 +223,14 @@ Layer.prototype = {
 	 * from 100% zoom and then blowing up the bitmap; instead,
 	 * should turn vector to bitmap at current zoom if
 	 * possible.  */
+    },
+    
+    resetDimensions: function(newX, newY, newWidth, newHeight) {
+	this.width = newWidth;
+	this.height = newHeight;
+	this.tag.css("left", newX);
+	this.tag.css("top", newY);
+	this.tag.attr("width", newWidth);
+	this.tag.attr("height", newHeight);
     }
 };
