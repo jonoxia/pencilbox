@@ -34,6 +34,7 @@ GestureInterpreter.prototype = {
 				 oldY: y,
 				 id: id};
 	this.touchPointCount ++;
+	$("#debug").html("Touch down, points is " + this.touchPointCount);
 
 	if (this.touchPointCount == 1 && this.hasMenus()) {
 	    this.menuMouseDown(evt);
@@ -77,15 +78,18 @@ GestureInterpreter.prototype = {
 	    } else {
 		this.interpretGesture(id);
 	    }
-	} else {
-	    $("#debug").html("NOT POINT");
-	}
+	    $("#debug").html("Moved point");
+	} 
     },
 
     touchUp: function(evt) {
 	let id = evt.streamId;
+	if (!this.touchPoints[id]) {
+	    return;
+	}
 	delete this.touchPoints[id];
 	this.touchPointCount --;
+	$("#debug").html("Touch up, points is " + this.touchPointCount);
 	if (this.touchPointCount == 0) {
 	    this.finalizeGesture();
 	    this.gestureDirections = [];
@@ -353,7 +357,7 @@ function ToolAreaInterface() {
 	    self.interpreter.touchDown(evt); }, false);
     this.toolCanvas.addEventListener("MozTouchMove", function(evt) {
 	    self.interpreter.touchMove(evt); }, false);
-    this.toolCanvas.addEventListener("MozTouchUp", function(evt) {
+    window.addEventListener("MozTouchUp", function(evt) {
 	    self.interpreter.touchUp(evt); }, false);
     // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
     // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
@@ -410,7 +414,7 @@ function DrawAreaInterface() {
     let self = this;    
     $("#the-canvas").bind("mousedown", function(evt) { 
 	    self.mouseDownHandler(evt); });
-    $("#the-canvas").bind("mouseup", function(evt) {
+    $(window).bind("mouseup", function(evt) {
 	    self.mouseUpHandler(evt); });
     $("#the-canvas").bind("mousemove", function(evt) {
 	    self.mouseMoveHandler(evt); });
@@ -434,8 +438,9 @@ function DrawAreaInterface() {
 	    self.interpreter.touchDown(evt); }, false);
     cursorCanvas.addEventListener("MozTouchMove", function(evt) {
 	    self.interpreter.touchMove(evt); }, false);
-    cursorCanvas.addEventListener("MozTouchUp", function(evt) {
-	    self.interpreter.touchUp(evt); }, false);
+    window.addEventListener("MozTouchUp", function(evt) {
+	    self.interpreter.touchUp(evt);
+	}, false);
 
 }
 DrawAreaInterface.prototype = {
@@ -472,6 +477,7 @@ DrawAreaInterface.prototype = {
 
     mouseUpHandler: function(evt) {
 	if (this.interpreter.touchPointCount > 0) return;
+	if (!this.mouseIsDown) return;
 
 	let x = evt.pageX - this.offsetX;
 	let y = evt.pageY - this.offsetY;
