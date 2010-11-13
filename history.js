@@ -64,7 +64,34 @@ DrawAction.prototype = {
 		layerName: self.layer.getName(),
 		points: self.pts,  // already json more or less
 		styleInfo: self.styleInfo,
-		isFill: self.isFill
+		isFill: self.isFill,
+		};
+    }
+};
+
+function EraserStrokeAction(layer, pointsList, size) {
+    this.layer = layer;
+    this.ctx = layer.getContext();
+    this.points = pointsList;  // expected in world coordinates
+    this.size = size;
+}
+EraserStrokeAction.prototype = {
+    replay: function(newCtx) {
+	let ctx = newCtx ? newCtx : this.ctx;
+	for (let i= 0; i < this.points.length; i++) {
+	    ctx.clearRect( this.points[i].x - this.size/2,
+			   this.points[i].y - this.size/2,
+			   this.size,
+			   this.size );
+	}
+    },
+
+    toJSON: function() {
+	let self = this;
+	return {type: "eraser",
+		layerName: self.layer.getName(),
+		points: self.pts,
+		size: self.size
 		};
     }
 };
@@ -74,7 +101,6 @@ function ClearRegionAction(layer, pointsList) {
     this.layer = layer;
     this.ctx = layer.getContext();
     this.points = pointsList;
-
 }
 ClearRegionAction.prototype = {
     replay: function(newCtx) {
@@ -238,6 +264,12 @@ History.prototype = {
 	    case "clear":
 		action = new ClearRegionAction(layer,
 					       actionData.points);
+		break;
+	    case "eraser":
+		action = new EraserStrokeAction(layer,
+						actionData.points,
+						actionData.size);
+
 		break;
 	    case "image":
 		let img = null; // TODO 

@@ -309,7 +309,7 @@ function ToolAreaInterface() {
     let paintColorMenu = new ColorMenu(this.penCtx, 70, bottom, 50, 50,
 					Colors.red);
     let bgColorMenu = new ColorMenu(this.penCtx, 130, bottom, 50, 50,
-				     Colors.white);
+				     Colors.transparent);
     this.colorMenus = [penColorMenu, paintColorMenu, bgColorMenu];
 
     this.library = {

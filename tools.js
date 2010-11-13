@@ -83,50 +83,32 @@ pen.display = function(penCtx, x, y) {
 pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
-// TODO other eraser options: square-edged eraser?
-// Erase to transparent instead of white? (erase to transparent should
-// actually be the default I think)
-eraser.getStrokeStyle = function() {
-    return g_toolInterface.getEraseColor();
-}
-eraser.getLineCap = function() {
-    return "round";
-};
-eraser.getLineJoin = function() {
-    return "round";
-};
+// This is a square eraser that erases to transparent
+// Could also have round one that erases to white (same as 100% opacity
+// paintbrush) - but round & transparent is hard because there's no
+// ClearCircle().
 eraser.display = function(penCtx, x, y) {
-    penCtx.beginPath();
-    penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
-    penCtx.fillStyle=Colors.white.style;
-    penCtx.fill();
-    penCtx.lineWidth = 1.0;
     penCtx.strokeStyle=Colors.black.style;
-    penCtx.stroke();
+    penCtx.lineWidth = 1.0;
+    penCtx.strokeRect(x - this.size/2, y - this.size/2,
+		      this.size, this.size);
 };
 eraser.drawCursor = eraser.display;
 eraser.drag = function(ctx, x, y) {
     // Don't scale up eraser, so it stays the same size on the screen
     // when you zoom in.
-    ctx.lineWidth = this.size;
-    ctx.lineCap = this.getLineCap();
-    ctx.strokeStyle = this.getStrokeStyle().style;
-    ctx.lineTo(x, y);
-    ctx.stroke();
+
+    ctx.clearRect(x - this.size/2, y - this.size/2,
+		      this.size, this.size);
     this.actionPoints.push( {x: x, y: y} );
 };
 eraser.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
-    let self = this;
     // Scale down the eraser when you zoom in, so it stays the
     // same size on screen and you can do precision erasing:
-    let width = self.size / g_drawInterface.getZoomLevel();
-    let styles = {lineWidth: width,
-		  strokeStyle: this.getStrokeStyle(),
-		  lineCap: this.getLineCap(),
-		  lineJoin: this.getLineJoin()};
-    return new DrawAction(activeLayer, this.actionPoints, styles,
-			  false);
+    let width = this.size / g_drawInterface.getZoomLevel();
+    return new EraserStrokeAction(activeLayer, this.actionPoints,
+				  width);
 };
 
 

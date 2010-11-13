@@ -89,6 +89,8 @@ Layer.prototype = {
 	return this.name;
     },
     setOpacity: function(opacity) {
+	// TODO can also implement opacity by setting
+	// ctx.globalAlpha = opacity before playing layer's actions.
 	$("#debug").html("Opacity set to " + opacity);
 	this.opacity = opacity;
 	this.updateDisplay();
