@@ -308,15 +308,12 @@ function ToolAreaInterface() {
 				      Colors.black);
     let paintColorMenu = new ColorMenu(this.penCtx, 70, bottom, 50, 50,
 					Colors.red);
-    let bgColorMenu = new ColorMenu(this.penCtx, 130, bottom, 50, 50,
-				     Colors.transparent);
-    this.colorMenus = [penColorMenu, paintColorMenu, bgColorMenu];
+    this.colorMenus = [penColorMenu, paintColorMenu];
 
     this.library = {
 	oneFinger: {
 	    pieMenu: toolMenu,
-	    locationMenus: [penColorMenu, paintColorMenu,
-			    bgColorMenu],
+	    locationMenus: [penColorMenu, paintColorMenu],
 	    directionalGestures: [
 	    {directions: ["left", "down", "right", "up"],
              command: function() {
@@ -387,9 +384,6 @@ ToolAreaInterface.prototype = {
     },
     getPaintColor: function() {
 	return this.colorMenus[1].color;
-    },
-    getEraseColor: function() {
-	return this.colorMenus[2].color;
     }
 };
 
