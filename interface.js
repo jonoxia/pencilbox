@@ -34,7 +34,6 @@ GestureInterpreter.prototype = {
 				 oldY: y,
 				 id: id};
 	this.touchPointCount ++;
-	$("#debug").html("Touch down, points is " + this.touchPointCount);
 
 	if (this.touchPointCount == 1 && this.hasMenus()) {
 	    this.menuMouseDown(evt);
@@ -78,7 +77,6 @@ GestureInterpreter.prototype = {
 	    } else {
 		this.interpretGesture(id);
 	    }
-	    $("#debug").html("Moved point");
 	} 
     },
 
@@ -89,7 +87,6 @@ GestureInterpreter.prototype = {
 	}
 	delete this.touchPoints[id];
 	this.touchPointCount --;
-	$("#debug").html("Touch up, points is " + this.touchPointCount);
 	if (this.touchPointCount == 0) {
 	    this.finalizeGesture();
 	    this.gestureDirections = [];

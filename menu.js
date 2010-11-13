@@ -36,6 +36,14 @@ function GridMenu( canvas, itemList, squareSize, isSubMenu ) {
 	this._commands = itemList;
 	this._subMenu = null;
     }
+
+    // Preload images:
+    for (let i = 0; i < this._commands.length; i++) {
+	let commandObj = this._commands[i];
+	let img = new Image();
+	img.onload = function(){ commandObj.img = img  };
+	img.src = commandObj.icon;
+    }
 }
 GridMenu.prototype = {
     get visible() {
@@ -196,17 +204,10 @@ GridMenu.prototype = {
 	this._ctx.mozDrawText(commandObj.name);
 	this._ctx.restore();
 
-	if (commandObj.icon) {
-	    var img = new Image();
-	    var ctx= this._ctx;
+	if (commandObj.img) {
 	    var x = this._left + this._squareSize * col + margin;
 	    var y = this._top + this._squareSize * row + margin;
-	    img.onload = function(){ ctx.drawImage(img, x, y);  };
-	    img.src = commandObj.icon;
-	    /*this._ctx.save();
-      this._ctx.translate(this._left + this._squareSize * col + margin, this._top + this._squareSize * (row) + 12 + margin );
-      this._ctx.mozDrawText(commandObj.icon);
-      this._ctx.restore();*/
+	    this._ctx.drawImage(commandObj.img, x, y);
 	}
     },
 
