@@ -305,12 +305,15 @@ function ToolAreaInterface() {
 		     execute: function() {self.setTool(rectSelect);}},
 	            {name: "Rectangle", icon: "icons/ruler-crop.png",
 		     execute: function() {self.setTool(rectangle);}},
-	            {name: "Panel", icon: "icons/ruler-crop.png",
-		     execute: function() {self.setTool(panelTool);}}
+	            {name: "Eyedropper", icon: "icons/pipette.png",
+		     execute: function() {self.setTool(eyedropper);}}
 	];		     
-	/*	            {name: "Lasso", icon: "icons/wand.png",
+	/*	     	        
+	{name: "Panel", icon: "icons/ruler-crop.png",
+		     execute: function() {self.setTool(panelTool);}}
+       {name: "Lasso", icon: "icons/wand.png",
 		     execute: function() {self.setTool(lasso);}},
-*/
+         */
 
     let toolMenu = new GridMenu( this.toolCanvas, itemList, 64, false );
     // Allow tool menu and pinch gesture to coexist:
@@ -403,6 +406,10 @@ ToolAreaInterface.prototype = {
     },
     getEraseColor: function() {
 	return Colors.white;
+    },
+    setPaintColor: function(color) {
+	this.colorMenus[1].color = color;
+	this.colorMenus[1].redraw(this.penCtx);
     }
 };
 

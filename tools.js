@@ -428,6 +428,38 @@ paintbrush.drag = function(ctx, x, y) {
 };
 
 
+let eyedropper = new Tool(1.0);
+eyedropper.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = "icons/pipette.png";
+};
+eyedropper.down = function(ctx, x, y) {
+};
+eyedropper.up = function(ctx, x, y) {
+    // do it here
+    let layer = g_drawInterface.getActiveLayer();
+    let bm = new BitManipulator(ctx, layer.width, layer.height);
+    let color = bm.getColorAt(x, y);
+    color.a = 1.0;
+    g_toolInterface.setPaintColor(color);
+};
+eyedropper.drag = function(ctx, x, y) {
+};
+eyedropper.drawCursor = function(ctx, x, y) {
+};
+eyedropper.getRecordedAction = function() {
+    // Setting the color never generates an action
+    return null;
+};
+eyedropper.resetRecordedAction = function() {
+    // Nothing to do
+};
+
+
+
 // More tools:
 // Filled rect (an option on rect tool?)
 // Porygon (like pencil but adds a new point to actionPoints list
