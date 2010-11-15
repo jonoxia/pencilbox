@@ -218,8 +218,14 @@ function ColorMenu(ctx, x, y, width, height, defaultColor) {
 			 Colors.yellow,
 			 Colors.cyan,
 			 Colors.magenta,
-			 Colors.grey,
-			 Colors.brown
+			 Colors.brown,
+			 Colors.grey1,
+			 Colors.grey2,
+			 Colors.grey3,
+			 Colors.grey4,
+			 Colors.grey5,
+			 Colors.grey6,
+			 Colors.grey7
 			 ];
 
     this.boxSize = this.width;
@@ -394,6 +400,9 @@ ToolAreaInterface.prototype = {
     },
     getPaintColor: function() {
 	return this.colorMenus[1].color;
+    },
+    getEraseColor: function() {
+	return Colors.white;
     }
 };
 

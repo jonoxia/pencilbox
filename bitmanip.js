@@ -27,16 +27,22 @@ Color.prototype = {
 };
 
 var Colors = {
-    brown: new Color(150, 100, 50, 1),
     white: new Color(255, 255, 255, 1),
+    grey1: new Color(224, 224, 224, 1),
+    grey2: new Color(192, 192, 192, 1),
+    grey3: new Color(160, 160, 160, 1),
+    grey4: new Color(128, 128, 128, 1),
+    grey5: new Color(96, 96, 96, 1),
+    grey6: new Color(64, 64, 64, 1),
+    grey7: new Color(32, 32, 32, 1),
     black: new Color(0, 0, 0, 1),
+    brown: new Color(150, 100, 50, 1),
     red: new Color(255, 0, 0, 1),
     blue: new Color(0, 0, 255, 1),
     green: new Color(0, 255, 0, 1),
     yellow: new Color(255, 255, 0, 1),
     cyan: new Color(0, 255, 255, 1),
     magenta: new Color(255, 0, 255, 1),
-    grey: new Color(100, 100, 100, 1),
     transparent: new Color(0, 0, 0, 0),
     translucentBlack: new Color(0, 0, 0, 0.2)
 };
