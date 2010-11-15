@@ -74,9 +74,9 @@ GestureInterpreter.prototype = {
 
 	    if (this.touchPointCount == 1 && this.activeMenu) {
 		this.activeMenu.onMouseMove(evt);
-	    } else {
-		this.interpretGesture(id);
 	    }
+	    this.interpretGesture(id);
+	    
 	} 
     },
 
@@ -150,7 +150,6 @@ GestureInterpreter.prototype = {
 	    let dx = movingPt.newX - movingPt.oldX;
 	    let dy = movingPt.newY - movingPt.oldY;
 
-	    // invisible pie menu!
 	    if (dy < -5 && Math.abs(dy) > Math.abs(dx)) {
 		this.gestureDirections.push("up");
 	    }
@@ -187,6 +186,12 @@ GestureInterpreter.prototype = {
 	 	matched += 1;
 		if (matched == pattern.length) {
 		    gestureCmd.command();
+		    // Dismiss menu if a mouse gesture was completed.
+		    if (this.activeMenu) {
+			this.activeMenu.cancel();
+			this.activeMenu = null;
+		    }
+
 		    return;
 		}
 	      } else {
@@ -260,6 +265,10 @@ ColorMenu.prototype = {
 	g_toolInterface.updateToolImage();
     },
 
+    cancel: function() {
+	g_toolInterface.updateToolImage();
+    },
+
     isPtInside: function(x, y) {
 	return (x >= this.x && x <= this.x + this.width &&
 		y >= this.y && y <= this.y + this.height);
@@ -319,22 +328,22 @@ function ToolAreaInterface() {
 	    {directions: ["left", "down", "right", "up"],
              command: function() {
 		    g_history.undo();
-		    //$("#debug").html("Undo");
+		    $("#debug").html("Undo");
 		}},
             {directions: ["down", "right", "up", "left"],
              command: function() {
 		    g_history.undo();
-		    //$("#debug").html("Undo");
+		    $("#debug").html("Undo");
 		}},
             {directions: ["right", "down", "left", "up"],
              command: function() {
 		    g_history.redo();
-		    //$("#debug").html("Redo");
+		    $("#debug").html("Redo");
 		}},
             {directions: ["down", "left", "up", "right"],
              command: function() {
 		    g_history.redo();
-		    //$("#debug").html("Redo");
+		    $("#debug").html("Redo");
 		}}
 				  ]},
 	twoFingers: {
