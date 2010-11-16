@@ -306,7 +306,7 @@ function ToolAreaInterface() {
 	            {name: "S. Area", icon: "icons/32x32/Wizard.png",
                      execute: function() {}},
 	            {name: "Picker", icon: "icons/32x32/Dropper.png",
-		     execute: function() {self.setTool(eyedropper);}},
+		     execute: function() {self.setTool(eyedropper);}}],
 		    {name: "Bucket", icon: "icons/32x32/Fill.png",
 		     execute: function() {self.setTool(bucket);}},
 	            {name: "Ellipse", icon: "icons/32x32/Ellipse.png",
@@ -323,7 +323,7 @@ function ToolAreaInterface() {
 		     execute: function() {}},
                     {name: "3d Obj.", icon: "icons/32x32/Transparency.png",
 		     execute: function() {}}
-	];
+		     ];
 
     // Creative Commons Share-alike 3.0 from www.aha-soft.com
     // or so says http://www.bestesoft.com/direct-software/62172-32x32-free-design-icons.html

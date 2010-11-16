@@ -401,7 +401,8 @@ lasso.drag = function(ctx, x, y) {
 	// TODO this is drawing on draw context, should draw on
 	// pen/cursor context.
 	ctx.beginPath();
-	ctx.fillStyle = Colors.pen.style;
+	ctx.strokeStyle = Colors.black.style;
+	ctx.lineWidth = 1.0;
 	let lastPt = this.points[this.points.length - 1];
 	ctx.moveTo(lastPt.x, lastPt.y);
 	ctx.lineTo(x, y);

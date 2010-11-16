@@ -84,10 +84,36 @@ GridMenu.prototype = {
     _getCellNumFromPoint: function( x, y ) {
 	var col = Math.floor( ( x - this._left ) / this._squareSize );
 	var row = Math.floor( ( y - this._top ) / this._squareSize );
-	if (col < -1) col = -1;
-	if (col > 3) col = 3;
-	if (row < -1) row = -1;
-	if (row > 3) row = 3;
+
+	/* Constrain row and column to the menu so that even if you
+	 * mouse outside of it, you're still treated as touching the
+	 * nearest box.  This makes it much easier to use by making the
+	 * effective target size much larger. */
+	let lots = (this._commands.length > 8);
+	if (col < 0) {
+	    if (lots && (row == 0 || row == 2))
+		col = -1;
+	    else
+		col = 0;
+	}
+	if (col > 2) {
+	    if (lots && (row == 0 || row == 2))
+		col = 3;
+	    else
+		col = 2;
+	}
+	if (row < 0) {
+	    if (lots && (col == 0 || col == 2))
+		row = -1;
+	    else
+		row = 0;
+	}
+	if (row > 2) {
+	    if (lots && (col == 0 || col == 2))
+		row = 3;
+	    else
+		row = 2;
+	}
 	return this._colRowToCellNum(col, row);
     },
 
@@ -99,12 +125,18 @@ GridMenu.prototype = {
     },
 
     get _rowColumnTable() {
+	if (this._commands.length > 8) {
 	return [         [0, -1],        [2, -1],
 		[-1, 0], [0, 0], [1, 0], [2, 0], [3, 0],
                          [0, 1],         [2, 1],
                 [-1, 2], [0, 2], [1, 2], [2, 2], [3, 2],
 			 [0, 3],          [2, 3]
                	];
+	} else {
+	    return [[0, 0], [1, 0], [2, 0],
+                    [0, 1],         [2, 1],
+                    [0, 2], [1, 2], [2, 2]];
+	}
     },
 
     _cellNumToColRow: function(cellNum) {
@@ -113,7 +145,7 @@ GridMenu.prototype = {
 
     _colRowToCellNum: function(col, row) {
 	let table = this._rowColumnTable;
-	for ( var i = 0; i < 16; i++ ) {
+	for ( var i = 0; i < table.length; i++ ) {
 	    if (table[i][0] == col && table[i][1] == row)
 		return i;
 	}
