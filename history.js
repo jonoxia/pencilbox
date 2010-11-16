@@ -293,13 +293,10 @@ History.prototype = {
     },
 
     loadFromLocalStorage: function() {
-	$("#debug").html("Loading from local storage...");
+	//$("#debug").html("Loading from local storage...");
 	let layerString = window.localStorage.getItem("layers");
 	let historyString = window.localStorage.getItem("history");
-	// TODO how do we tell if an item is not set?  Will it
-	// return empty string?
 	if (!layerString || !historyString) {
-	    $("#debug").html("Nothing in local storage.");
 	    return;
 	}
 	g_drawInterface.recreateLayers(layerString);

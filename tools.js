@@ -463,8 +463,13 @@ eyedropper.resetRecordedAction = function() {
 // Filled rect (an option on rect tool?)
 // Porygon (like pencil but adds a new point to actionPoints list
 // only when you click - options: close or not, fill or not)
+// Fancy line tool? (TBH i never use these)
+// Ellipse tool!!
+// Magic-wand selector (select continuous region)
+// 
 
-// A gradient fill tool (Canvas supports it!!)
+// A gradient fill tool (Canvas supports it!!) Could also be a
+// selection option?
 
 // In general, tools need individualized setting controls beyond
 // the all-purpose color and line width controls.  Bucket needs to

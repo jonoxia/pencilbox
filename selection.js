@@ -76,8 +76,46 @@ function SelectionManager() {
     };
     g_drawInterface.layers.push(this.selectionLayer);
     this._selectionCtx = this.selectionLayer.getContext();
+
+
+// Selection Menu:
+    let selectionMenuItemList = [
+                    {name: "Clear", icon: "icons/32x32/Erase.png",
+		     execute: function() {$("#debug").html("Clear");}},
+		    {name: "Rotate", icon: "icons/32x32/Rotation.png",
+		     execute: function() {$("#debug").html("Rotate");}},
+		    {name: "Resize", icon: "icons/32x32/Sizes.png",
+		     execute: function() {$("#debug").html("Resize");}},
+		    {name: "Duplicate", icon: "icons/32x32/Copy.png",
+		     execute: function() {$("#debug").html("Dupe");}},
+		    {name: "Flip H.", icon: "icons/32x32/Flip_horiz.png",
+		     execute: function() {$("#debug").html("Flip H");}},
+		    {name: "Flip V.", icon: "icons/32x32/Flip_vert.png",
+		     execute: function() {$("#debug").html("Flip V");}},
+		    {name: "To Layer", icon: "icons/32x32/Layers.png",
+		     execute: function() {$("#debug").html("2Layer");}},
+		    {name: "Invert", icon: "icons/32x32/Contrast.png",
+		     execute: function() {$("#debug").html("Invert");}},
+			     ];
+
+    this._selectionMenu = new GridMenu( $("#the-canvas").get(0),
+					selectionMenuItemList,
+					64, {x: 0, y: 0} );
+    /* Future selection menu options:
+     *   - Select More (e.g. enter "Selection Union" mode)
+     *   - Select Less (e.g. enter "Selection Intersection" mode)
+     *   - Color Negative  (not to be confused with Invert Selection
+     *   - Gradient Fill (lots more design needed)
+     *   - Probably don't even need menu items for rotate and resize:
+     *      they can be done with two-finger gestures on selection.
+     *   - Blur?  (Is blur something I would use?) Other filter types?
+     */
 }
 SelectionManager.prototype = {
+    get selectionMenu() {
+	return this._selectionMenu;
+    },
+
     get selectionPresent() {
 	return this._selectionPresent;
     },
@@ -237,30 +275,45 @@ SelectionManager.prototype = {
  That sounds workable.
 */
 
+const DBL_CLICK_SPEED = 750;  //maximum milliseconds
+
 selectionMovingTool = new Tool(0);
+selectionMovingTool._lastTimeDown = 0;
+selectionMovingTool._lastTimeUp = 0;
+selectionMovingTool.mode = null;
 selectionMovingTool.display = function(penCtx, x, y) {
 };
 selectionMovingTool.down = function(ctx, x, y) {
-    if (g_selection.selectionPresent) {
-	this.startX = x;
-	this.startY = y;
-	this.lastX = x;
-	this.lastY = y;
-	this.inProgress = true;
+    let now = Date.now();
+    if (now - this._lastTimeUp < DBL_CLICK_SPEED && 
+	this._lastTimeUp - this._lastTimeDown < DBL_CLICK_SPEED) {
+	this.mode = "menu";
+	g_selection.selectionMenu.onMouseDown({pageX: x, pageY: y});
+    } else {
+	if (g_selection.selectionPresent) {
+	    this.startX = x;
+	    this.startY = y;
+	    this.lastX = x;
+	    this.lastY = y;
+	    this.mode = "drag";
+	}
     }
+    this._lastTimeDown = now;
 };
 selectionMovingTool.up = function(ctx, x, y) {
-    if (this.inProgress) {
+    if (this.mode == "drag") {
 	if (g_selection.selectionPresent) {
 	    this.endX = x;
 	    this.endY = y;
-	    this.inProgress = false;
-	    g_selection.dropSelection(); 
+	    this.mode = null;
 	}
+    } else if (this.mode == "menu") {
+	g_selection.selectionMenu.onMouseUp({pageX: x, pageY: y});
     }
+    this._lastTimeUp = Date.now();
 };
 selectionMovingTool.drag = function(ctx, x, y) {
-    if (this.inProgress) {
+    if (this.mode == "drag") {
 	if (g_selection.selectionPresent) {
 	    // convert screen to world so the drag distance
 	    // is correct even if zoomed
@@ -272,7 +325,9 @@ selectionMovingTool.drag = function(ctx, x, y) {
 	    this.lastX = x;
 	    this.lastY = y;
 	}
-    }
+    } else if (this.mode == "menu") {
+	g_selection.selectionMenu.onMouseMove({pageX: x, pageY: y});
+    } 
 };
 selectionMovingTool.drawCursor = function(ctx, x, y) {
 };

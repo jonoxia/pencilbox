@@ -1,5 +1,5 @@
 
-function GridMenu( canvas, itemList, squareSize) {
+function GridMenu( canvas, itemList, squareSize, offsets) {
     // Each item in stringList has .name, .icon, and .execute
     this._left = 0;
     this._top = 0;
@@ -9,8 +9,16 @@ function GridMenu( canvas, itemList, squareSize) {
     //this._optionsList = optionsList;
     this._visible = false;
     this._ctx =canvas.getContext("2d");
-    this._offsetX = canvas.offsetLeft;
-    this._offsetY = canvas.offsetTop;
+
+    // Offsets is optional x-y offsets of region where grid menu
+    // is to appear.  If not provided, will use left and top of canvas.
+    if (offsets) {
+	this._offsetX = offsets.x;
+	this._offsetY = offsets.y;
+    } else {
+	this._offsetX = canvas.offsetLeft;
+	this._offsetY = canvas.offsetTop;
+    }
     this._maxWidth = canvas.width;
     this._maxHeight = canvas.height;
 

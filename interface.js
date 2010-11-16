@@ -306,14 +306,14 @@ function ToolAreaInterface() {
 	            {name: "S. Area", icon: "icons/32x32/Wizard.png",
                      execute: function() {}},
 	            {name: "Picker", icon: "icons/32x32/Dropper.png",
-		     execute: function() {self.setTool(eyedropper);}}],
+		     execute: function() {self.setTool(eyedropper);}},
 		    {name: "Bucket", icon: "icons/32x32/Fill.png",
 		     execute: function() {self.setTool(bucket);}},
 	            {name: "Ellipse", icon: "icons/32x32/Ellipse.png",
 		     execute: function() {}},
 	            {name: "Rect", icon: "icons/32x32/Rectangle.png",
 		     execute: function() {self.setTool(rectangle);}},
-		    {name: "Brush", icon: "icons/32x32/Brush.png",
+		    {name: "Brush", icon: "icons/32x32/Fine_brush.png",
 		     execute: function() {self.setTool(paintbrush);}},
                     {name: "Panel", icon: "icons/32x32/Grid.png",
 		     execute: function() {self.setTool(panelTool);}},
@@ -339,7 +339,7 @@ function ToolAreaInterface() {
     // Rotation
 
 
-    let toolMenu = new GridMenu( this.toolCanvas, itemList, 64, false );
+    let toolMenu = new GridMenu( this.toolCanvas, itemList, 64 );
     // Allow tool menu and pinch gesture to coexist:
     // Send events primarily to GestureInterpreter, do the pie
     // menu in response to the one finger thing.  (If a second
