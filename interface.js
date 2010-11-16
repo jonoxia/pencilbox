@@ -536,7 +536,7 @@ DrawAreaInterface.prototype = {
 	g_history.pushAction(action);
 	tool.resetRecordedAction();
 	// refresh the layer the action was in:
-	action.layer.updateDisplay();
+	if (action) action.layer.updateDisplay();
 	// refresh my cursor layer:
 	this.cursorCtx.clearRect(0, 0, this.width, this.height);
     },

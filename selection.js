@@ -100,7 +100,8 @@ function SelectionManager() {
 
     this._selectionMenu = new GridMenu( $("#the-canvas").get(0),
 					selectionMenuItemList,
-					64, {x: 0, y: 0} );
+					64, {x: 0, y: 0,
+					     alwaysRedraw: true} );
     /* Future selection menu options:
      *   - Select More (e.g. enter "Selection Union" mode)
      *   - Select Less (e.g. enter "Selection Intersection" mode)

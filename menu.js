@@ -1,5 +1,5 @@
 
-function GridMenu( canvas, itemList, squareSize, offsets) {
+function GridMenu( canvas, itemList, squareSize, options) {
     // Each item in stringList has .name, .icon, and .execute
     this._left = 0;
     this._top = 0;
@@ -10,17 +10,23 @@ function GridMenu( canvas, itemList, squareSize, offsets) {
     this._visible = false;
     this._ctx =canvas.getContext("2d");
 
-    // Offsets is optional x-y offsets of region where grid menu
+    // Options can have x-y offsets of region where grid menu
     // is to appear.  If not provided, will use left and top of canvas.
-    if (offsets) {
-	this._offsetX = offsets.x;
-	this._offsetY = offsets.y;
+    if (options) {
+	if (options.x != undefined) this._offsetX = options.x;
+	if (options.y != undefined) this._offsetY = options.y;
     } else {
 	this._offsetX = canvas.offsetLeft;
 	this._offsetY = canvas.offsetTop;
     }
     this._maxWidth = canvas.width;
     this._maxHeight = canvas.height;
+
+    // Pass in alwaysRedraw: True as part of options to have it
+    // always redraw
+    if (options) {
+	this._alwaysRedraw = options.alwaysRedraw;
+    }
 
     this._oldCell = null;
     this._invokeTime = 0;
@@ -80,12 +86,17 @@ GridMenu.prototype = {
 	    return;
 	}
 	var cellNum = this._getCellNumFromPoint(x, y);
-	if (cellNum != this._oldCell) {
-	    if (this._oldCell != null)
-		this._fillSquare(this._oldCell, "white");
-	    if (cellNum != null)
-		this._fillSquare(cellNum, "red");
-	    this._oldCell = cellNum;
+	if (this._alwaysRedraw) {
+	    this._draw();
+	    this._fillSquare(cellNum, "red");
+	} else {
+	    if (cellNum != this._oldCell) {
+		if (this._oldCell != null)
+		    this._fillSquare(this._oldCell, "white");
+		if (cellNum != null)
+		    this._fillSquare(cellNum, "red");
+		this._oldCell = cellNum;
+	    }
 	}
     },
 
