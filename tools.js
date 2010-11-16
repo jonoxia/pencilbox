@@ -383,9 +383,8 @@ rectangle.resetRecordedAction = function() {
 
 
 let paintbrush = new Tool(10.0);
-// TODO paintbrush needs a way to set color and opacity as well
-// as size.  Also when drawing it looks more opaque than it really
-// is because it's going back over its own path so many times.
+// TODO paintbrush needs a way to set messiness and opacity as well
+// as size.  
 paintbrush.getStrokeStyle = function() {
     this.transparency = 0.5;
     let color = g_toolInterface.getPaintColor().copy();
@@ -463,23 +462,14 @@ eyedropper.resetRecordedAction = function() {
 // More tools:
 // Filled rect (an option on rect tool?)
 // Porygon (like pencil but adds a new point to actionPoints list
-// only when you click)
-// Eyedropper (sets fg color to clicked pixel - implement after we
-//             have color-setting interface!!)
+// only when you click - options: close or not, fill or not)
 
-// Three colors: erasure color, fill color, and pen color.
-// Any of these colors can be "transparent" (although it dont make
-// much sense for pen) which really means "Delete pixels here instead
-// of drawing them."
-
-// Until I think of a better interface, I guess we're just going
-// to have to have three swatches of color on display, and clicking
-// one brings up the whole set of possibilities.
+// A gradient fill tool (Canvas supports it!!)
 
 // In general, tools need individualized setting controls beyond
 // the all-purpose color and line width controls.  Bucket needs to
 // be able to set sensitivity, paintbush transparency (and noise!)
-// rectangle filled-or-not-filledness, etc.  Eraser could have
-// shortcuts for white or transparent.
+// rectangle filled-or-not-filledness, etc.  When we have ellipse, it will
+// need filledness, circleness, and orthogonality of axis
 
 // But what I really want to play with is... selections!!!

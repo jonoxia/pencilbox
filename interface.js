@@ -291,29 +291,53 @@ function ToolAreaInterface() {
     this.selectedTool = pen;
 
     let self = this;
-    let itemList = [{name: "Pencil", icon: "icons/pencil.png",
-		     execute: function() {self.setTool(pen);}},
-		    {name: "Eraser", icon: "icons/eraser.png",
-		     execute: function() {self.setTool(eraser);}},
-		    {name: "Bucket", icon: "icons/paint-can.png",
-		     execute: function() {self.setTool(bucket);}},
-		    {name: "Line", icon: "icons/ruler.png",
+    let itemList = [{name: "Line", icon: "icons/32x32/Line.png",
 		     execute: function() {self.setTool(line);}},
-		    {name: "Paintbrush", icon: "icons/paint-brush.png",
-		     execute: function() {self.setTool(paintbrush);}},
-		    {name: "Select", icon: "icons/border.png",
+		    {name: "S. Rect", icon: "icons/32x32/Selection.png",
 		     execute: function() {self.setTool(rectSelect);}},
-	            {name: "Rectangle", icon: "icons/ruler-crop.png",
+	            {name: "Curve", icon: "icons/32x32/Curve.png",
+		     execute: function() {}},
+                    {name: "Pencil", icon: "icons/32x32/Pencil.png",
+		     execute: function() {self.setTool(pen);}},
+		    {name: "Eraser", icon: "icons/32x32/Eraser.png",
+		     execute: function() {self.setTool(eraser);}},
+	            {name: "Select", icon: "icons/wand.png",
+                     execute: function() {self.setTool(lasso);}},
+	            {name: "S. Area", icon: "icons/32x32/Wizard.png",
+                     execute: function() {}},
+	            {name: "Picker", icon: "icons/32x32/Dropper.png",
+		     execute: function() {self.setTool(eyedropper);}},
+		    {name: "Bucket", icon: "icons/32x32/Fill.png",
+		     execute: function() {self.setTool(bucket);}},
+	            {name: "Ellipse", icon: "icons/32x32/Ellipse.png",
+		     execute: function() {}},
+	            {name: "Rect", icon: "icons/32x32/Rectangle.png",
 		     execute: function() {self.setTool(rectangle);}},
-	            {name: "Eyedropper", icon: "icons/pipette.png",
-		     execute: function() {self.setTool(eyedropper);}}
-	];		     
-	/*	     	        
-	{name: "Panel", icon: "icons/ruler-crop.png",
-		     execute: function() {self.setTool(panelTool);}}
-       {name: "Lasso", icon: "icons/wand.png",
-		     execute: function() {self.setTool(lasso);}},
-         */
+		    {name: "Brush", icon: "icons/32x32/Brush.png",
+		     execute: function() {self.setTool(paintbrush);}},
+                    {name: "Panel", icon: "icons/32x32/Grid.png",
+		     execute: function() {self.setTool(panelTool);}},
+                    {name: "Speech", icon: "icons/32x32/Hints.png",
+		     execute: function() {}},
+                    {name: "Polygon", icon: "icons/32x32/Hexagon.png",
+		     execute: function() {}},
+                    {name: "3d Obj.", icon: "icons/32x32/Transparency.png",
+		     execute: function() {}}
+	];
+
+    // Creative Commons Share-alike 3.0 from www.aha-soft.com
+    // or so says http://www.bestesoft.com/direct-software/62172-32x32-free-design-icons.html
+    // Useful icons: icons/32x32/Brush   Dropper   Ellipse, Eraser
+    // CMYK for color   Comment (or Hints)  Curve points  Fill   Fine brush
+    // Grid, Line, Objects, Pen, Pencil, Restangle, Rounded rectangle,
+    // Selection, Square, Transparency, Undo, Redo, Wizard
+
+    // Upload image, 
+
+    // For selection menu: Constrast, Copy, Cut, Erase, Flip horizontally,
+    // Flip vertically, Move, Revert, Rotate CW, Rotate, CCW, 
+    // Rotation
+
 
     let toolMenu = new GridMenu( this.toolCanvas, itemList, 64, false );
     // Allow tool menu and pinch gesture to coexist:
