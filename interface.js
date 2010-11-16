@@ -530,9 +530,15 @@ DrawAreaInterface.prototype = {
 	let tool = this.getSelectedTool();
         this.getSelectedTool().up(this.getDrawCtx(), x, y);
 	this.mouseIsDown = false;
+
 	// Record action to undo history
-	g_history.pushAction(tool.getRecordedAction());
+	let action = tool.getRecordedAction();
+	g_history.pushAction(action);
 	tool.resetRecordedAction();
+	// refresh the layer the action was in:
+	action.layer.updateDisplay();
+	// refresh my cursor layer:
+	this.cursorCtx.clearRect(0, 0, this.width, this.height);
     },
 
     mouseDownHandler: function(evt) {

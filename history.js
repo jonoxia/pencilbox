@@ -187,7 +187,6 @@ History.prototype = {
 	}
 	this.actionList.push(action);
 	this.currPtr = this.actionList.length;
-
     },
 
     replayActions: function() {

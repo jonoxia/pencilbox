@@ -409,6 +409,8 @@ paintbrush.display = function(penCtx, x, y) {
 };
 paintbrush.drawCursor = paintbrush.display;
 paintbrush.drag = function(ctx, x, y) {
+    // Preview on cursor context, not main draw context!
+    let ctx = g_drawInterface.cursorCtx;
     // Multiply lineWidth by current scaling factor for preview width:
     ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
     ctx.lineCap = this.getLineCap();
@@ -418,9 +420,6 @@ paintbrush.drag = function(ctx, x, y) {
     for (let i = 1; i < this.actionPoints.length; i++) {
 	ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
     }
-
-    ctx.strokeStyle = g_toolInterface.getEraseColor().style;
-    ctx.stroke();
     ctx.strokeStyle = this.getStrokeStyle().style;
     ctx.stroke();
     this.actionPoints.push( {x: x, y: y} );
