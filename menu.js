@@ -199,6 +199,9 @@ GridMenu.prototype = {
     _fillSquare: function( cellNum, color ) {
 	this._ctx.fillStyle = color;
 	var colRow = this._cellNumToColRow(cellNum);
+	if (!colRow) {
+	    return;
+	}
 	var col = colRow[0];
 	var row = colRow[1];
 	this._ctx.beginPath();

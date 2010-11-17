@@ -480,14 +480,36 @@ function DrawAreaInterface() {
 					      this.offsetX,
 					      this.offsetY);
 
+    // Multitouches on the canvas:  Decide whether they're in a selection
+    // or not.  If inside a selection, they'll be resize/rotate commands
+    // dispatch to selection manager.  If not, they'll be page zoom/pan
+    // commands; process them.
+    let ptInSelection = function(x, y) {
+	if (!g_selection.selectionPresent) {
+	    return
+	};
+	let x = x - self.offsetX;
+	let y = y - self.offsetY;
+	return g_selection.isScreenPtInsideSelection(x, y);
+    }
     cursorCanvas.addEventListener("MozTouchDown", function(evt) {
-	    self.interpreter.touchDown(evt); }, false);
+	    if (ptInSelection(evt.pageX, evt.pageY)) {
+		g_selection.interpreter.touchDown(evt);
+	    } else {
+		self.interpreter.touchDown(evt); 
+	    }
+	}, false);
     cursorCanvas.addEventListener("MozTouchMove", function(evt) {
-	    self.interpreter.touchMove(evt); }, false);
+	    if (ptInSelection(evt.pageX, evt.pageY)) {
+		g_selection.interpreter.touchMove(evt);
+	    } else {
+		self.interpreter.touchMove(evt); 
+	    }
+	}, false);
     window.addEventListener("MozTouchUp", function(evt) {
 	    self.interpreter.touchUp(evt);
+	    g_selection.interpreter.touchUp(evt);
 	}, false);
-
 }
 DrawAreaInterface.prototype = {
     getSelectedTool: function() {

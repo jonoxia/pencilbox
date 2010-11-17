@@ -44,7 +44,8 @@ var Colors = {
     cyan: new Color(0, 255, 255, 1),
     magenta: new Color(255, 0, 255, 1),
     transparent: new Color(0, 0, 0, 0),
-    translucentBlack: new Color(0, 0, 0, 0.2)
+    translucentBlack: new Color(0, 0, 0, 0.2),
+    translucentYellow: new Color(255, 255, 0, 0.5)
 };
 
 function move(pt, dir) {

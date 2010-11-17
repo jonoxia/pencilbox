@@ -77,17 +77,17 @@ function SelectionManager() {
     g_drawInterface.layers.push(this.selectionLayer);
     this._selectionCtx = this.selectionLayer.getContext();
 
-
-// Selection Menu:
+    // Selection Menu:
+    let self = this;
     let selectionMenuItemList = [
                     {name: "Clear", icon: "icons/32x32/Erase.png",
-		     execute: function() {$("#debug").html("Clear");}},
+		     execute: function() {self.clearSelectionCmd();}},
 		    {name: "Rotate", icon: "icons/32x32/Rotation.png",
 		     execute: function() {$("#debug").html("Rotate");}},
 		    {name: "Resize", icon: "icons/32x32/Sizes.png",
 		     execute: function() {$("#debug").html("Resize");}},
 		    {name: "Duplicate", icon: "icons/32x32/Copy.png",
-		     execute: function() {$("#debug").html("Dupe");}},
+		     execute: function() {self.dupeSelectionCmd();}},
 		    {name: "Flip H.", icon: "icons/32x32/Flip_horiz.png",
 		     execute: function() {$("#debug").html("Flip H");}},
 		    {name: "Flip V.", icon: "icons/32x32/Flip_vert.png",
@@ -111,6 +111,22 @@ function SelectionManager() {
      *      they can be done with two-finger gestures on selection.
      *   - Blur?  (Is blur something I would use?) Other filter types?
      */
+
+    // Two-finger gestures on selection:
+    let library = {
+	oneFinger: [],
+	twoFingers: {
+	    pinch: function(ratio) {
+		self.resizeSelection(ratio);
+	    },
+	    rotate: function(dTheta) {
+		self.rotateSelection(dTheta);
+	    }
+	}
+    };
+    this._transformInterpreter = new GestureInterpreter(library,
+					       g_drawInterface.offsetX,
+					       g_drawInterface.offsetY);
 }
 SelectionManager.prototype = {
     get selectionMenu() {
@@ -119,6 +135,10 @@ SelectionManager.prototype = {
 
     get selectionPresent() {
 	return this._selectionPresent;
+    },
+
+    get interpreter() {
+	return this._transformInterpreter;
     },
 
     isWorldPtInsideSelection: function(x, y) {
@@ -215,12 +235,6 @@ SelectionManager.prototype = {
 	this.selectionLayer.updateDisplay();
     },
 
-    cancelSelection: function() {
-	// TODO 
-	// Does this need to be implemented or can we accomplish
-	// the same thing by undoing the selection?
-    },
-
     dropSelection: function(toLayer) {
 	// Defaults to the parent layer (i.e. the layer the selection
 	// originally came from) if not specified.
@@ -252,28 +266,60 @@ SelectionManager.prototype = {
 	let clipRect = this._clipRect;
 	ctx.drawImage(this._selectionImg, clipRect.left, clipRect.top);
 	// Draw translucent black square around selection
-	ctx.fillStyle = Colors.translucentBlack.style;
+	ctx.fillStyle = Colors.translucentYellow.style;
 	ctx.beginPath();
 	ctx.moveTo(this._clippingPath[0].x, this._clippingPath[0].y);
         for (let i= 1; i < this._clippingPath.length; i++) {
 	    ctx.lineTo(this._clippingPath[i].x, this._clippingPath[i].y);
 	}
 	ctx.fill();
+    },
+
+    clearSelectionCmd: function() {
+	// Selection just goes away.
+	// TODO this should push something onto history so it can be
+	// undoable.
+	this.selectionLayer.clearLayer();
+	this._selectionPresent = false;
+	this._clippingPath = null;
+	this._parentLayer = null;
+	this._clipRect = null;
+	this._selectionImg = null;
+    },
+    
+    dupeSelectionCmd: function() {
+	// Create a new action in history importing the dropped
+	// selection picture contents into the target layer.
+	let action = new ImportImageAction(this._parentLayer,
+					   this._selectionImg,
+					   this._clipRect.left,
+					   this._clipRect.top);
+	g_history.pushAction(action);
+	this._parentLayer.doActionNow(action);
+	// But don't clear out the selection.
+    },
+
+    resizeSelection: function(ratio) {
+	this.selectionLayer.scale(ratio);
+	// TODO:
+	// 1. suppress selection drag when resizing selection
+	// 2. Reset scale factor of selection layer to be 100% when
+        //     creating new selection
+        // 3. don't draw The Brown outside the selection layer - does
+	//     weird things when resizing!
+	// 4. Apply scale factor to the ImportImageAction 
+	//    (requires re-snapshotting?
+    },
+
+    rotateSelection: function(dTheta) {
     }
 };
 
 /* When user mousedowns within the selection and drags, then
  call the selectionMovingTool instead of the real tool.
 
- (At least, for now.  There should be a way to draw within the
- selection, using the selection as a clipping region, so that means
- there eventually needs to be a way of using other tools inside
- the selection region...  still some stuff to figure out here.)
-
- Oh, what if a click with any selection tool inside an existing
- selection turns into the selectionMovingTool?  But clicks with other
- drawing tools draw normally using the selection as a clipping region?
- That sounds workable.
+When the user doubletaps within the selection, bring up the selection
+context menu.
 */
 
 const DBL_CLICK_SPEED = 750;  //maximum milliseconds
@@ -394,7 +440,7 @@ rectSelect.drawCursor = function(ctx, x, y) {
     // have selected.
     $("#the-canvas").css("cursor", "crosshair");
     if (this.inProgress) {
-	ctx.fillStyle = Colors.translucentBlack.style;
+	ctx.fillStyle = Colors.translucentYellow.style;
 	ctx.beginPath();
 	ctx.moveTo(this.startX, this.startY);
 	ctx.lineTo(this.startX, y);
@@ -457,7 +503,7 @@ lasso.drag = function(ctx, x, y) {
 	// TODO this is drawing on draw context, should draw on
 	// pen/cursor context.
 	ctx.beginPath();
-	ctx.strokeStyle = Colors.black.style;
+	ctx.strokeStyle = Colors.yellow.style;
 	ctx.lineWidth = 1.0;
 	let lastPt = this.points[this.points.length - 1];
 	ctx.moveTo(lastPt.x, lastPt.y);
