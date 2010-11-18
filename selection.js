@@ -312,6 +312,9 @@ SelectionManager.prototype = {
     },
 
     rotateSelection: function(dTheta) {
+    },
+
+    mirrorSelection: function(isVertical) {
     }
 };
 

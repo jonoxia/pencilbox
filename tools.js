@@ -107,7 +107,8 @@ eraser.getRecordedAction = function() {
     // Scale down the eraser when you zoom in, so it stays the
     // same size on screen and you can do precision erasing:
     let width = this.size / g_drawInterface.getZoomLevel();
-    return new EraserStrokeAction(activeLayer, this.actionPoints,
+    let points = activeLayer.screenToWorldMulti(this.actionPoints);
+    return new EraserStrokeAction(activeLayer, points,
 				  width);
 };
 

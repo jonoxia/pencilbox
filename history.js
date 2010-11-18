@@ -1,12 +1,10 @@
 function DrawAction(layer, pointList, styleInfo, isFill) {
+    // Expects pointList in screen coordinates (TODO this is
+    // inconsistent with other Actions.)
     this.layer = layer;
     this.ctx = layer.getContext();
-    this.pts = [];
-    for each (let pt in pointList) {
-	    // Points are given in screen coordinates, but need to be
-	    // stored in world coordinates.
-	    this.pts.push( layer.screenToWorld(pt.x, pt.y) );
-	}
+    
+    this.pts = layer.screenToWorldMulti(pointList);
     this.styleInfo = styleInfo;
     // styleInfo is an object that can contain:
     // .lineWidth, .strokeStyle, .fillStyle, .lineCap

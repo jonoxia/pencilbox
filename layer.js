@@ -134,6 +134,13 @@ Layer.prototype = {
 	return {x: (x - xTrans - xCen* ( 1-scale))/ scale,
 		y: (y - yTrans - yCen * (1-scale))/scale };
     },
+    screenToWorldMulti: function(pointList) {
+	let pts = [];
+	for each (let pt in pointList) {
+	    pts.push( this.screenToWorld(pt.x, pt.y) );
+	}
+	return pts;
+    },
     clearLayer: function() {
 	this._everythingBrown();
 	this.displayContext.save();
