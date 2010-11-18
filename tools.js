@@ -61,9 +61,9 @@ Tool.prototype = {
 	let activeLayer = g_drawInterface.getActiveLayer();
 	let self = this;
 	let styles = {lineWidth: self.size,
-		      strokeStyle: this.getStrokeStyle(),
-		      lineCap: this.getLineCap(),
-	              lineJoin: this.getLineJoin()};
+		      strokeStyle: self.getStrokeStyle(),
+		      lineCap: self.getLineCap(),
+	              lineJoin: self.getLineJoin()};
 	return new DrawAction(activeLayer, this.actionPoints, styles,
 			      false);
     },
