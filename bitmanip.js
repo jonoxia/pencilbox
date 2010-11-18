@@ -45,7 +45,28 @@ var Colors = {
     magenta: new Color(255, 0, 255, 1),
     transparent: new Color(0, 0, 0, 0),
     translucentBlack: new Color(0, 0, 0, 0.2),
-    translucentYellow: new Color(255, 255, 0, 0.5)
+    translucentYellow: new Color(255, 255, 0, 0.5),
+    ecru: new Color(230, 230, 180, 1),
+    bleachedBone: new Color(250, 250, 190, 1),
+    tallarnFlesh: new Color(230, 200, 150, 1),
+    rouge: new Color(255, 240, 180, 1),
+    lichePurple: new Color(180, 0, 220, 1),
+    darkAngelsGreen: new Color(0, 120, 40, 1),
+    iceBlue: new Color(180, 255, 255, 1),
+    hawkTurquoise: new Color(0, 200, 200, 1),
+    blazingOrange: new Color(255, 180, 0, 1),
+    catachanGreen: new Color(110, 180, 80, 1),
+    goblinGreen: new Color(0, 200, 0, 1),
+    shiningGold: new Color(255, 210, 70, 1),
+    ultramarinesBlue: new Color(0, 0, 150, 1),
+    scabRed: new Color(200, 0, 0, 1),
+    bestialBrown: new Color(200, 140, 50, 1),
+    scorchedBrown: new Color(100, 65, 25, 1),
+    tentaclePink: new Color(255, 180, 180, 1),
+    indigo: new Color(100, 0, 255, 1),
+    yellowGreen: new Color(180, 255, 0, 1),
+    mediumBlue: new Color(0, 100, 180, 1),
+    jungleGreen: new Color(0, 180, 100, 1)
 };
 
 function move(pt, dir) {

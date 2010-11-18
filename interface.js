@@ -211,21 +211,51 @@ function ColorMenu(ctx, x, y, width, height, defaultColor) {
     this.width = width;
     this.height = height;
     this.allTheColors = [Colors.black,
-			 Colors.white,
-			 Colors.red,
-			 Colors.green,
-			 Colors.blue,
-			 Colors.yellow,
-			 Colors.cyan,
-			 Colors.magenta,
+			 Colors.scorchedBrown,
+			 Colors.scabRed,
+			 Colors.darkAngelsGreen,
+			 Colors.ultramarinesBlue,
+
+			 Colors.grey7,
 			 Colors.brown,
-			 Colors.grey1,
-			 Colors.grey2,
-			 Colors.grey3,
-			 Colors.grey4,
-			 Colors.grey5,
+			 Colors.red,
+			 Colors.catachanGreen,
+			 Colors.blue,
+
 			 Colors.grey6,
-			 Colors.grey7
+			 Colors.bestialBrown,
+			 Colors.tentaclePink,
+			 Colors.jungleGreen,
+			 Colors.mediumBlue,
+
+			 Colors.grey5,
+			 Colors.tallarnFlesh,
+			 Colors.magenta,
+			 Colors.goblinGreen,
+			 Colors.hawkTurquoise,
+
+			 Colors.grey4,
+			 Colors.rouge,
+			 Colors.lichePurple,
+			 Colors.green,
+			 Colors.cyan,
+
+			 Colors.grey3,
+			 Colors.bleachedBone,
+			 Colors.blazingOrange,
+			 Colors.yellowGreen,
+			 Colors.iceBlue,
+
+			 Colors.grey2,
+			 Colors.ecru,
+			 Colors.shiningGold,
+			 Colors.yellow,
+			 Colors.indigo,
+
+			 Colors.grey1,
+			 Colors.white
+
+
 			 ];
 
     this.boxSize = this.width;
