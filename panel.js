@@ -33,11 +33,11 @@
 // make them easier to line up.
 const SNAP_GRID_PIXELS = 10;
 
-function Panel(path) {
+function ComicPanel(path) {
     this.borderWidth = 2.0;
     this.borderPath = path;
 }
-Panel.protoype = {
+ComicPanel.prototype = {
     setCorner: function(whichCorner, newPoint) {
 	switch(whichCorner) {
 	case "nw":
@@ -73,11 +73,11 @@ Panel.protoype = {
 	    ctx.lineTo(this.borderPath[i].x, this.borderPath[i].y);
 	}
 	// Make sure inside of path is transparent:
-	/*context.globalCompositeOperation = 'destination-out';
-	context.fill();
-	context.restore();*/
+	ctx.globalCompositeOperation = 'destination-out';
+	ctx.fill();
+	ctx.restore();
 	ctx.strokeWidth = this.borderWidth;
-	ctx.strokeStyle = this.getStrokeStyle().style;
+	ctx.strokeStyle = Colors.black.style;
 	ctx.stroke();
     }
 };
@@ -85,13 +85,15 @@ Panel.protoype = {
 function PanelManager() {
     this.panels = [];
     // Color to fill in the space between panels:
-    this.gutterColor = Colors.grey;
+    this.gutterColor = Colors.grey2;
     this.panelLayer = new Layer(-1); // TODO must go under dialogue
+    // currently is going above dialogue!!
     this.panelLayer.setName("Panels");
     let manager = this;
     this.panelLayer.onRedraw = function(ctx) {
 	manager.drawEverything(ctx);
     };
+    g_drawInterface.layers.push(this.panelLayer);
 }
 PanelManager.prototype = {
     getGrabPt: function(x, y) {
@@ -102,26 +104,26 @@ PanelManager.prototype = {
 	return null;
     },
     createPanel: function( borderPath ) {
-	this.panels.push( new Panel(borderPath) );
+	this.panels.push(new ComicPanel(borderPath));
     },
     createRectanglePanel: function(startPt, endPt) {
 	let pointList = [];
-	// TODO does this need a screenToWorld transform or do we
-	// get startPt and endPt already in world coords?
-	pointList.push({x: startPt.x, y: startPt.y});
-	pointList.push({x: startPt.x, y: endPt.y});
-	pointList.push({x: endPt.x, y: endPt.y});
-	pointList.push({x: endPt.x, y: startPt.y});
-	pointList.push({x: startPt.x, y: startPt.y});
+	let layer = this.panelLayer;
+	pointList.push(layer.screenToWorld(startPt.x, startPt.y));
+	pointList.push(layer.screenToWorld(startPt.x, endPt.y));
+	pointList.push(layer.screenToWorld(endPt.x, endPt.y));
+	pointList.push(layer.screenToWorld(endPt.x, startPt.y));
+	pointList.push(layer.screenToWorld(startPt.x, startPt.y));
 	this.createPanel(pointList);
+	this.panelLayer.updateDisplay();
     },
     drawEverything: function( context ) {
 	// fill in gutter:
-	context.fillStyle = this.gutterColor;
-	context.fillRect(0, 0, this.panelLayer.width,
-			 this.panelLayer.height);
+	context.fillStyle = this.gutterColor.style;
+	let dim = g_drawInterface.getPageDimensions();
+	context.fillRect(0, 0, dim.width, dim.height);
 	for (let i = 0; i < this.panels.length; i++) {
-	    this.panels[i].draw(context);
+	    this.panels[i].draw(context); 
 	}
     }
 };
@@ -131,9 +133,23 @@ panelTool.mode = null; // one of "draw" or "manipulate"
 panelTool.getStrokeStyle = function() {
     return Colors.black;
 };
-panelTool.down = function(ctx, x, y) {
+panelTool.snapToGrid = function(screenX, screenY) {
+    // TODO implement snap-to-grid: worldPt.x = math.floor(worldPt.x)/10
+    // * 10, and then convert back to screen coordinates?
     let layer = g_panels.panelLayer;
-    let worldPt = layer.screenToWorld(x, y);
+    let worldPt = layer.screenToWorld(screenX, screenY);
+    let worldX = Math.floor(worldPt.x / SNAP_GRID_PIXELS);
+    let worldY = Math.floor(worldPt.y / SNAP_GRID_PIXELS);
+    let worldPt = {x: worldX * SNAP_GRID_PIXELS,
+		   y: worldY * SNAP_GRID_PIXELS};
+    let screenPt = layer.worldToScreen(worldPt.x, worldPt.y);
+    return {screenPt: screenPt, worldPt: worldPt};
+};
+panelTool.down = function(ctx, x, y) {
+    let pts = this.snapToGrid(x, y);
+    let worldPt = pts.worldPt;
+    let screenPt = pts.screenPt;
+    
     let grabbitation = g_panels.getGrabPt(worldPt.x, worldPt.y);
     if (grabbitation) {
 	this.panel = grabbitation.panel;
@@ -143,7 +159,7 @@ panelTool.down = function(ctx, x, y) {
 	this.panel = null;
 	this.controlPoint = null;
 	this.mode = "draw";
-	this.drawStartPt = {x: x, y: y};
+	this.drawStartPt = {x: screenPt.x, y: screenPt.y};
     }
 };
 panelTool.up = function(ctx, x, y) {
@@ -156,8 +172,11 @@ panelTool.up = function(ctx, x, y) {
     this.controlPoint = null;
 };
 panelTool.drag = function(ctx, x, y) {
+    let pts = this.snapToGrid(x, y);
+    let worldPt = pts.worldPt;
+    let screenPt = pts.screenPt;
     let layer = g_panels.panelLayer;
-    let worldPt = layer.screenToWorld(x, y);
+
     if (this.mode == "manipulate") {
 	switch (this.controlPoint) {
 	case "nw": case "sw": case "ne": case "se":
@@ -171,8 +190,7 @@ panelTool.drag = function(ctx, x, y) {
 	    break;
 	}
     } else if (this.mode == "draw") {
-	$("#debug").html("Drawing!");
-	this.drawEndPt = worldPt;
+	this.drawEndPt = {x: screenPt.x, y: screenPt.y};
     }
 };
 panelTool.display = function(penCtx, x, y) {

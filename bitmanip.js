@@ -112,8 +112,6 @@ function BitManipulator(context, width, height) {
     this.context = context;
     this.width = width;
     this.height = height;
-    // TODO paint bucket stopped working at all -- this now gest
-    // invalid or illegal string error every time.
     this.dataBlob = this.context.getImageData(0, 0, width, height);
 }
 BitManipulator.prototype = {
@@ -143,3 +141,12 @@ BitManipulator.prototype = {
     }    
 };
 
+function debugObj(obj) {
+    let str = "";
+    for (let x in obj) {
+	str += "obj." + x + " = " + obj[x] + ";";
+    }
+    $("#debug").html(str);
+
+
+}

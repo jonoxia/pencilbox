@@ -23,6 +23,7 @@ DrawAction.prototype = {
 	    let opacity = this.layer.getOpacity();
 	    ctx.beginPath();
 	    if (this.styleInfo.strokeStyle) {
+		// TODO bug: strokeStyle.copy is not a function?
 		let strokeColor = this.styleInfo.strokeStyle.copy();
 		strokeColor.a *= opacity;
 		ctx.strokeStyle = strokeColor.style;

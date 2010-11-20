@@ -141,6 +141,15 @@ Layer.prototype = {
 	}
 	return pts;
     },
+    worldToScreen: function(x, y) {
+	let xTrans = this._xTranslate;
+	let yTrans = this._yTranslate;
+	let xCen = this._center.x;
+	let yCen = this._center.y;
+	let scale = this._scale;
+	return { x: scale * x + xTrans + xCen * (1 - scale),
+		y: scale * y + yTrans + yCen * (1 - scale)};
+    },
     clearLayer: function() {
 	this._everythingBrown();
 	this.displayContext.save();
