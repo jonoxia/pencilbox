@@ -33,30 +33,92 @@
 // make them easier to line up.
 const SNAP_GRID_PIXELS = 10;
 
-function ComicPanel(path) {
-    this.borderWidth = 2.0;
-    this.borderPath = path;
+const BORDER_WIDTH = 2.0;
+
+const GRAB_MARGIN = 15;
+
+function RectanglePanel(left, top, width, height) {
+    this._left = left;
+    this._top = top;
+    this._width = width;
+    this._height = height;
 }
-ComicPanel.prototype = {
-    setCorner: function(whichCorner, newPoint) {
-	switch(whichCorner) {
+RectanglePanel.prototype = {
+    moveCorner: function(whichCorner, dx, dy) {
+	switch (whichCorner) {
 	case "nw":
-	this.left = newPoint.x;
-	this.top = newPoint.y;
-	break;
-	case "ne":
-	this.right = newPoint.x;
-	this.top = newPoint.y;
+	this._left += dx;
+	this._width -= dx; 
+	this._top += dy;
+	this._height -= dy;
 	break;
 	case "sw":
-	this.left = newPoint.x;
-	this.bottom = newPoint.y;
+	this._left += dx;
+	this._width -= dx; 
+	this._height += dy;
+	break;
+	case "ne":
+	this._width += dx;
+	this._top += dy;
+	this._height -= dy;
 	break;
 	case "se":
-	this.right = newPoint.x;
-	this.bottom = newPoint.y;
+	this._width += dx;
+	this._height += dy;
 	break;
 	}
+	if (this._height < SNAP_GRID_PIXELS) {
+	    this._height = SNAP_GRID_PIXELS;
+	}
+	if (this._width < SNAP_GRID_PIXELS) {
+	    this._width = SNAP_GRID_PIXELS;
+	}
+    },
+    move: function(dx, dy) {
+	this._left += dx;
+	this._top += dy;
+	// TODO move everything inside the panel too
+    },
+    getGrabPt: function(x, y) {
+	if (Math.abs( x - this._left) < GRAB_MARGIN) {
+	    if (Math.abs( y - this._top ) < GRAB_MARGIN) {
+		return "nw";
+	    }
+	    if (Math.abs(y - (this._top + this._height)) < GRAB_MARGIN) {
+		return "sw";
+	    }
+	}
+	if (Math.abs( x -(this._left + this._width)) < GRAB_MARGIN) {
+	    if (Math.abs( y - this._top ) < GRAB_MARGIN) {
+		return "ne";
+	    }
+	    if (Math.abs(y - (this._top + this._height)) < GRAB_MARGIN) {
+		return "se";
+	    }
+	}
+	if (x >= this._left && x <= this._left + this._width &&
+	    y >= this._top && y <= this._top + this._height) {
+	    return "main";
+	}
+    },
+    draw: function(ctx) {
+	ctx.save();
+	ctx.globalCompositeOperation = 'destination-out';
+	ctx.fillRect(this._left, this._top, this._width, this._height);
+	ctx.restore();
+	ctx.strokeWidth = BORDER_WIDTH;
+	ctx.strokeStyle = Colors.black.style;
+	ctx.strokeRect(this._left, this._top, this._width, this._height);
+    }
+};
+
+function PolygonPanel(path) {
+    this.borderPath = path;
+}
+PolygonPanel.prototype = {
+    moveCorner: function(whichCorner, dx, dy) {
+	this.borderPath[whichCorner].x += dx;
+	this.borderPath[whichCorner].y += dy;
     },
     move: function(dx, dy) {
 	for (let i = 1; i < this.borderPath.length; i++) {
@@ -64,6 +126,15 @@ ComicPanel.prototype = {
 	    this.borderPath[i].y += dy;
 	}
 	// TODO IMPL move everything inside the panel too!
+    },
+    getGrabPt: function(x, y) {
+	for (let i = 0; i < this.borderPath.length; i++) {
+	    if ( Math.abs( x - this.borderPath[i].x ) < GRAB_MARGIN &&
+		 Math.abs( y - this.borderPath[i].y ) < GRAB_MARGIN) {
+		return i;
+	    }
+	}
+	return null;
     },
     draw: function(ctx) {
 	ctx.save();
@@ -76,7 +147,7 @@ ComicPanel.prototype = {
 	ctx.globalCompositeOperation = 'destination-out';
 	ctx.fill();
 	ctx.restore();
-	ctx.strokeWidth = this.borderWidth;
+	ctx.strokeWidth = BORDER_WIDTH;
 	ctx.strokeStyle = Colors.black.style;
 	ctx.stroke();
     }
@@ -97,24 +168,31 @@ function PanelManager() {
 }
 PanelManager.prototype = {
     getGrabPt: function(x, y) {
-	// TODO IMPLEMENT return reference to the grabbed panel and
-	// one of "nw", "ne", "sw", "se", or "main".
-	/*return {panel: null,
-	  controlPoint: ""};*/
+	for (let i = 0; i < this.panels.length; i++) {
+	    let panel = this.panels[i];
+	    let hit = panel.getGrabPt(x, y);
+	    if (hit != null) {
+		return {panel: panel,
+			controlPoint: hit};
+	    }
+	}
 	return null;
     },
-    createPanel: function( borderPath ) {
-	this.panels.push(new ComicPanel(borderPath));
+    createPolygonPanel: function( borderPath ) {
+	let borderPath = this.panelLayer.screenToWorldMulti(borderPath);
+	this.panels.push(new PolygonPanel(borderPath));
     },
     createRectanglePanel: function(startPt, endPt) {
 	let pointList = [];
 	let layer = this.panelLayer;
-	pointList.push(layer.screenToWorld(startPt.x, startPt.y));
-	pointList.push(layer.screenToWorld(startPt.x, endPt.y));
-	pointList.push(layer.screenToWorld(endPt.x, endPt.y));
-	pointList.push(layer.screenToWorld(endPt.x, startPt.y));
-	pointList.push(layer.screenToWorld(startPt.x, startPt.y));
-	this.createPanel(pointList);
+	let startPt = layer.screenToWorld(startPt.x, startPt.y);
+	let endPt = layer.screenToWorld(endPt.x, endPt.y);
+	let left = startPt.x < endPt.x? startPt.x : endPt.x;
+	let top = startPt.y < endPt.y ? startPt.y : endPt.y;
+	let right = startPt.x > endPt.x? startPt.x : endPt.x;
+	let bottom = startPt.y > endPt.y ? startPt.y : endPt.y;
+	this.panels.push(new RectanglePanel(left, top,
+					    right-left, bottom-top));
 	this.panelLayer.updateDisplay();
     },
     drawEverything: function( context ) {
@@ -134,8 +212,6 @@ panelTool.getStrokeStyle = function() {
     return Colors.black;
 };
 panelTool.snapToGrid = function(screenX, screenY) {
-    // TODO implement snap-to-grid: worldPt.x = math.floor(worldPt.x)/10
-    // * 10, and then convert back to screen coordinates?
     let layer = g_panels.panelLayer;
     let worldPt = layer.screenToWorld(screenX, screenY);
     let worldX = Math.floor(worldPt.x / SNAP_GRID_PIXELS);
@@ -155,6 +231,7 @@ panelTool.down = function(ctx, x, y) {
 	this.panel = grabbitation.panel;
 	this.controlPoint = grabbitation.controlPoint;
 	this.mode = "manipulate";
+	this.manipStartPt = {x: worldPt.x, y: worldPt.y};
     } else {
 	this.panel = null;
 	this.controlPoint = null;
@@ -178,17 +255,19 @@ panelTool.drag = function(ctx, x, y) {
     let layer = g_panels.panelLayer;
 
     if (this.mode == "manipulate") {
+	let dx = worldPt.x - this.manipStartPt.x;
+	let dy = worldPt.y - this.manipStartPt.y;
 	switch (this.controlPoint) {
-	case "nw": case "sw": case "ne": case "se":
-	    this.panel.setCorner(this.controlPoint, worldPt);
-            layer.updateDisplay();
-	    break;
 	case "main":
 	    // TODO IMPL calc dx, dy
             this.panel.move(dx, dy);
-            layer.updateDisplay();
+	    break;
+	default:
+	    this.panel.moveCorner(this.controlPoint, dx, dy);
 	    break;
 	}
+	layer.updateDisplay();
+	this.manipStartPt = {x: worldPt.x, y: worldPt.y};
     } else if (this.mode == "draw") {
 	this.drawEndPt = {x: screenPt.x, y: screenPt.y};
     }
