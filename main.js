@@ -108,6 +108,10 @@ $(function() {
 	// restore everything else from localstorage.
 	g_history = new History();
 
+	// Create first drawing layer:
+	g_drawInterface.newLayer();
+	g_drawInterface.updateAllLayerDisplays();
+
 	// Set up the main menu:
 	$("#main-menu").change(function() {
 		switch($(this).val()) {

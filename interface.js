@@ -473,10 +473,7 @@ function DrawAreaInterface() {
     this.height = cursorCanvas.height;
 
     this.layers = [];
-
-    let newLayer = new Layer(-1);
-    this.layers.push(newLayer);
-    this.activeLayer = newLayer;
+    this.activeLayer = null;
 
     this.cursorCtx = cursorCanvas.getContext("2d");
     this.offsetX = cursorCanvas.offsetLeft;
@@ -570,7 +567,11 @@ DrawAreaInterface.prototype = {
 		lowestLayer = this.layers[i].getIndex();
 	    }
 	}
-	this.layers.push( new Layer(lowestLayer - 1) );
+	let newLayer = new Layer(lowestLayer - 1);
+	this.layers.push( newLayer );
+	if (this.activeLayer == null) {
+	    this.activeLayer = newLayer;
+	}
     },
 
     mouseUpHandler: function(evt) {
@@ -636,7 +637,6 @@ DrawAreaInterface.prototype = {
 	}
     },
     updateAllLayerDisplays: function() {
-	// TODO not used -- delete?
 	for (let i = 0; i < this.layers.length; i++) {
 	    this.layers[i].updateDisplay();
 	}

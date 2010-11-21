@@ -68,7 +68,7 @@ function SelectionManager() {
     // the layers table.  (Maybe an argument to Layer constructor
     // telling it whether or not to add itself to the table?)
 
-    this.selectionLayer = new Layer(-1);
+    this.selectionLayer = new Layer(-2);
     this.selectionLayer.setName("Selection");
     let manager = this;
     this.selectionLayer.onRedraw = function(ctx) {

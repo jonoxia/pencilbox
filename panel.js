@@ -25,8 +25,17 @@
  *    panel)
 
  *  There will also need to be a way to remove a panel, but I
- *   don't know what that is yet.
-
+ *   don't know what that is yet.  (Dbltap panel to bring up context
+ *   menu, 'remove' is one option.)
+ *
+ *   TODO 2. Make moving a panel move its contents (hard)
+          2a. A panel drawn around some drawing becomes owner of
+              the surrounded content.
+          2b. A new drawing started inside a panel is owned by that
+	  `   panel.
+ *   TODO 3. What happens when one panel overlaps another?
+ *   TODO 4. Non-rectangular panels (we have the makings of an
+ *           arbitrary polygon type; should also support round ones)
  */
 
 // Drawing border of panels will snap to multiples of 10 pixels to
@@ -157,8 +166,7 @@ function PanelManager() {
     this.panels = [];
     // Color to fill in the space between panels:
     this.gutterColor = Colors.grey2;
-    this.panelLayer = new Layer(-1); // TODO must go under dialogue
-    // currently is going above dialogue!!
+    this.panelLayer = new Layer(-3);
     this.panelLayer.setName("Panels");
     let manager = this;
     this.panelLayer.onRedraw = function(ctx) {
