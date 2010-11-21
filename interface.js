@@ -642,9 +642,14 @@ DrawAreaInterface.prototype = {
 	}
     },
     exportAllLayers: function(exportCtx) {
-	for (let i = 0; i < this.layers.length; i++) {
-	    g_history.replayActionsForLayer(this.layers[i], exportCtx);
-	    this.layers[i].onRedraw(exportCtx);
+	// Sort layers - draw them from lowest to highest
+	let layers = this.layers.slice();
+	layers.sort(function(layerA, layerB) {
+		return layerA.getIndex() - layerB.getIndex();
+	    });
+	for (let i = 0; i < layers.length; i++) {
+	    g_history.replayActionsForLayer(layers[i], exportCtx);
+	    layers[i].onRedraw(exportCtx);
 	}
     },
 

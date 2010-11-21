@@ -18,7 +18,7 @@ function export() {
     exportCanvas.width = dim.width;
     exportCanvas.height = dim.height;
     let ctx = exportCanvas.getContext("2d");
-    g_drawInterface.exportAllLayers(ctx);
+    ctx.jonoName = "ExportCanvas";
 
     // 2. Turn canvas into data URL like this:
     let dataUrl = exportCanvas.toDataURL("image/png");
@@ -92,6 +92,11 @@ function importImage() {
 	layer.doActionNow(action);
     }  
     img.src = 'myImage.png';
+}
+
+function deleteThatHistory() {
+    window.localStorage.setItem("history", "");
+    window.localStorage.setItem("layers", "");
 }
 
 $(function() {
