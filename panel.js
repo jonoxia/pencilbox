@@ -1,5 +1,4 @@
-// Panels!
-
+// Panel
 /* What is a panel, anyway, or at any rate what can you do to one?
  *  - Create panel
  *  - Resize panel (by dragging corners?)

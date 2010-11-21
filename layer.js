@@ -1,5 +1,5 @@
 
-function Layer(index) {
+function Layer(index, options) {
   // Create canvas tag for this layer by copying size of
   // original canvas tag
   let can = $("#the-canvas").get(0);
@@ -16,7 +16,6 @@ function Layer(index) {
   this.displayCanvas = this.tag.get(0);
   this.displayContext = this.displayCanvas.getContext("2d");
 
-
   // Set up layer drawing properties
   this.index = index;
   this.visible = true;
@@ -28,45 +27,57 @@ function Layer(index) {
 		  y: this.height/2};
   this.name = "Layer " + index;
 
+  this._hidden = false;
+  if (options && options.hidden) {
+      this._hidden = options.hidden;
+  }
 
-  // Create row in the layers tablefor this layer
-  this.tableRow = $("<tr></tr>");
-  let cell = $("<td></td>");
-  this.radioBtn = $("<input type=\"radio\" name=\"layers-radioset\"></input>");
-  this.radioBtn.attr("value", this.index);
-  this.radioBtn.change(
-   function() {
-     let sel = $("input[name='layers-radioset']:checked").val();
-     g_drawInterface.setActiveLayer(sel);
-   });
-  cell.append(this.radioBtn);
-  this.tableRow.append(cell);
-  this.titleCell = $("<td></td>");
-  this.titleCell.html(this.name);
-  this.tableRow.append(this.titleCell);
-  cell = $("<td></td>");
-  let checkBox = $("<input type=\"checkbox\" checked=\"true\"></input>");
-  let self = this;
-  checkBox.bind("click", function() {
-	  self.setVisible(checkBox.attr("checked"));
-      });
-  cell.append(checkBox);
-  this.tableRow.append(cell);
+  if (!this._hidden) {
+      this.createLayerTableInterface();
+  }
 
-  cell = $("<td></td>");
-  let selector = $("<select><option value='1.0'>1.0</option>" +
-		   "<option value='0.75'>0.75</option>" +
-		   "<option value='0.50'>0.50</option>" +
-		   "<option value='0.25'>0.25</option></select>");
-  selector.change(function(){
-	  let selected = selector.children("option:selected").first();
-	  self.setOpacity(parseFloat(selected.val()));
-      });
-  cell.append(selector);
-  this.tableRow.append(cell);
-  this.tableRow.appendTo("#layers-table");
 }
 Layer.prototype = {
+
+    createLayerTableInterface: function() {
+	// Create row in the layers table for this layer
+	this.tableRow = $("<tr></tr>");
+	let cell = $("<td></td>");
+	this.radioBtn = $("<input type=\"radio\" name=\"layers-radioset\"></input>");
+	this.radioBtn.attr("value", this.index);
+	this.radioBtn.change(
+			     function() {
+				 let sel = $("input[name='layers-radioset']:checked").val();
+				 g_drawInterface.setActiveLayer(sel);
+			     });
+	cell.append(this.radioBtn);
+	this.tableRow.append(cell);
+	this.titleCell = $("<td></td>");
+	this.titleCell.html(this.name);
+	this.tableRow.append(this.titleCell);
+	cell = $("<td></td>");
+	let checkBox = $("<input type=\"checkbox\" checked=\"true\"></input>");
+	let self = this;
+	checkBox.bind("click", function() {
+		self.setVisible(checkBox.attr("checked"));
+	    });
+	cell.append(checkBox);
+	this.tableRow.append(cell);
+	
+	cell = $("<td></td>");
+	let selector = $("<select><option value='1.0'>1.0</option>" +
+			 "<option value='0.75'>0.75</option>" +
+			 "<option value='0.50'>0.50</option>" +
+			 "<option value='0.25'>0.25</option></select>");
+	selector.change(function(){
+		let selected = selector.children("option:selected").first();
+		self.setOpacity(parseFloat(selected.val()));
+	    });
+	cell.append(selector);
+	this.tableRow.append(cell);
+	this.tableRow.appendTo("#layers-table");
+    },
+    
     setIndex: function(newIndex) {
 	this.index = newIndex;
 	this.tag.css("z-index", "" + newIndex);
@@ -151,7 +162,9 @@ Layer.prototype = {
 		y: scale * y + yTrans + yCen * (1 - scale)};
     },
     clearLayer: function() {
-	this._everythingBrown();
+	if (!this._hidden) {
+	    this._everythingBrown();
+	}
 	this.displayContext.save();
 	this._setTransformMatrix();
 	this._clearPageArea();
@@ -163,7 +176,9 @@ Layer.prototype = {
 	// this function.
     },
     updateDisplay: function() {
-	this._everythingBrown();
+	if (!this._hidden) {
+	    this._everythingBrown();
+	}
 	this.displayContext.save();
 	this._setTransformMatrix();
 	this._clearPageArea();

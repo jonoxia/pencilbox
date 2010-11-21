@@ -64,11 +64,8 @@ function SelectionManager() {
     this._parentLayer = null; // the layer the selection came from
     this._selectionContentsSnapshot = null;
 
-    // TODO this layer should be hidden - it shouldn't be shown in
-    // the layers table.  (Maybe an argument to Layer constructor
-    // telling it whether or not to add itself to the table?)
 
-    this.selectionLayer = new Layer(-2);
+    this.selectionLayer = new Layer(-2, {hidden: false});
     this.selectionLayer.setName("Selection");
     let manager = this;
     this.selectionLayer.onRedraw = function(ctx) {
