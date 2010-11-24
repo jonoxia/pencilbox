@@ -254,6 +254,7 @@ function DialogueManager() {
     let manager = this;
     let theLayer = this.dialogueLayer;
     theLayer.onRedraw = function(ctx) {
+	manager.makeBubblesFromText();
 	manager.renderAllBubbles(ctx);
     }
     g_drawInterface.layers.push(theLayer);
@@ -264,13 +265,24 @@ DialogueManager.prototype = {
     },
 
     renderAllBubbles: function(ctx) {
+	if (!ctx) {
+	    ctx = this.dialogueLayer.getContext();
+	}
 	for (let i = 0; i < this.bubbles.length; i++) {
 	    this.bubbles[i].render(ctx);
 	}
     },
 
-    makeBubblesFromText: function(text) {
-	let lines = text.split("\n");
+    getScript: function() {
+	return this.allSpeech;
+    },
+
+    setScript: function(script) {
+	this.allSpeech = script;
+    },
+
+    makeBubblesFromText: function() {
+	let lines = this.allSpeech.split("\n");
 	for (let i = 0; i < lines.length; i++) {
 	    if (i < this.bubbles.length) {
 		// Modify text in existing bubbles...
@@ -284,7 +296,6 @@ DialogueManager.prototype = {
 	if (this.bubbles.length > lines.length) {
 	    this.bubbles = this.bubbles.slice(0, lines.length);
 	}
-	this.dialogueLayer.updateDisplay();
     },
 
     getGrabPt: function(x, y) {
@@ -296,29 +307,33 @@ DialogueManager.prototype = {
 	    let box = balloon.getBoundingBox();
 	    if (Math.abs( x - box.left) < margin &&
 		y > box.top && y < box.bottom) {
-		return {balloon: balloon,
+		return {balloon: i,
 			controlPoint: "leftEdge"};
 	    }
 
 	    if (Math.abs( x - box.right) < margin &&
 		y > box.top && y < box.bottom) {
-		return {balloon: balloon,
+		return {balloon: i,
 			controlPoint: "rightEdge"};
 	    }
 	    
 	    if (x > box.left && x < box.right &&
 		y > box.top && y < box.bottom) {
-		return {balloon: balloon,
+		return {balloon: i,
 			controlPoint: "main"};
 	    }
 
 	    if (Math.abs( x - balloon.tailTip.x ) < margin &&
 		Math.abs( y - balloon.tailTip.y ) < margin) {
-		return {balloon: balloon,
+		return {balloon: i,
 			controlPoint: "tailTip"};
 	    }
 	}
 	return null;
+    },
+
+    getBalloonByIndex: function(i) {
+	return this.bubbles[i];
     },
 
     get numBubbles() {

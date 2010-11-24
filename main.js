@@ -100,6 +100,7 @@ function deleteThatHistory() {
 }
 
 $(function() {
+	deleteThatHistory();
         document.multitouchData = true;
 	adjustToScreen();
 
@@ -141,8 +142,20 @@ $(function() {
 		}
 		$(this).val("none");
 	    });
+	// Update balloons with each keystroke, but don't
+	// push an action to history until onchange event
+	// (i.e. dialogue edit area loses focus)
 	$("#dialogue-edit-area").bind("keyup", function() {
-	  g_dialogue.makeBubblesFromText($("#dialogue-edit-area").val());
-	  g_toolInterface.setTool(textBalloonTool);
+		let newScript = $("#dialogue-edit-area").val();
+		g_dialogue.setScript(newScript);
+		g_dialogue.makeBubblesFromText();
+		g_dialogue.renderAllBubbles();
+		g_toolInterface.setTool(textBalloonTool);
+	    });
+	$("#dialogue-edit-area").bind("change", function() {
+		let newScript = $("#dialogue-edit-area").val();
+		let action = new ChangeScriptAction(newScript);
+		g_history.pushAction(action);
+		g_dialogue.dialogueLayer.updateDisplay();
 	    });
 });

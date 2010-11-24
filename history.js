@@ -162,6 +162,60 @@ ImportImageAction.prototype = {
 
 };
 
+function ChangeScriptAction(newScript) {
+    this.newScript = newScript;
+    this.layer = g_dialogue.dialogueLayer;
+}
+ChangeScriptAction.prototype = {
+    replay: function(newCtx) {
+	if (g_dialogue) {
+	    g_dialogue.setScript(this.newScript);	
+	}
+	if ($("#dialogue-edit-area")) {
+	    $("#dialogue-edit-area").val(this.newScript);
+	}
+    },
+
+    toJSON: function() {
+	let self = this;
+	return {type: "script",
+		layerName: "",
+	        text: self.newScript};
+    }
+};
+
+function MoveBalloonAction(balloonIndex, controlPoint, point) {
+    this.balloonIndex = balloonIndex;
+    this.controlPoint = controlPoint;
+    this.point = point;
+    this.layer = g_dialogue.dialogueLayer;
+};
+MoveBalloonAction.prototype = {
+    replay: function(newCtx) {
+	let balloon = g_dialogue.getBalloonByIndex(this.balloonIndex);
+	switch(this.controlPoint) {
+	case "tailTip":
+	    balloon.setTailTip(this.point);
+	    break;
+	case "main":
+	    balloon.setCenter(this.point);
+	    break;
+	case "leftEdge": case "rightEdge":
+	    balloon.setWidth(this.point.x);
+	    break;
+	}
+    },
+
+    toJSON: function() {
+	let self = this;
+	return {type: "balloon",
+		layerName: "",
+		balloonIndex: self.balloonIndex,
+		controlPoint: self.controlPoint,
+		point: self.point};
+    }
+};
+
 function History() {
     this.actionList = [];
     this.currPtr = 0;
@@ -209,8 +263,9 @@ History.prototype = {
     undo: function() {
 	if (this.currPtr > 0 ) {
 	    this.currPtr -= 1;
-	    g_drawInterface.clearAllLayers();
-	    this.replayActions();
+	    //g_drawInterface.clearAllLayers();
+	    //this.replayActions();
+	    g_drawInterface.updateAllLayerDisplays();
 	}
     },
 
@@ -247,6 +302,9 @@ History.prototype = {
 	    let actionData = historyObj.actions[i];
 	    let layerName = actionData.layerName;
 	    let layer = g_drawInterface.getLayerByName(layerName);
+	    if (!layer) {
+		continue;
+	    }
 	    let action;
 	    switch (actionData.type) {
 	    case "draw":

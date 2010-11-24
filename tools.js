@@ -266,32 +266,42 @@ textBalloonTool.down = function(ctx, x, y) {
 	this.balloon = null;
 	this.controlPoint = null;
     }
+    $("#debug").html("Down");
 };
 textBalloonTool.up = function(ctx, x, y) {
     this.balloon = null;
     this.controlPoint = null;
 };
 textBalloonTool.drag = function(ctx, x, y) {
-    if (this.balloon && this.controlPoint) {
+    if ((this.balloon != null) && this.controlPoint) {
+	let balloon = g_dialogue.getBalloonByIndex(this.balloon);
 	let layer = g_dialogue.dialogueLayer;
 	let worldPt = layer.screenToWorld(x, y);
+	this.lastControlPoint = this.controlPoint;
+	this.lastActionPoint = worldPt;
+	this.lastBalloon = this.balloon;
 	switch (this.controlPoint) {
 	case "tailTip":
-	    this.balloon.setTailTip(worldPt);
+	    balloon.setTailTip(worldPt);
             layer.updateDisplay();
 	    break;
 	case "main":
-            this.balloon.setCenter(worldPt);
+            balloon.setCenter(worldPt);
             layer.updateDisplay();
 	    break;
 	case "leftEdge": case "rightEdge":
-            let dx = Math.abs(this.balloon.center.x - worldPt.x);
-	    if (dx > this.balloon.cornerRadius) {
-		this.balloon.setWidth( 2 * dx );
+            let dx = Math.abs(balloon.center.x - worldPt.x);
+	    if (dx > balloon.cornerRadius) {
+		balloon.setWidth( 2 * dx );
+		this.lastActionPoint = {x: 2*dx, y: 0};
                 layer.updateDisplay();
             }
 	    break;
+	default:
+	    $("#debug").html("Control point is " + this.controlPoint);
 	}
+    } else {
+	$("#debug").html("No balloon to drag.");
     }
 };
 textBalloonTool.display = function(penCtx, x, y) {
@@ -306,11 +316,25 @@ textBalloonTool.drawCursor = function(penCtx, x, y) {
 textBalloonTool.changeSize = function(delta) {
 };
 textBalloonTool.getRecordedAction = function() {
-    // TODO (for undo history)
-    return null;
+    /* TODO there's a weird bug happening with these actions.
+       Sometimes you drag balloon and it updates live while dragging.
+       Other times you drag balloon and it stays still until you mouseup
+       then it suddenly changes.
+       The extra weird part is that the ones that stay still until you
+       mouseup appear to be undoable while the other kind appear not to
+       be undoable! */
+    if (this.lastControlPoint == null || this.lastBalloon == null) {
+	return null;
+    }
+    $("#debug").html("Creating moveBalloonAction.");
+    return new MoveBalloonAction(this.lastBalloon,
+				 this.lastControlPoint,
+				 this.lastActionPoint);
 };
 textBalloonTool.resetRecordedAction = function() {
-    // TODO
+    this.lastControlPoint = null;
+    this.lastActionPoint = null;
+    this.lastBalloon = null;
 };
 
 
