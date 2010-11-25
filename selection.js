@@ -524,3 +524,61 @@ lasso.getRecordedAction = function() {
 lasso.resetRecordedAction = function() {
     // Nothing to do
 };
+
+
+// TODO The three selection tools duplicate some code -- make a common
+// base class??
+// TODO magic wand seems to be missing exactly one pixel all the way
+// around the edge.  This is probably fault of the edgeFinder algorithm.
+magicWand = new Tool(1.0);
+magicWand._moveMode = false;
+magicWand.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = "icons/wand.png";
+};
+magicWand.down = function(ctx, x, y) {
+    if (g_selection.isScreenPtInsideSelection(x, y)) {
+	this._moveMode = true;
+	selectionMovingTool.down(ctx, x, y);
+    }
+};
+magicWand.up = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.up(ctx, x, y);
+    } else {
+	$("#debug").html("Magic wand up (select mode)");
+	// do it here: Find borders of region of same color, turn it
+	// into a selection.
+	let layer = g_drawInterface.getActiveLayer();
+	let ctx = layer.getContext();
+	let bm = new BitManipulator(ctx, layer.width, layer.height);
+	let megaPoints = edgeFindingAlgorithm(bm, x, y);
+
+	let worldPts = [];
+        for (let i= 0; i < megaPoints.length; i++) {
+	    worldPts.push(layer.screenToWorld(megaPoints[i].x,
+					      megaPoints[i].y));
+	}	
+	if (g_selection) {
+	    g_selection.createSelection(worldPts, layer);
+	}
+    }
+    this._moveMode = false;
+};
+magicWand.drag = function(ctx, x, y) {
+    if (this._moveMode) {
+	selectionMovingTool.drag(ctx, x, y);
+    }
+};
+magicWand.drawCursor = function(ctx, x, y) {
+    $("#the-canvas").css("cursor", "crosshair");
+};
+magicWand.getRecordedAction = function() {
+    return null;
+};
+magicWand.resetRecordedAction = function() {
+    // Nothing to do
+};

@@ -162,71 +162,12 @@ bucket.display = function(penCtx, x, y) {
 };
 bucket.down = function(ctx, x, y) {
 };
-bucket.edgeFindingAlgorithm = function(data, x, y) {
-    // TODO this algorthm needs to treat edges of canvas as color
-    // boundaries too.
-    let megaList = [];
-    let dir = "up";
-    let pt = {x: x, y: y};
-    let seedColor = data.getColorAt(x, y);
-    // Go up until we hit a color boundary:
-    while (seedColor.equals(data.getColorAt(pt.x, pt.y))) {
-	pt = move(pt, dir);
-	if (pt.y < 0) {
-	    break;
-	}
-    }
-    // Remember the point just before we hit -- we'll be trying to get
-    // back here.
-    pt = move(pt, "down");
-    let keyPt = {x: pt.x, y: pt.y};
-    // TODO this algorithm is going to have a problem with islands.
-    // Now hug edges clockwise until we get back to this point.
-    let dir = clockwise(dir);
-    let i = 0;
-    megaList.push({x: pt.x + 0.5, y: pt.y + 0.5});
-    // the +0.5 is because canvas coords are actually between pixels - without
-    // it we miss a row of pixels on the right and bottom
-    while(i < 5000) {
-	i++;
-	// Throw out a feeler counterclockwise to see if there's more
-	// seedColored space that way -- this ensures that we expand
-	// outward as much as possible.
-	let exploreDir = counterclockwise(dir);
-	let explorePt = move(pt, exploreDir);
-	// Figure out which way we need to move to hug the edge of
-	// the line.
-	let z = 0;
-	let debugStr = "";
-	while (!seedColor.equals(data.getColorAtPt(explorePt))) {
-	    debugStr += explorePt.x + ", " + explorePt.y + ": "
-		+ data.getColorAtPt(explorePt).toStr();
-	    exploreDir = clockwise(exploreDir);
-	    explorePt = move(pt, exploreDir);
-	    z++;
-	    if (z > 4) {
-		$("#debug").html("Infinite inner loop: " + debugStr);
-		break;
-	    }
-	}
-	// Only record points when the direction changes
-	if (dir != exploreDir) {
-	    megaList.push({x: pt.x + 0.5, y: pt.y + 0.5});
-	}
-	dir = exploreDir;
-	pt = move(pt, dir);
-	if (pt.x == keyPt.x && pt.y == keyPt.y) {
-	    break;
-	}
-    }
-    return megaList;
-};
 bucket.up = function(ctx, x, y) {
     let layer = g_drawInterface.getActiveLayer();
     let bm = new BitManipulator(ctx, layer.width, layer.height);
     this.lastDrawCtx = ctx;
 
-    this.actionPoints = bucket.edgeFindingAlgorithm(bm, x, y);
+    this.actionPoints = edgeFindingAlgorithm(bm, x, y);
     ctx.fillStyle = g_toolInterface.getPaintColor().style;
     ctx.beginPath();
     ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
@@ -480,7 +421,6 @@ eyedropper.getRecordedAction = function() {
 eyedropper.resetRecordedAction = function() {
     // Nothing to do
 };
-
 
 
 // More tools:

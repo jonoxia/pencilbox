@@ -22,10 +22,6 @@
  *    decides whether you're 1. near a panel corner (resize) 
  *    or 2. inside a panel (drag) or 3. not in a panel (draw new
  *    panel)
-
- *  There will also need to be a way to remove a panel, but I
- *   don't know what that is yet.  (Dbltap panel to bring up context
- *   menu, 'remove' is one option.)
  *
  *   TODO 2. Make moving a panel move its contents (hard)
           2a. A panel drawn around some drawing becomes owner of
@@ -35,6 +31,15 @@
  *   TODO 3. What happens when one panel overlaps another?
  *   TODO 4. Non-rectangular panels (we have the makings of an
  *           arbitrary polygon type; should also support round ones)
+
+ *  TODO 5. Make a Panel context menu, which can contain things like:
+ *        - Delete Panel
+ *        - Clear Panel Contents
+ *        - Select Panel Contents
+ *        - Show/Hide Panel Border
+ *
+ *     Invoke it by double-tapping the middle of the panel with the
+ *     panel tool.
  */
 
 // Drawing border of panels will snap to multiples of 10 pixels to
