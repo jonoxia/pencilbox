@@ -283,6 +283,8 @@ DialogueManager.prototype = {
 
     makeBubblesFromText: function() {
 	let lines = this.allSpeech.split("\n");
+	let x;
+	lines = [lines[x] for (x in lines) if (lines[x].length > 0)];
 	for (let i = 0; i < lines.length; i++) {
 	    if (i < this.bubbles.length) {
 		// Modify text in existing bubbles...
