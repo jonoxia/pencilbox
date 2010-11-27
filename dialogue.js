@@ -254,7 +254,7 @@ function DialogueManager() {
     let manager = this;
     let theLayer = this.dialogueLayer;
     theLayer.onRedraw = function(ctx) {
-	manager.makeBubblesFromText();
+	//manager.makeBubblesFromText();
 	manager.renderAllBubbles(ctx);
     }
     g_drawInterface.layers.push(theLayer);
@@ -340,5 +340,10 @@ DialogueManager.prototype = {
 
     get numBubbles() {
 	return this.bubbles.length;
+    },
+    
+    reset: function() {
+	this.allSpeech = "";
+	this.bubbles = [];
     }
 };

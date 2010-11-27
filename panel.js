@@ -50,13 +50,21 @@ const BORDER_WIDTH = 2.0;
 
 const GRAB_MARGIN = 15;
 
-function RectanglePanel(left, top, width, height) {
+function RectanglePanel(left, top, width, height, options) {
     this._left = left;
     this._top = top;
     this._width = width;
     this._height = height;
+    if (options && options.id != undefined) {
+	this._id = options.id;
+    } else {
+	this._id = g_panels.getUnusedPanelId();
+    }
 }
 RectanglePanel.prototype = {
+    getId: function() {
+	return this._id;
+    },
     moveCorner: function(whichCorner, dx, dy) {
 	switch (whichCorner) {
 	case "nw":
@@ -91,6 +99,12 @@ RectanglePanel.prototype = {
 	this._left += dx;
 	this._top += dy;
 	// TODO move everything inside the panel too
+    },
+    setLocation: function(left, top, width, height) {
+	this._left = left;
+	this._top = top;
+	this._width = width;
+	this._height = height;
     },
     getGrabPt: function(x, y) {
 	if (Math.abs( x - this._left) < GRAB_MARGIN) {
@@ -127,8 +141,12 @@ RectanglePanel.prototype = {
 
 function PolygonPanel(path) {
     this.borderPath = path;
+    this._id = g_panels.getUnusedPanelId();
 }
 PolygonPanel.prototype = {
+    getId: function() {
+	return this._id;
+    },
     moveCorner: function(whichCorner, dx, dy) {
 	this.borderPath[whichCorner].x += dx;
 	this.borderPath[whichCorner].y += dy;
@@ -179,6 +197,23 @@ function PanelManager() {
     g_drawInterface.layers.push(this.panelLayer);
 }
 PanelManager.prototype = {
+    getUnusedPanelId: function() {
+	let maxPanelId = 0;
+	for (let i = 0; i < this.panels.length; i++) {
+	    if (this.panels[i].getId() > maxPanelId) {
+		maxPanelId = this.panels[i].getId();
+	    }
+	}
+	return maxPanelId + 1;
+    },
+    getPanelById: function(id) {
+	for (let i = 0; i < this.panels.length; i++) {
+	    if (this.panels[i].getId() == id) {
+		return this.panels[i];
+	    }
+	}
+	return null;
+    },
     getGrabPt: function(x, y) {
 	for (let i = 0; i < this.panels.length; i++) {
 	    let panel = this.panels[i];
@@ -203,9 +238,16 @@ PanelManager.prototype = {
 	let top = startPt.y < endPt.y ? startPt.y : endPt.y;
 	let right = startPt.x > endPt.x? startPt.x : endPt.x;
 	let bottom = startPt.y > endPt.y ? startPt.y : endPt.y;
-	this.panels.push(new RectanglePanel(left, top,
-					    right-left, bottom-top));
+
+	let newPanel = new RectanglePanel(left, top,
+					  right-left, bottom-top);
+	this.panels.push(newPanel);
 	this.panelLayer.updateDisplay();
+	return newPanel; // return reference to it so panel tool can
+	// add to history
+    },
+    pushPanel: function(panel) {
+	this.panels.push(panel);
     },
     drawEverything: function( context ) {
 	// fill in gutter:
@@ -215,6 +257,9 @@ PanelManager.prototype = {
 	for (let i = 0; i < this.panels.length; i++) {
 	    this.panels[i].draw(context); 
 	}
+    },
+    reset: function() {
+	this.panels = [];
     }
 };
 
@@ -253,11 +298,10 @@ panelTool.down = function(ctx, x, y) {
 };
 panelTool.up = function(ctx, x, y) {
     if (this.mode == "draw") {
-	g_panels.createRectanglePanel( this.drawStartPt,
-				       this.drawEndPt );
+	this.panel = g_panels.createRectanglePanel( this.drawStartPt,
+						    this.drawEndPt );
     }
     this.mode = null;
-    this.panel = null;
     this.controlPoint = null;
 };
 panelTool.drag = function(ctx, x, y) {
@@ -271,7 +315,6 @@ panelTool.drag = function(ctx, x, y) {
 	let dy = worldPt.y - this.manipStartPt.y;
 	switch (this.controlPoint) {
 	case "main":
-	    // TODO IMPL calc dx, dy
             this.panel.move(dx, dy);
 	    break;
 	default:
@@ -310,9 +353,13 @@ panelTool.changeSize = function(delta) {
     // want that to stay consistent.
 };
 panelTool.getRecordedAction = function() {
-    // TODO (for undo history)
-    return null;
+    let id = this.panel.getId();
+    let left = this.panel._left;
+    let top = this.panel._top;
+    let width = this.panel._width;
+    let height = this.panel._height;
+    return new RectanglePanelAction(id, left, top, width, height);
 };
 panelTool.resetRecordedAction = function() {
-    // TODO
+    this.panel = null;
 };

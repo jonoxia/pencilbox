@@ -228,6 +228,7 @@ textBalloonTool.drag = function(ctx, x, y) {
 	    break;
 	case "main":
             balloon.setCenter(worldPt);
+	    $("#debug").html("updating display on main drag.");
             layer.updateDisplay();
 	    break;
 	case "leftEdge": case "rightEdge":
@@ -263,7 +264,11 @@ textBalloonTool.getRecordedAction = function() {
        then it suddenly changes.
        The extra weird part is that the ones that stay still until you
        mouseup appear to be undoable while the other kind appear not to
-       be undoable! */
+       be undoable!  Like it's either updating XOR making an action.
+       $("#debug") shows that the update is getting called on drag, 
+       and the "creating moveballoon action" is happening too...
+       weirdness.
+    */
     if (this.lastControlPoint == null || this.lastBalloon == null) {
 	return null;
     }

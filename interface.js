@@ -391,22 +391,22 @@ function ToolAreaInterface() {
 	    {directions: ["left", "down", "right", "up"],
              command: function() {
 		    g_history.undo();
-		    $("#debug").html("Undo");
+		    //$("#debug").html("Undo");
 		}},
             {directions: ["down", "right", "up", "left"],
              command: function() {
 		    g_history.undo();
-		    $("#debug").html("Undo");
+		    //$("#debug").html("Undo");
 		}},
             {directions: ["right", "down", "left", "up"],
              command: function() {
 		    g_history.redo();
-		    $("#debug").html("Redo");
+		    //$("#debug").html("Redo");
 		}},
             {directions: ["down", "left", "up", "right"],
              command: function() {
 		    g_history.redo();
-		    $("#debug").html("Redo");
+		    //$("#debug").html("Redo");
 		}}
 				  ]},
 	twoFingers: {

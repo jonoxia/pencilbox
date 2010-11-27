@@ -150,6 +150,7 @@ ImportImageAction.prototype = {
     },
 
     toJSON: function() {
+	// Not yet being reconstructed.
 	/* TODO This is going to be hard.  The image may not have come
 	 * from a URL so we have to actually save the pixel level
 	 * data and serialize that to a string to store it in JSON! */
@@ -170,6 +171,7 @@ ChangeScriptAction.prototype = {
     replay: function(newCtx) {
 	if (g_dialogue) {
 	    g_dialogue.setScript(this.newScript);	
+	    g_dialogue.makeBubblesFromText();
 	}
 	if ($("#dialogue-edit-area")) {
 	    $("#dialogue-edit-area").val(this.newScript);
@@ -177,6 +179,7 @@ ChangeScriptAction.prototype = {
     },
 
     toJSON: function() {
+	// TODO ChangeScriptActions not yet being reconstructed
 	let self = this;
 	return {type: "script",
 		layerName: "",
@@ -207,12 +210,53 @@ MoveBalloonAction.prototype = {
     },
 
     toJSON: function() {
+	// TODO MoveBalloonActions not yet being reconstructed
 	let self = this;
 	return {type: "balloon",
 		layerName: "",
 		balloonIndex: self.balloonIndex,
 		controlPoint: self.controlPoint,
 		point: self.point};
+    }
+};
+
+function RectanglePanelAction(panelId, left, top, width, height) {
+    this._panelId = panelId;
+    this._left = left;
+    this._top = top;
+    this._width = width;
+    this._height = height;
+    this.layer = g_panels.panelLayer;
+};
+RectanglePanelAction.prototype = {
+    replay: function(newCtx) {
+	// TODO this only works for rectangle panels -- will need
+	// another type of action for polygon and round panels.
+	if (g_panels) {
+	    panel = g_panels.getPanelById(this._panelId);
+	    if (panel) {
+		panel.setLocation(this._left, this._top, 
+				  this._width, this._height);
+	    } else {
+		// TODO create the new panel with the right ID!!
+		let id = this._panelId;
+		g_panels.pushPanel( new RectanglePanel(this._left,
+						       this._top,
+						       this._width,
+						       this._height,
+						       {id: id}));
+	    }
+	}
+    },
+    toJSON: function() {
+	// TODO PanelActions not yet being reconstructed
+	let self = this;
+	return {type: "rectanglePanel",
+		panelId: self._panelId,
+		left: self._left,
+		top: self._top,
+		width: self._width,
+		height: self._height};
     }
 };
 
@@ -236,10 +280,10 @@ History.prototype = {
 	    // if we are somewhere back in the undo stack and we do 
 	    // a new positive action, discard the popped actions.
 	    this.actionList = this.actionList.slice(0, this.currPtr);
-	    // test this for off-by-one-errors.
 	}
 	this.actionList.push(action);
 	this.currPtr = this.actionList.length;
+	$("#debug").html("Action pushed - currPtr now " + this.currPtr);
     },
 
     replayActions: function() {
@@ -261,18 +305,23 @@ History.prototype = {
     },
 
     undo: function() {
+	
 	if (this.currPtr > 0 ) {
+	    g_dialogue.reset();
+	    g_panels.reset();
+	    g_drawInterface.clearAllLayers();
 	    this.currPtr -= 1;
-	    //g_drawInterface.clearAllLayers();
 	    //this.replayActions();
-	    g_drawInterface.updateAllLayerDisplays();
+	    g_drawInterface.updateAllLayerDisplays(); // will replay 
+	    $("#debug").html("Undone - currPtr now " + this.currPtr);
 	}
     },
 
     redo: function() {
 	if (this.currPtr < this.actionList.length) {
 	    this.currPtr += 1;
-	    this.actionList[this.currPtr - 1].replay();
+	    g_drawInterface.updateAllLayerDisplays();
+	    $("#debug").html("Redone - currPtr now " + this.currPtr);
 	}
     },
 
