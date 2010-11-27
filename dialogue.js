@@ -347,3 +347,81 @@ DialogueManager.prototype = {
 	this.bubbles = [];
     }
 };
+
+
+textBalloonTool = new Tool(0);
+textBalloonTool.getStrokeStyle = function() {
+    return null;
+};
+textBalloonTool.down = function(ctx, x, y) {
+    let layer = g_dialogue.dialogueLayer;
+    let worldPt = layer.screenToWorld(x, y);
+    let grabbitation = g_dialogue.getGrabPt(worldPt.x, worldPt.y);
+    if (grabbitation) {
+	this.balloon = grabbitation.balloon;
+	this.controlPoint = grabbitation.controlPoint;
+    } else {
+	this.balloon = null;
+	this.controlPoint = null;
+    }
+    $("#debug").html("Down");
+};
+textBalloonTool.up = function(ctx, x, y) {
+    this.balloon = null;
+    this.controlPoint = null;
+};
+textBalloonTool.drag = function(ctx, x, y) {
+    if ((this.balloon != null) && this.controlPoint) {
+	let balloon = g_dialogue.getBalloonByIndex(this.balloon);
+	let layer = g_dialogue.dialogueLayer;
+	let worldPt = layer.screenToWorld(x, y);
+	this.lastControlPoint = this.controlPoint;
+	this.lastActionPoint = worldPt;
+	this.lastBalloon = this.balloon;
+	switch (this.controlPoint) {
+	case "tailTip":
+	    balloon.setTailTip(worldPt);
+	    break;
+	case "main":
+            balloon.setCenter(worldPt);
+	    break;
+	case "leftEdge": case "rightEdge":
+            let dx = Math.abs(balloon.center.x - worldPt.x);
+	    if (dx > balloon.cornerRadius) {
+		balloon.setWidth( 2 * dx );
+		this.lastActionPoint = {x: 2*dx, y: 0};
+            }
+	    break;
+	default:
+	    $("#debug").html("Control point is " + this.controlPoint);
+	}
+	layer.updateWithoutReplay();
+    } else {
+	$("#debug").html("No balloon to drag.");
+    }
+};
+textBalloonTool.display = function(penCtx, x, y) {
+    let img = new Image();  
+    img.onload = function(){  
+	penCtx.drawImage(img, 60, 60);  
+    }  
+    img.src = "icons/balloon-quotation.png";
+};
+textBalloonTool.drawCursor = function(penCtx, x, y) {
+};
+textBalloonTool.changeSize = function(delta) {
+};
+textBalloonTool.getRecordedAction = function() {
+    if (this.lastControlPoint == null || this.lastBalloon == null) {
+	return null;
+    }
+    return new MoveBalloonAction(this.lastBalloon,
+				 this.lastControlPoint,
+				 this.lastActionPoint);
+};
+textBalloonTool.resetRecordedAction = function() {
+    this.lastControlPoint = null;
+    this.lastActionPoint = null;
+    this.lastBalloon = null;
+};
+

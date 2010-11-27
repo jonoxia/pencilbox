@@ -250,6 +250,9 @@ PanelManager.prototype = {
 	this.panels.push(panel);
     },
     drawEverything: function( context ) {
+	if (!context) {
+	    context = this.panelLayer.getContext();
+	}
 	// fill in gutter:
 	context.fillStyle = this.gutterColor.style;
 	let dim = g_drawInterface.getPageDimensions();
@@ -311,6 +314,7 @@ panelTool.drag = function(ctx, x, y) {
     let layer = g_panels.panelLayer;
 
     if (this.mode == "manipulate") {
+	$("#debug").html("Manipulating...");
 	let dx = worldPt.x - this.manipStartPt.x;
 	let dy = worldPt.y - this.manipStartPt.y;
 	switch (this.controlPoint) {
@@ -321,7 +325,8 @@ panelTool.drag = function(ctx, x, y) {
 	    this.panel.moveCorner(this.controlPoint, dx, dy);
 	    break;
 	}
-	layer.updateDisplay();
+	// important don't call updateDisplay() here, that replays actions
+	g_panels.panelLayer.updateWithoutReplay();
 	this.manipStartPt = {x: worldPt.x, y: worldPt.y};
     } else if (this.mode == "draw") {
 	this.drawEndPt = {x: screenPt.x, y: screenPt.y};

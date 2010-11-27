@@ -186,6 +186,13 @@ Layer.prototype = {
 	this.onRedraw(this.displayContext);
 	this.displayContext.restore();
     },
+    updateWithoutReplay: function() {
+	this.displayContext.save();
+	this._setTransformMatrix();
+	this._clearPageArea();
+	this.onRedraw(this.displayContext);
+	this.displayContext.restore();
+    },
     scale: function(factor) {
 	let oldScale = this._scale;
 	this._scale = this._scale * factor;
