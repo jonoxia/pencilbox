@@ -179,7 +179,7 @@ ChangeScriptAction.prototype = {
     },
 
     toJSON: function() {
-	// TODO ChangeScriptActions not yet being reconstructed
+
 	let self = this;
 	return {type: "script",
 		layerName: "",
@@ -210,7 +210,6 @@ MoveBalloonAction.prototype = {
     },
 
     toJSON: function() {
-	// TODO MoveBalloonActions not yet being reconstructed
 	let self = this;
 	return {type: "balloon",
 		layerName: "",
@@ -238,7 +237,6 @@ RectanglePanelAction.prototype = {
 		panel.setLocation(this._left, this._top, 
 				  this._width, this._height);
 	    } else {
-		// TODO create the new panel with the right ID!!
 		let id = this._panelId;
 		g_panels.pushPanel( new RectanglePanel(this._left,
 						       this._top,
@@ -249,7 +247,6 @@ RectanglePanelAction.prototype = {
 	}
     },
     toJSON: function() {
-	// TODO PanelActions not yet being reconstructed
 	let self = this;
 	return {type: "rectanglePanel",
 		panelId: self._panelId,
@@ -343,10 +340,12 @@ History.prototype = {
     },
 
     recreate: function(historyString) {
+	$("#debug").html("Recreating.\n");
 	let historyObj = JSON.parse(historyString);
 	// Layers must already have been recreated when this
 	// is called.
 	this.actionList = [];
+	$("#debug").html(historyObj.actions.length + " history items.\n");
 	for (let i = 0; i < historyObj.actions.length; i++) {
 	    let actionData = historyObj.actions[i];
 	    let layerName = actionData.layerName;
@@ -377,9 +376,27 @@ History.prototype = {
 
 		break;
 	    case "image":
-		let img = null; // TODO 
+		let img = null; // TODO store image data in json
 		let pt = actionData.point;
 		action = new ImportImageAction(layer, img, pt.x, pt.y);
+		break;
+	    case "rectanglePanel":
+		// TODO test
+		action = new RectanglePanelAction(actionData.panelId,
+						  actionData.left,
+						  actionData.top,
+						  actionData.width,
+						  actionData.height);
+		break;
+	    case "script":
+		// TODO test
+		action = new ChangeScriptAction(actionData.text);
+		break;
+	    case "balloon":
+		// TODO test
+		action = new MoveBalloonAction(actionData.balloonIndex,
+					       actionData.controlPoint,
+					       actionData.point);
 		break;
 	    }
 	    this.actionList.push(action);
@@ -402,6 +419,14 @@ History.prototype = {
 	let layerString = window.localStorage.getItem("layers");
 	let historyString = window.localStorage.getItem("history");
 	if (!layerString || !historyString) {
+	    let str = "";
+	    if (!layerString) {
+		str += "No layer string.";
+	    }
+	    if (!historyString) {
+		str += " No history string.";
+	    }
+	    $("#debug").html(str);
 	    return;
 	}
 	g_drawInterface.recreateLayers(layerString);

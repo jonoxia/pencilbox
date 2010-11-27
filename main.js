@@ -25,8 +25,9 @@ function export() {
     let postArgs = {data: dataUrl.split(",")[1],
 		filename: "mypic"};
 
-    // 3. AJAX post the data url to "www.evilbrainjono.net/multicanvas/export.py" with
-    //     args data = data filename = filename.
+    /* 3. AJAX post the data url to
+     * "www.evilbrainjono.net/multicanvas/export.py"
+     * with args data = data filename = filename. */
     jQuery.ajax({url:"export.py",
 		data: postArgs,
 		type: "POST",
@@ -37,8 +38,8 @@ function export() {
 		  $("#debug").html("error " + textStatus + "; " + error);
 	        },
 		dataType: "html"});
-    
-    // 4. Python script converts to .png and saves image, generates name, sends you back a link.
+    /* 4. Python script converts to .png and saves image,
+     * generates name, sends you back a link. */
 
     // 5. Remove the special canvas we created for export
     $(exportCanvas).remove();
@@ -67,7 +68,6 @@ function adjustToScreen() {
     $("#the-canvas").attr("width", mainCanvasWidth);
     $("#the-canvas").attr("height", mainCanvasHeight);
 
-
     if (g_drawInterface) {
 	g_drawInterface.resetDimensions($("#the-canvas").offset().left,
 					$("#the-canvas").offset().top,
@@ -79,11 +79,10 @@ function adjustToScreen() {
 
 function importImage() {
     // TODO interface for picking a local image to upload
-    // TODO also need a way of moving imported image
-    // where we want it!!  Maybe treat it as a selection?
+    /* TODO also need a way of moving imported image
+     * where we want it!!  Maybe treat it as a selection? */
 
-    // TODO trying to select this gives me a security
-    // error!!!
+    // TODO trying to select this gives me a security error!!!
     var img = new Image();   // Create new Image object  
     img.onload = function(){  
 	let layer = g_drawInterface.getActiveLayer();
@@ -100,7 +99,7 @@ function deleteThatHistory() {
 }
 
 $(function() {
-	deleteThatHistory();
+	// deleteThatHistory();
         document.multitouchData = true;
 	adjustToScreen();
 
@@ -114,7 +113,9 @@ $(function() {
 	// restore everything else from localstorage.
 	g_history = new History();
 
-	// Create first drawing layer:
+	// Create first drawing layer: 
+	// TODO skip this if there are already drawing layers due to 
+	// recreated history
 	g_drawInterface.newLayer();
 	g_drawInterface.updateAllLayerDisplays();
 
@@ -142,9 +143,9 @@ $(function() {
 		}
 		$(this).val("none");
 	    });
-	// Update balloons with each keystroke, but don't
-	// push an action to history until onchange event
-	// (i.e. dialogue edit area loses focus)
+	/* Update balloons with each keystroke, but don't
+	 * push an action to history until onchange event
+	 * (i.e. dialogue edit area loses focus) */
 	$("#dialogue-edit-area").bind("keyup", function() {
 		let newScript = $("#dialogue-edit-area").val();
 		g_dialogue.setScript(newScript);
