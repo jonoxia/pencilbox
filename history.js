@@ -182,7 +182,7 @@ ChangeScriptAction.prototype = {
 
 	let self = this;
 	return {type: "script",
-		layerName: "",
+		layerName: self.layer.getName(),
 	        text: self.newScript};
     }
 };
@@ -212,7 +212,7 @@ MoveBalloonAction.prototype = {
     toJSON: function() {
 	let self = this;
 	return {type: "balloon",
-		layerName: "",
+		layerName: self.layer.getName(),
 		balloonIndex: self.balloonIndex,
 		controlPoint: self.controlPoint,
 		point: self.point};
@@ -295,6 +295,11 @@ History.prototype = {
 	// If overrideCtx is not provided, it will replay the actions
 	// to the layer's own context.
 	for (let i = 0; i < this.currPtr; i++) {
+	    if (!this.actionList[i]) {
+		//$("#debug").html("Null action at " + i);
+		// TODO confirmed: Panel move actions and speechbubble move actions
+		// (but not script actions!) are null here.
+	    }
 	    if (this.actionList[i].layer == layer) {
 		this.actionList[i].replay(overrideCtx); //layer.getContext());
 	    }
@@ -411,7 +416,7 @@ History.prototype = {
 	let layerString = g_drawInterface.serializeLayers();
 	window.localStorage.setItem("history", historyString);
 	window.localStorage.setItem("layers", layerString);
-	$("#debug").html("Saved.");
+	//$("#debug").html("Saved.");
     },
 
     loadFromLocalStorage: function() {

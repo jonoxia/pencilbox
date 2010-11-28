@@ -99,7 +99,7 @@ function deleteThatHistory() {
 }
 
 $(function() {
-	// deleteThatHistory();
+        //deleteThatHistory();
         document.multitouchData = true;
 	adjustToScreen();
 
@@ -114,9 +114,12 @@ $(function() {
 	g_history = new History();
 
 	// Create first drawing layer: 
-	// TODO skip this if there are already drawing layers due to 
-	// recreated history
-	g_drawInterface.newLayer();
+	// (skip this if there are already drawing layers due to 
+	// recreated history)
+	if (g_drawInterface.layers.length < 4) {
+	    $("#debug").html("Only " + g_drawInterface.layers.length + " layers");
+	    g_drawInterface.newLayer();
+	}
 	g_drawInterface.updateAllLayerDisplays();
 
 	// Set up the main menu:

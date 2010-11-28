@@ -671,7 +671,9 @@ DrawAreaInterface.prototype = {
 			name: layer.getName()
 			});
 	}
-	return JSON.stringify(layerObj);
+	let str = JSON.stringify(layerObj);
+	$("#debug").html(str);
+	return str;
     },
     
     recreateLayers: function(layerString) {
