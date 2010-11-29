@@ -249,6 +249,7 @@ RectanglePanelAction.prototype = {
     toJSON: function() {
 	let self = this;
 	return {type: "rectanglePanel",
+		layerName: self.layer.getName(),
 		panelId: self._panelId,
 		left: self._left,
 		top: self._top,
@@ -344,21 +345,23 @@ History.prototype = {
 	return JSON.stringify(historyObj);
     },
 
-    recreate: function(historyString) {
-	$("#debug").html("Recreating.\n");
+    recreate: function(historyString, foo) {
 	let historyObj = JSON.parse(historyString);
 	// Layers must already have been recreated when this
 	// is called.
 	this.actionList = [];
-	$("#debug").html(historyObj.actions.length + " history items.\n");
 	for (let i = 0; i < historyObj.actions.length; i++) {
+	    foo.output("Restoring history item " + i);
 	    let actionData = historyObj.actions[i];
 	    let layerName = actionData.layerName;
+	    foo.output("It belongs in layer " + layerName);
 	    let layer = g_drawInterface.getLayerByName(layerName);
 	    if (!layer) {
+		foo.output("No such layer.");
 		continue;
 	    }
 	    let action;
+	    foo.output("Type is " + actionData.type);
 	    switch (actionData.type) {
 	    case "draw":
 		action = new DrawAction(layer,
@@ -386,7 +389,6 @@ History.prototype = {
 		action = new ImportImageAction(layer, img, pt.x, pt.y);
 		break;
 	    case "rectanglePanel":
-		// TODO test
 		action = new RectanglePanelAction(actionData.panelId,
 						  actionData.left,
 						  actionData.top,
@@ -394,14 +396,15 @@ History.prototype = {
 						  actionData.height);
 		break;
 	    case "script":
-		// TODO test
 		action = new ChangeScriptAction(actionData.text);
 		break;
 	    case "balloon":
-		// TODO test
 		action = new MoveBalloonAction(actionData.balloonIndex,
 					       actionData.controlPoint,
 					       actionData.point);
+		break;
+	    default:
+		foo.output("No such action type");
 		break;
 	    }
 	    this.actionList.push(action);

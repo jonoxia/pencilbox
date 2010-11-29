@@ -559,6 +559,9 @@ DrawAreaInterface.prototype = {
     getActiveLayer: function() {
 	return this.activeLayer;
     },
+    getNumLayers: function() {
+	return this.layers.length;
+    },
     newLayer: function() {
 	// create at bottom, for now
 	let lowestLayer = 0;
@@ -672,7 +675,6 @@ DrawAreaInterface.prototype = {
 			});
 	}
 	let str = JSON.stringify(layerObj);
-	$("#debug").html(str);
 	return str;
     },
     
@@ -686,6 +688,7 @@ DrawAreaInterface.prototype = {
 		let newLayer = new Layer(layerObj[i].index);
 		newLayer.setVisible(layerObj[i].visible);
 		newLayer.setName(layerObj[i].name);
+		this.layers.push(newLayer);
 	    }
 	}
     },

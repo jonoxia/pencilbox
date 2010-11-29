@@ -99,7 +99,7 @@ function deleteThatHistory() {
 }
 
 $(function() {
-        //deleteThatHistory();
+        deleteThatHistory();
         document.multitouchData = true;
 	adjustToScreen();
 
