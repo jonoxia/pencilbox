@@ -59,12 +59,44 @@ DrawAction.prototype = {
 	/* Can't save the layer to json as it's a live object ref
 	 * Instead, save the layerName which we can use to match
 	 * the action back up to the layer when reconstructing. */
+	let styleInfo = {};
+	if (self.styleInfo.lineWidth != undefined) {
+	    styleInfo.lineWidth = self.styleInfo.lineWidth;
+	}
+	if (self.styleInfo.lineCap != undefined) {
+	    styleInfo.lineCap = self.styleInfo.lineCap;
+	}
+	if (self.styleInfo.strokeStyle != undefined) {
+	    styleInfo.strokeStyle = self.styleInfo.strokeStyle.toJSON();
+	}
+	if (self.styleInfo.fillStyle != undefined) {
+	    styleInfo.fillStyle = self.styleInfo.fillStyle.toJSON();
+	}
 	return {type: "draw",
 		layerName: self.layer.getName(),
 		points: self.pts,  // already json more or less
-		styleInfo: self.styleInfo,
+		styleInfo: styleInfo,
 		isFill: self.isFill,
 		};
+    },
+
+    restoreStyleFromJSON: function(styleInfo) {
+	if (styleInfo.lineWidth != undefined) {
+	    this.styleInfo.lineWidth = styleInfo.lineWidth;
+	}
+	if (styleInfo.lineCap != undefined) {
+	    this.styleInfo.lineCap = styleInfo.lineCap;
+	}
+	if (styleInfo.strokeStyle != undefined) {
+	    let color = new Color();
+	    color.fromJSON(styleInfo.strokeStyle);
+	    this.styleInfo.strokeStyle = color;
+	}
+	if (styleInfo.fillStyle != undefined) {
+	    let color = new Color();
+	    color.fromJSON(styleInfo.fillStyle);
+	    this.styleInfo.fillStyle = color;
+	}
     }
 };
 
@@ -345,33 +377,30 @@ History.prototype = {
 	return JSON.stringify(historyObj);
     },
 
-    recreate: function(historyString, foo) {
+    recreate: function(historyString) {
 	let historyObj = JSON.parse(historyString);
 	// Layers must already have been recreated when this
 	// is called.
 	this.actionList = [];
 	for (let i = 0; i < historyObj.actions.length; i++) {
-	    foo.output("Restoring history item " + i);
 	    let actionData = historyObj.actions[i];
 	    let layerName = actionData.layerName;
-	    foo.output("It belongs in layer " + layerName);
 	    let layer = g_drawInterface.getLayerByName(layerName);
 	    if (!layer) {
-		foo.output("No such layer.");
 		continue;
 	    }
 	    let action;
-	    foo.output("Type is " + actionData.type);
 	    switch (actionData.type) {
 	    case "draw":
 		action = new DrawAction(layer,
 					actionData.points,
-					actionData.styleInfo,
+					{},
 					actionData.isFill);
 		/* DrawAction constructor transforms points to world
 		 * coords (this is inconsistent with other actions!)
 		 * The following line is a workaround: */
 		action.pts = actionData.points;
+		action.restoreStyleFromJSON(actionData.styleInfo);
 		break;
 	    case "clear":
 		action = new ClearRegionAction(layer,
@@ -404,7 +433,6 @@ History.prototype = {
 					       actionData.point);
 		break;
 	    default:
-		foo.output("No such action type");
 		break;
 	    }
 	    this.actionList.push(action);

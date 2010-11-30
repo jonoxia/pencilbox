@@ -23,7 +23,20 @@ Color.prototype = {
     },
     get style() {
 	return this.toStyle();
-    }    
+    },
+    toJSON: function() {
+	let self = this;
+	return {r: self.r,
+		g: self.g,
+		b: self.b,
+		a: self.a};
+    },
+    fromJSON: function(jsonObj) {
+	this.r = jsonObj.r;
+	this.g = jsonObj.g;
+	this.b = jsonObj.b;
+	this.a = jsonObj.a;
+    }
 };
 
 var Colors = {
