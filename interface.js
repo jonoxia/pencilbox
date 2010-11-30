@@ -645,6 +645,7 @@ DrawAreaInterface.prototype = {
 	}
     },
     exportAllLayers: function(exportCtx) {
+	// TODO deprecated - now using main.js export2() instead
 	// Sort layers - draw them from lowest to highest
 	let layers = this.layers.slice();
 	layers.sort(function(layerA, layerB) {
@@ -666,31 +667,41 @@ DrawAreaInterface.prototype = {
     },
 
     serializeLayers: function() {
-	let layerObj = [];
+	let layerObj = {};
+	let layerList = [];
+	let activeLayerIndex = 0;
 	for (let i = 0; i < this.layers.length; i++) {
 	    let layer = this.layers[i];
-	    layerObj.push({index: layer.getIndex(),
+	    if (this.activeLayer == this.layers[i]) {
+		activeLayerIndex = i;
+	    }
+	    layerList.push({index: layer.getIndex(),
 			visible: layer.visible,
 			name: layer.getName()
 			});
 	}
+	layerObj.layerList = layerList;
+	layerObj.activeLayerIndex = activeLayerIndex;
 	let str = JSON.stringify(layerObj);
 	return str;
     },
     
     recreateLayers: function(layerString) {
 	let layerObj = JSON.parse(layerString);
-	for (let i = 0; i < layerObj.length; i++) {
+	let layerList = layerObj.layerList;
+	for (let i = 0; i < layerList.length; i++) {
 	    /* Ignore instructions to recreate any layer with a
 	     * name we already have (e.g. special layers - 
 	     * dialogue layer, panel layer, etc.) */
-	    if (this.getLayerByName(layerObj[i].name) == null) {
-		let newLayer = new Layer(layerObj[i].index);
-		newLayer.setVisible(layerObj[i].visible);
-		newLayer.setName(layerObj[i].name);
+	    if (this.getLayerByName(layerList[i].name) == null) {
+		let newLayer = new Layer(layerList[i].index);
+		newLayer.setVisible(layerList[i].visible);
+		newLayer.setName(layerList[i].name);
 		this.layers.push(newLayer);
 	    }
 	}
+	let activeLayerIndex = layerObj.activeLayerIndex;
+	this.activeLayer = this.layers[activeLayerIndex];
     },
 
     getZoomLevel: function() {

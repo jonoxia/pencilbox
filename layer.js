@@ -38,7 +38,9 @@ function Layer(index, options) {
 
 }
 Layer.prototype = {
-
+    isHiddenLayer: function() {
+	return this._hidden;
+    },
     createLayerTableInterface: function() {
 	// Create row in the layers table for this layer
 	this.tableRow = $("<tr></tr>");
@@ -255,6 +257,8 @@ Layer.prototype = {
 	// Replay all the history now, with that transform applied
 	g_history.replayActionsForLayer(parentLayer,
 					this.displayContext);
+	// TODO any reason not to call onRedraw?
+	parentLayer.onRedraw(this.displayContext);
 	let dataUrl = this.displayCanvas.toDataURL("image/png");
 
 	// Return canvas to original size:

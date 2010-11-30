@@ -26,24 +26,46 @@ import base64
 import cgi
 import cgitb
 import time
+from PIL import Image
+
+BASE_PATH = "/var/www/multicanvas/tmpimages"
+
+def compositeFiles(fileNameList, outFileName):
+  baseImage = Image.open( os.path.join(BASE_PATH, fileNameList[0]) )
+  for fileName in fileNameList[1:]:
+    layerImage = Image.open( os.path.join(BASE_PATH, fileName) )
+    baseImage.paste(layerImage, (0, 0), layerImage)
+  baseImage.save( os.path.join(BASE_PATH, outFileName ))
+
+def writeTempFiles(dataBlob, outFileName):
+  layerBlobs = dataBlob.split(",")
+  filenames = []
+  for i in xrange(len(layerBlobs)):
+    data = layerBlobs[i]
+    filename = "layer%d-%s" % (i, outFileName)
+    filenames.append(filename)
+    file = open( os.path.join(BASE_PATH, filename), "wb")
+    # Get an "incorrect padding" error on trying to decode.
+    # Correct b64 padding:
+    while len(data) % 4 != 0:
+      data = data + "="
+    file.write(base64.b64decode(data))
+    file.close()
+
+  return filenames
+
 
 cgitb.enable()
-
 q = cgi.FieldStorage()
-
-
 data = q.getfirst("data", "")
 filename = q.getfirst("filename", "untitled")
-
 filename = "%s-%d.png" % (filename, time.time())
 
-file = open( os.path.join("/var/www/multicanvas/tmpimages", filename), "wb")
-  # Get an "incorrect padding" error on trying to decode.
-# Correct b64 padding:
-while len(data) % 4 != 0:
-  data = data + "="
-file.write(base64.b64decode(data))
-file.close()
+tempFileNames = writeTempFiles(data, filename)
+
+compositeFiles(tempFileNames, filename)
+
+# TODO delete temp files
 
 print "Content-type: text/html"
 print

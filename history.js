@@ -454,12 +454,12 @@ History.prototype = {
 	//$("#debug").html("Loading from local storage...");
 	let layerString = window.localStorage.getItem("layers");
 	let historyString = window.localStorage.getItem("history");
-	if (!layerString || !historyString) {
+	if (!layerString || !historyString || layerString == "" || historyString == "") {
 	    let str = "";
-	    if (!layerString) {
+	    if (!layerString || layerString == "") {
 		str += "No layer string.";
 	    }
-	    if (!historyString) {
+	    if (!historyString || historyString == "") {
 		str += " No history string.";
 	    }
 	    $("#debug").html(str);

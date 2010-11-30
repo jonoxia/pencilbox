@@ -7,33 +7,39 @@ var g_selection = null;
 
 function export2() {
     // Export each layer as a separate .png, composite them on the
-    // server using imageMagick?
+    // server using PIL (Python Image Library)
     let dim = g_drawInterface.getPageDimensions();
-    let finalUrls = [];
-    for (let i = 0; i < g_drawInterface.getNumLayers(); i++) {
-	let layer = g_drawInterface.layers[i];
+    let dataUrls = [];
+    // Sort layers by z-index:
+    let layers = g_drawInterface.layers.slice();
+    layers.sort(function(layerA, layerB) {
+	    return layerA.getIndex() - layerB.getIndex();
+	});
+    for (let i = 0; i < layers.length; i++) {
+	let layer = layers[i];
+	if (layer.isHiddenLayer()) {
+	    // Skip hidden layers, like the selection layer
+	    continue;
+	}
 	let dataUrl = layer.pngSnapshot(layer, {left: 0,
 						top: 0,
 						right: dim.width,
 						bottom: dim.height});
-	let postArgs = {data: dataUrl.split(",")[1],
-			filename: layer.getName()};
+	// everything before comma is metadata: slice off
+	dataUrls.push( dataUrl.split(",")[1] );
+	
     }
-    let onComplete = function() {
-	if (finalUrls.length == g_drawInterface.getNumLayers()) {
-	    $("#debug").html(finalUrls.join(", "));
-	}
-    };
+    let postArgs = {data: dataUrls.join(","),
+		    filename: "ExportedPic"};
+
     jQuery.ajax({url:"export.py",
 		data: postArgs,
 		type: "POST",
 		success: function(data, textStatus) {
-                  finalUrls.push(data);
-		  onComplete();
+		  $("#debug").html(data);
 	        },
 		error: function(req, textStatus, error) {
-                  finalUrls.push("Error");
-		  onComplete();
+		  $("#debug").html("error " + textStatus + "; " + error);
 	        },
 		dataType: "html"});
 }
@@ -51,6 +57,8 @@ function export() {
     exportCanvas.width = dim.width;
     exportCanvas.height = dim.height;
     let ctx = exportCanvas.getContext("2d");
+
+    g_drawInterface.exportAllLayers(ctx);
 
     // 2. Turn canvas into data URL like this:
     let dataUrl = exportCanvas.toDataURL("image/png");

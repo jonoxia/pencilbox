@@ -11,6 +11,8 @@ TestsAhoy.register(
       setUp: function() {
 	  // Instantiating these requires html elements #pen-size-canvas, 
 	  // #the-canvas, and #debug.
+	  TestsAhoy.output("Settingup");
+	  deleteThatHistory();
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();
 	g_drawInterface.clearAllLayers();
@@ -28,14 +30,21 @@ TestsAhoy.register(
 	  g_drawInterface.newLayer();
 	  TestsAhoy.assertEqual(g_drawInterface.getNumLayers(), 4,
 				"Should have 4 layers!");
+	  g_drawInterface.setActiveLayer(-4);
+	  TestsAhoy.assertEqual(g_drawInterface.activeLayer,
+				g_drawInterface.layers[3]);
 	  let layerStr = g_drawInterface.serializeLayers();
-	  
+	  TestsAhoy.output(layerStr);
 	  this.tearDown();
 	  this.setUp();
 
 	  g_drawInterface.recreateLayers(layerStr, TestsAhoy);
 	  TestsAhoy.assertEqual(g_drawInterface.getNumLayers(), 4,
 				"Should have 4 layers!");
+	  TestsAhoy.assertEqual(g_drawInterface.activeLayer,
+				g_drawInterface.layers[3],
+				"Last layer should be active!");
+	  
       },
 
       testHistoryRestored: function() {
@@ -83,7 +92,7 @@ TestsAhoy.register(
 	  TestsAhoy.assertEqual(action.controlPoint, "main");
 	  TestsAhoy.assertEqual(action.point.x, 300);
 	  TestsAhoy.assertEqual(action.point.y, 250);
-	  
+	  // TODO restore a DrawAction, test that its colors are right!
       },
 
       tearDown: function() {
