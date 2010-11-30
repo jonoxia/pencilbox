@@ -224,6 +224,8 @@ Layer.prototype = {
 
 	// Return a dataURL png of the part of the layer contents
 	// inside the clipPath.
+	// clipPath is optional: if not provided, will grab
+	// everything inside clipRect instead.
 
 	// shrink canvas to just size of boundary rectangle
 	// for the .png conversion:
@@ -239,14 +241,16 @@ Layer.prototype = {
 	-1 * clipRect.top);
 
 	// Set clipping path:
-	this.displayContext.beginPath();
-	this.displayContext.moveTo(clipPath[0].x,
-				  clipPath[0].y);
-	for (let i = 1; i < clipPath.length; i++) {
-	    this.displayContext.lineTo(clipPath[i].x,
-				      clipPath[i].y);
+	if (clipPath) {
+	    this.displayContext.beginPath();
+	    this.displayContext.moveTo(clipPath[0].x,
+				       clipPath[0].y);
+	    for (let i = 1; i < clipPath.length; i++) {
+		this.displayContext.lineTo(clipPath[i].x,
+					   clipPath[i].y);
+	    }
+	    this.displayContext.clip();
 	}
-	this.displayContext.clip();
 
 	// Replay all the history now, with that transform applied
 	g_history.replayActionsForLayer(parentLayer,
@@ -264,7 +268,7 @@ Layer.prototype = {
 	 * should turn vector to bitmap at current zoom if
 	 * possible.  */
     },
-    
+
     resetDimensions: function(newX, newY, newWidth, newHeight) {
 	this.width = newWidth;
 	this.height = newHeight;

@@ -5,6 +5,39 @@ var g_dialogue = null;
 var g_panels = null;
 var g_selection = null;
 
+function export2() {
+    // Export each layer as a separate .png, composite them on the
+    // server using imageMagick?
+    let dim = g_drawInterface.getPageDimensions();
+    let finalUrls = [];
+    for (let i = 0; i < g_drawInterface.getNumLayers(); i++) {
+	let layer = g_drawInterface.layers[i];
+	let dataUrl = layer.pngSnapshot(layer, {left: 0,
+						top: 0,
+						right: dim.width,
+						bottom: dim.height});
+	let postArgs = {data: dataUrl.split(",")[1],
+			filename: layer.getName()};
+    }
+    let onComplete = function() {
+	if (finalUrls.length == g_drawInterface.getNumLayers()) {
+	    $("#debug").html(finalUrls.join(", "));
+	}
+    };
+    jQuery.ajax({url:"export.py",
+		data: postArgs,
+		type: "POST",
+		success: function(data, textStatus) {
+                  finalUrls.push(data);
+		  onComplete();
+	        },
+		error: function(req, textStatus, error) {
+                  finalUrls.push("Error");
+		  onComplete();
+	        },
+		dataType: "html"});
+}
+
 function export() {
     // There's a securtiy exception that can happen if you try to
     // save a canvas that thinks it contains an image loaded from
@@ -12,13 +45,12 @@ function export() {
 
     // To save images:
     // 1. Composite all layers onto a single canvas, big enough to hold whole comic
-    // (scald to 100%)
+    // (scaled to 100%)
     let exportCanvas = $("<canvas>").appendTo($("body")).get(0);
     let dim = g_drawInterface.getPageDimensions();
     exportCanvas.width = dim.width;
     exportCanvas.height = dim.height;
     let ctx = exportCanvas.getContext("2d");
-    ctx.jonoName = "ExportCanvas";
 
     // 2. Turn canvas into data URL like this:
     let dataUrl = exportCanvas.toDataURL("image/png");
@@ -129,7 +161,7 @@ $(function() {
 		    importImage();
 		    break;
 		case "export-item":
-		    export();
+		    export2();
 		    break;
 		case "save-item":
 		    g_history.saveToLocalStorage();
