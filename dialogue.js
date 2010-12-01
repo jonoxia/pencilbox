@@ -226,6 +226,7 @@ SpeechBubble.prototype = {
 			 left: interceptL,
 			 right: interceptR,
 			 bottom: interceptB};
+	this.tailIntercept = {x: intercept.x, y: intercept.y};
     },
     render: function(ctx) {
 	ctx.font = this.normalFont;
@@ -270,6 +271,67 @@ SpeechBubble.prototype = {
     },
     renderThought: function(ctx) {
 	// TODO
+	let width = this.right - this.left;
+	let height = this.bottom - this.top;
+	
+	// Bubble trail where tail would be:
+	let tailCenter;
+	let self = this;
+	switch (this.tailInterceptSide) {
+	case "bottom":
+	    tailCenter = {x: self.tailIntercept.x, y: self.bottom};
+	    break;
+	case "top":
+	    tailCenter = {x: self.tailIntercept.x, y: self.top};
+	    break;
+	case "left":
+	    tailCenter = {x: self.left, y: self.tailIntercept.y};
+	    break;
+	case "right":
+	    tailCenter = {x: self.right, y: self.tailIntercept.y};
+	    break;
+	}
+	// Three bubbles of decreasing size:
+	ctx.beginPath();
+	ctx.arc(tailCenter.x, tailCenter.y,
+		this.tailBaseWidth, 0, 2*Math.PI, false);
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc((tailCenter.x + this.tailTip.x)/2,
+		(tailCenter.y + this.tailTip.y)/2,
+		this.tailBaseWidth/2, 0, 2*Math.PI, false);
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(this.tailTip.x,
+		this.tailTip.y,
+		this.tailBaseWidth/4, 0, 2*Math.PI, false);
+	ctx.fill();
+	ctx.stroke();
+
+	// The curvy outline:
+	ctx.beginPath();
+	let x = this.left;
+	for (let i = 0; i < 5; i++) {
+	    ctx.arc(this.left + i* width/5 + width/10,  this.top,
+		    width/10, Math.PI, 0, false);
+	}
+	for (let i = 0; i < 3; i++) {
+	    ctx.arc(this.right, this.top + i* height/3 + height/6,
+		    height/6, 3*Math.PI/2, Math.PI/2, false);
+	}
+	for (let i = 0; i < 5; i++) {
+	    ctx.arc(this.right - i* width/5 - width/10,  this.bottom,
+		    width/10, 0, Math.PI, false);
+	}
+	for (let i = 0; i < 3; i++) {
+	    ctx.arc(this.left, this.bottom - i* height/3 - height/6,
+		    height/6, Math.PI/2, 3*Math.PI/2, false);
+	}
+	ctx.fill();
+	ctx.stroke();
+
     },
     renderTalk: function(ctx) {
 	ctx.beginPath();
