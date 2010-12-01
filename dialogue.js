@@ -1,4 +1,4 @@
-function SpeechBubble(text) {
+function SpeechBubble(text, style) {
     // These will be global and shared by all instances:
     this.borderLineSize = 2.0;
     this.padding = 15;
@@ -9,6 +9,7 @@ function SpeechBubble(text) {
     
     // These are instance specific (and need an interface for setting)
     this.text = text;
+    this.style = style; // regular, caption, thought?
     
     // Pick a place to start out the bubble:
     let x = 25 * g_dialogue.numBubbles;
@@ -29,7 +30,21 @@ SpeechBubble.prototype = {
 	this.calcTail();
     },
     setText: function(newText) {
-	this.text = newText;
+	// newText is XML; parse out the style tags!
+	// TODO don't recreate the parser every time here
+	let parser = new DOMParser();
+	let dom = parser.parseFromString(newText, "text/xml");
+	let doc = dom.documentElement;
+	if (doc.nodeName == "parsererror") {
+	    // can't parse - take text literally
+	    this.style = "talk";
+	    this.text = newText;
+	} else {
+	    this.style = doc.nodeName;
+	    // could be "talk", "thought", or "caption".
+	    this.text = doc.childNodes[0].nodeValue;
+	}
+
 	this.wrapText();
 	this.calcBoundingBox();
 	this.calcTail();
@@ -182,7 +197,35 @@ SpeechBubble.prototype = {
 	ctx.lineWidth = this.borderLineSize;
 	ctx.strokeStyle = "rgb(0,0,0)";
 	ctx.fillStyle = "rgb(255, 255, 255)";
-
+	switch (this.style) {
+	case "talk":
+	    this.renderTalk(ctx);
+	break;
+	case "thought":
+	    this.renderThought(ctx);
+        break;
+	case "caption":
+	    this.renderCaption(ctx);
+	break;
+	}
+	let x = this.left + this.padding;
+	let y = this.top + this.padding + (this.lineHeight/2);
+	for (let i = 0; i < this.lines.length; i++) {
+	    ctx.fillStyle = "rgb(0, 0, 0)";
+	    ctx.fillText(this.lines[i], x, y);
+	    y += this.lineHeight;
+	}
+    },
+    renderCaption: function(ctx) {
+	let width = this.right - this.left;
+	let height = this.bottom - this.top;
+	ctx.fillRect(this.left, this.top, width, height);
+	ctx.strokeRect(this.left, this.top, width, height);
+    },
+    renderThought: function(ctx) {
+	// TODO
+    },
+    renderTalk: function(ctx) {
 	ctx.beginPath();
 	// top edge:
 	ctx.moveTo( this.left + this.cornerRadius, this.top);
@@ -235,14 +278,6 @@ SpeechBubble.prototype = {
 	// clear area
 	ctx.fill();
 	ctx.stroke();
-
-	let x = this.left + this.padding;
-	let y = this.top + this.padding + (this.lineHeight/2);
-	for (let i = 0; i < this.lines.length; i++) {
-	    ctx.fillStyle = "rgb(0, 0, 0)";
-	    ctx.fillText(this.lines[i], x, y);
-	    y += this.lineHeight;
-	}
     }
 };
 
