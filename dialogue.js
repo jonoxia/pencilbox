@@ -99,6 +99,7 @@ SpeechBubble.prototype = {
     wrapText: function() {
 	let ctx = g_dialogue.dialogueLayer.getContext();
 	let lines = [];
+	this.lineWidths = [];
 	let thisLine = [];
 	let lineWidth = 0;
 	let thisSegment = [];
@@ -121,6 +122,7 @@ SpeechBubble.prototype = {
 		    thisLine.push({words: thisSegment.join(" "),
 				style: style,
 				width: segmentWidth});
+		    this.lineWidths.push(lineWidth);
 		    lines.push(thisLine);
 		    thisLine = [];
 		    thisSegment = [];
@@ -138,6 +140,7 @@ SpeechBubble.prototype = {
 	    thisSegment = [];
 	}
 	lines.push(thisLine);
+	this.lineWidths.push(lineWidth);
 	this.lines = lines;
     },
     calcTail: function() {
@@ -245,10 +248,14 @@ SpeechBubble.prototype = {
 	    this.renderCaption(ctx);
 	break;
 	}
-	let x = this.left + this.padding;
+	// Render each line in turn: Each line can have multiple
+	// segments (with different styles applied to them).
+	let x = (this.left + this.right)/2; // manual centering
 	let y = this.top + this.padding + (this.lineHeight/2);
 	ctx.fillStyle = "rgb(0, 0, 0)";
 	for (let i = 0; i < this.lines.length; i++) {
+	    let lineWidth = this.lineWidths[i];
+	    x = (this.left + this.right)/2  - (lineWidth)/2;
 	    for (let j = 0; j < this.lines[i].length; j++) {
 		let segment = this.lines[i][j];
 		if (segment.style == "em") {
@@ -259,7 +266,6 @@ SpeechBubble.prototype = {
 		ctx.fillText(segment.words, x, y);
 		x += segment.width;
 	    }
-	    x = this.left + this.padding;
 	    y += this.lineHeight;
 	}
     },
@@ -314,56 +320,32 @@ SpeechBubble.prototype = {
 	    ctx.stroke();
 	}
 
-	// The curvy outline:
-	// TODO: Randomize
+	// The curvy outline, using Parametric equation of ellipse:
+	// x = a * cos(t)
+	// y = b * sin(t)
+	// as t goes from 0 to 2pi.
+	let t = 0; 
+	let centerX = this.left + width/2;
+	let centerY = this.top + height/2;
+	let oldX = centerX + (width/2) * Math.cos(t);
+	let oldY = centerY + (height/2) * Math.sin(t);
 	ctx.beginPath();
-	let sum = 0;
-	// top edge
-	while(sum < width) {
-	    let radius = Math.floor(Math.random() * 20);
-	    if (sum + 2*radius > width) {
-		radius = (width - sum)/2;
+	while (t < 2 * Math.PI) {
+	    let step = 0.2 + 0.2 * Math.random();
+	    t += step;
+	    if (t >= 2*Math.PI) {
+		t = 2*Math.PI;
 	    }
-	    sum += radius;
-	    ctx.arc(this.left + sum, this.top, radius, Math.PI, 0, false);
-	    sum += radius;
+	    let x = centerX + (width/2) * Math.cos(t);
+	    let y = centerY + (height/2) * Math.sin(t);
+	    let radius = Math.sqrt((x-oldX)*(x-oldX) + (y-oldY)*(y-oldY));
+	    ctx.arc(x, y, 3*radius/4, 0, 2*Math.PI, false);
+	    oldX = x;
+	    oldY = y;
 	}
-	sum = 0;
-	while (sum < height) {
-	    let radius = Math.floor(Math.random() * 20);
-	    if (sum + 2*radius > height) {
-		radius = (height - sum)/2;
-	    }
-	    sum += radius;
-	    ctx.arc(this.right, this.top + sum, radius,
-		    3*Math.PI/2, Math.PI/2, false);
-	    sum += radius;
-	}
-	sum = 0;
-	while(sum < width) {
-	    let radius = Math.floor(Math.random() * 20);
-	    if (sum + 2*radius > width) {
-		radius = (width - sum)/2;
-	    }
-	    sum += radius;
-	    ctx.arc(this.right - sum, this.bottom, radius, 
-		    0, Math.PI, false);
-	    sum += radius;
-	}
-	sum = 0;
-	while (sum < height) {
-	    let radius = Math.floor(Math.random() * 20);
-	    if (sum + 2*radius > height) {
-		radius = (height - sum)/2;
-	    }
-	    sum += radius;
-	    ctx.arc(this.left, this.bottom - sum, radius,
-		    Math.PI/2, 3*Math.PI/2, false);
-	    sum += radius;
-	}
-	ctx.fill();
+	ctx.lineWidth = 2*this.borderLineSize;
 	ctx.stroke();
-
+	ctx.fill();
     },
     renderTalk: function(ctx) {
 	ctx.beginPath();
