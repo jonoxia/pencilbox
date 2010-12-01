@@ -4,8 +4,14 @@ function SpeechBubble(text, style) {
     this.padding = 15;
     this.cornerRadius = 15;
     this.tailBaseWidth = 30;
-    this.normalFont = "12pt sans-serif";
-    this.emFont = "bold italic 12pt sans-serif";
+    this._fonts = {
+	normal: "12pt cursive",  // was sans-serif
+	em: "bold italic 12pt cursive",
+	title: "bold small-caps 18pt serif",
+        whisper: "lighter 10pt cursive"};
+    // TODO lineHeight actually needs to vary by which font is used
+    // - if there are several segments in one line, that line needs to
+    // be as tall as the lineHeight of the font of the highest segment.
     this.lineHeight = 20;
     
     // These are instance specific (and need an interface for setting)
@@ -25,6 +31,13 @@ function SpeechBubble(text, style) {
     this.calcTail();
 };
 SpeechBubble.prototype = {
+    getFont: function(tagName) {
+	if (this._fonts[tagName]) {
+	    return this._fonts[tagName];
+	} else {
+	    return this._fonts.normal;
+	}
+    },
     setWidth: function(newWidth) {
 	this.maxLineWidth = newWidth - 2 * this.padding;
 	this.wrapText();
@@ -107,11 +120,7 @@ SpeechBubble.prototype = {
 	for (let i = 0; i < this.textSpans.length; i++) {
 	    let words = this.textSpans[i].words.split(" ");
 	    let style = this.textSpans[i].style;
-	    if (style == "em") {
-		ctx.font = this.emFont;
-	    } else {
-		ctx.font = this.normalFont;
-	    }
+	    ctx.font = this.getFont(style);
 	    for (let j = 0; j < words.length; j++) {
 		if (words[j].length == 0) {
 		    continue;
@@ -232,7 +241,6 @@ SpeechBubble.prototype = {
 	this.tailIntercept = {x: intercept.x, y: intercept.y};
     },
     render: function(ctx) {
-	ctx.font = this.normalFont;
 	ctx.textAlign = "start";
 	ctx.lineWidth = this.borderLineSize;
 	ctx.strokeStyle = "rgb(0,0,0)";
@@ -244,9 +252,14 @@ SpeechBubble.prototype = {
 	case "thought":
 	    this.renderThought(ctx);
         break;
+	case "yell":
+	    this.renderYell(ctx);
+        break;
 	case "caption":
 	    this.renderCaption(ctx);
 	break;
+	// Any other tag name will not render any border around
+	// text -- useful for sound effects and titles!
 	}
 	// Render each line in turn: Each line can have multiple
 	// segments (with different styles applied to them).
@@ -258,11 +271,7 @@ SpeechBubble.prototype = {
 	    x = (this.left + this.right)/2  - (lineWidth)/2;
 	    for (let j = 0; j < this.lines[i].length; j++) {
 		let segment = this.lines[i][j];
-		if (segment.style == "em") {
-		    ctx.font = this.emFont;
-		} else {
-		    ctx.font = this.normalFont;
-		}
+		ctx.font = this.getFont(segment.style);
 		ctx.fillText(segment.words, x, y);
 		x += segment.width;
 	    }
@@ -274,6 +283,10 @@ SpeechBubble.prototype = {
 	let height = this.bottom - this.top;
 	ctx.fillRect(this.left, this.top, width, height);
 	ctx.strokeRect(this.left, this.top, width, height);
+    },
+    renderYell: function(ctx) {
+	// TODO spiky balloon -- parametrically do an inner and
+	// an outer ellipse, zigzag between them stochastically.
     },
     renderThought: function(ctx) {
 	let width = this.right - this.left;
