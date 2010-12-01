@@ -270,13 +270,12 @@ SpeechBubble.prototype = {
 	ctx.strokeRect(this.left, this.top, width, height);
     },
     renderThought: function(ctx) {
-	// TODO
 	let width = this.right - this.left;
 	let height = this.bottom - this.top;
-	
-	// Bubble trail where tail would be:
 	let tailCenter;
 	let self = this;
+
+	// Bubble trail where tail would be:
 	switch (this.tailInterceptSide) {
 	case "bottom":
 	    tailCenter = {x: self.tailIntercept.x, y: self.bottom};
@@ -290,44 +289,77 @@ SpeechBubble.prototype = {
 	case "right":
 	    tailCenter = {x: self.right, y: self.tailIntercept.y};
 	    break;
+	default:
+	    tailCenter = null;
 	}
 	// Three bubbles of decreasing size:
-	ctx.beginPath();
-	ctx.arc(tailCenter.x, tailCenter.y,
-		this.tailBaseWidth, 0, 2*Math.PI, false);
-	ctx.fill();
-	ctx.stroke();
-	ctx.beginPath();
-	ctx.arc((tailCenter.x + this.tailTip.x)/2,
-		(tailCenter.y + this.tailTip.y)/2,
-		this.tailBaseWidth/2, 0, 2*Math.PI, false);
-	ctx.fill();
-	ctx.stroke();
-	ctx.beginPath();
-	ctx.arc(this.tailTip.x,
-		this.tailTip.y,
-		this.tailBaseWidth/4, 0, 2*Math.PI, false);
-	ctx.fill();
-	ctx.stroke();
+	if (tailCenter != null) {
+	    ctx.beginPath();
+	    ctx.arc((2*tailCenter.x + this.tailTip.x)/3,
+		    (2*tailCenter.y + this.tailTip.y)/3,
+		    this.tailBaseWidth/2, 0, 2*Math.PI, false);
+	    ctx.fill();
+	    ctx.stroke();
+	    ctx.beginPath();
+	    ctx.arc((tailCenter.x + 2*this.tailTip.x)/3,
+		    (tailCenter.y + 2*this.tailTip.y)/3,
+		    this.tailBaseWidth/3, 0, 2*Math.PI, false);
+	    ctx.fill();
+	    ctx.stroke();
+	    ctx.beginPath();
+	    ctx.arc(this.tailTip.x,
+		    this.tailTip.y,
+		    this.tailBaseWidth/4, 0, 2*Math.PI, false);
+	    ctx.fill();
+	    ctx.stroke();
+	}
 
 	// The curvy outline:
+	// TODO: Randomize
 	ctx.beginPath();
-	let x = this.left;
-	for (let i = 0; i < 5; i++) {
-	    ctx.arc(this.left + i* width/5 + width/10,  this.top,
-		    width/10, Math.PI, 0, false);
+	let sum = 0;
+	// top edge
+	while(sum < width) {
+	    let radius = Math.floor(Math.random() * 20);
+	    if (sum + 2*radius > width) {
+		radius = (width - sum)/2;
+	    }
+	    sum += radius;
+	    ctx.arc(this.left + sum, this.top, radius, Math.PI, 0, false);
+	    sum += radius;
 	}
-	for (let i = 0; i < 3; i++) {
-	    ctx.arc(this.right, this.top + i* height/3 + height/6,
-		    height/6, 3*Math.PI/2, Math.PI/2, false);
+	sum = 0;
+	while (sum < height) {
+	    let radius = Math.floor(Math.random() * 20);
+	    if (sum + 2*radius > height) {
+		radius = (height - sum)/2;
+	    }
+	    sum += radius;
+	    ctx.arc(this.right, this.top + sum, radius,
+		    3*Math.PI/2, Math.PI/2, false);
+	    sum += radius;
 	}
-	for (let i = 0; i < 5; i++) {
-	    ctx.arc(this.right - i* width/5 - width/10,  this.bottom,
-		    width/10, 0, Math.PI, false);
+	sum = 0;
+	while(sum < width) {
+	    let radius = Math.floor(Math.random() * 20);
+	    if (sum + 2*radius > width) {
+		radius = (width - sum)/2;
+	    }
+	    sum += radius;
+	    ctx.arc(this.right - sum, this.bottom, radius, 
+		    0, Math.PI, false);
+	    sum += radius;
 	}
-	for (let i = 0; i < 3; i++) {
-	    ctx.arc(this.left, this.bottom - i* height/3 - height/6,
-		    height/6, Math.PI/2, 3*Math.PI/2, false);
+	sum = 0;
+	while (sum < height) {
+	    let radius = Math.floor(Math.random() * 20);
+	    if (sum + 2*radius > height) {
+		radius = (height - sum)/2;
+	    }
+	    sum += radius;
+	    ctx.arc(this.left, this.bottom - sum, radius,
+		    Math.PI/2, 3*Math.PI/2, false);
+	    sum += radius;
 	}
 	ctx.fill();
 	ctx.stroke();
