@@ -4,11 +4,13 @@ function SpeechBubble(text, style) {
     this.padding = 15;
     this.cornerRadius = 15;
     this.tailBaseWidth = 30;
-    this.font = "12pt Arial";
+    this.normalFont = "12pt sans-serif";
+    this.emFont = "bold italic 12pt sans-serif";
     this.lineHeight = 20;
     
     // These are instance specific (and need an interface for setting)
     this.text = text;
+    this.textSpans = [];
     this.style = style; // regular, caption, thought?
     
     // Pick a place to start out the bubble:
@@ -30,6 +32,7 @@ SpeechBubble.prototype = {
 	this.calcTail();
     },
     setText: function(newText) {
+	this.text = newText;
 	// newText is XML; parse out the style tags!
 	// TODO don't recreate the parser every time here
 	let parser = new DOMParser();
@@ -38,11 +41,24 @@ SpeechBubble.prototype = {
 	if (doc.nodeName == "parsererror") {
 	    // can't parse - take text literally
 	    this.style = "talk";
-	    this.text = newText;
+	    this.textSpans = [ { words: newText,
+				 style: null} ];
+			       
 	} else {
 	    this.style = doc.nodeName;
 	    // could be "talk", "thought", or "caption".
-	    this.text = doc.childNodes[0].nodeValue;
+	    this.textSpans = [];
+	    for (let i = 0; i < doc.childNodes.length; i++) {
+		let node = doc.childNodes[i];
+		if (node.nodeValue != null) {
+		    this.textSpans.push( {words: node.nodeValue,
+				style: null} );
+		} else {
+		    this.textSpans.push(
+		      {words: node.childNodes[0].nodeValue,
+		       style: node.nodeName} );
+		}
+	    }
 	}
 
 	this.wrapText();
@@ -82,26 +98,46 @@ SpeechBubble.prototype = {
     },
     wrapText: function() {
 	let ctx = g_dialogue.dialogueLayer.getContext();
-	ctx.font = this.font;
-	let words = this.text.split(" ");
 	let lines = [];
 	let thisLine = [];
 	let lineWidth = 0;
-	for (let i = 0; i < words.length; i++) {
-	    if (words[i].length == 0) {
-		continue;
+	let thisSegment = [];
+	let segmentWidth = 0;
+	for (let i = 0; i < this.textSpans.length; i++) {
+	    let words = this.textSpans[i].words.split(" ");
+	    let style = this.textSpans[i].style;
+	    if (style == "em") {
+		ctx.font = this.emFont;
+	    } else {
+		ctx.font = this.normalFont;
 	    }
-	    // Don't forget to include width of the space!
-	    let thisWidth = ctx.measureText(words[i] + " ").width;
-	    if (lineWidth + thisWidth > this.maxLineWidth) {
-		lines.push(thisLine.join(" "));
-		thisLine = [];
-		lineWidth = 0;
+	    for (let j = 0; j < words.length; j++) {
+		if (words[j].length == 0) {
+		    continue;
+		}
+		// Don't forget to include width of the space!
+		let thisWidth = ctx.measureText(words[j] + " ").width;
+		if (lineWidth + thisWidth > this.maxLineWidth) {
+		    thisLine.push({words: thisSegment.join(" "),
+				style: style,
+				width: segmentWidth});
+		    lines.push(thisLine);
+		    thisLine = [];
+		    thisSegment = [];
+		    lineWidth = 0;
+		    segmentWidth = 0;
+		}
+		thisSegment.push(words[j]);
+		lineWidth += thisWidth;
+		segmentWidth += thisWidth;
 	    }
-	    thisLine.push(words[i]);
-	    lineWidth += thisWidth;
+	    thisLine.push({words: thisSegment.join(" "),
+			style: style,
+			width: segmentWidth});
+	    segmentWidth = 0;
+	    thisSegment = [];
 	}
-	lines.push(thisLine.join(" "));
+	lines.push(thisLine);
 	this.lines = lines;
     },
     calcTail: function() {
@@ -192,7 +228,7 @@ SpeechBubble.prototype = {
 			 bottom: interceptB};
     },
     render: function(ctx) {
-	ctx.font = this.font;
+	ctx.font = this.normalFont;
 	ctx.textAlign = "start";
 	ctx.lineWidth = this.borderLineSize;
 	ctx.strokeStyle = "rgb(0,0,0)";
@@ -210,9 +246,19 @@ SpeechBubble.prototype = {
 	}
 	let x = this.left + this.padding;
 	let y = this.top + this.padding + (this.lineHeight/2);
+	ctx.fillStyle = "rgb(0, 0, 0)";
 	for (let i = 0; i < this.lines.length; i++) {
-	    ctx.fillStyle = "rgb(0, 0, 0)";
-	    ctx.fillText(this.lines[i], x, y);
+	    for (let j = 0; j < this.lines[i].length; j++) {
+		let segment = this.lines[i][j];
+		if (segment.style == "em") {
+		    ctx.font = this.emFont;
+		} else {
+		    ctx.font = this.normalFont;
+		}
+		ctx.fillText(segment.words, x, y);
+		x += segment.width;
+	    }
+	    x = this.left + this.padding;
 	    y += this.lineHeight;
 	}
     },
