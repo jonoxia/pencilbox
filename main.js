@@ -44,47 +44,6 @@ function export2() {
 		dataType: "html"});
 }
 
-function export() {
-    // There's a securtiy exception that can happen if you try to
-    // save a canvas that thinks it contains an image loaded from
-    // a different server...
-
-    // To save images:
-    // 1. Composite all layers onto a single canvas, big enough to hold whole comic
-    // (scaled to 100%)
-    let exportCanvas = $("<canvas>").appendTo($("body")).get(0);
-    let dim = g_drawInterface.getPageDimensions();
-    exportCanvas.width = dim.width;
-    exportCanvas.height = dim.height;
-    let ctx = exportCanvas.getContext("2d");
-
-    g_drawInterface.exportAllLayers(ctx);
-
-    // 2. Turn canvas into data URL like this:
-    let dataUrl = exportCanvas.toDataURL("image/png");
-    let postArgs = {data: dataUrl.split(",")[1],
-		filename: "mypic"};
-
-    /* 3. AJAX post the data url to
-     * "www.evilbrainjono.net/multicanvas/export.py"
-     * with args data = data filename = filename. */
-    jQuery.ajax({url:"export.py",
-		data: postArgs,
-		type: "POST",
-		success: function(data, textStatus) {
-		  $("#debug").html(data);
-	        },
-		error: function(req, textStatus, error) {
-		  $("#debug").html("error " + textStatus + "; " + error);
-	        },
-		dataType: "html"});
-    /* 4. Python script converts to .png and saves image,
-     * generates name, sends you back a link. */
-
-    // 5. Remove the special canvas we created for export
-    $(exportCanvas).remove();
-}
-
 function adjustToScreen() {
     // Set widths and heights dynamically to make optimal
     // use of screen dimensions.
