@@ -294,6 +294,34 @@ SpeechBubble.prototype = {
 	let tailCenter;
 	let self = this;
 
+	// The curvy outline, using Parametric equation of ellipse:
+	// x = a * cos(t)
+	// y = b * sin(t)
+	// as t goes from 0 to 2pi.
+	let t = 0; 
+	let centerX = this.left + width/2;
+	let centerY = this.top + height/2;
+	let oldX = centerX + (width/2) * Math.cos(t);
+	let oldY = centerY + (height/2) * Math.sin(t);
+	ctx.beginPath();
+	while (t < 2 * Math.PI) {
+	    let step = 0.2 + 0.2 * Math.random();
+	    t += step;
+	    if (t >= 2*Math.PI) {
+		t = 2*Math.PI;
+	    }
+	    let x = centerX + (width/2) * Math.cos(t);
+	    let y = centerY + (height/2) * Math.sin(t);
+	    let radius = Math.sqrt((x-oldX)*(x-oldX) + (y-oldY)*(y-oldY));
+	    ctx.arc(x, y, 3*radius/4, t - Math.PI/2, t + Math.PI/2, false);
+	    oldX = x;
+	    oldY = y;
+	}
+	ctx.lineWidth = 2*this.borderLineSize;
+	ctx.stroke();
+	ctx.fill();
+
+	ctx.lineWidth = this.borderLineSize;
 	// Bubble trail where tail would be:
 	switch (this.tailInterceptSide) {
 	case "bottom":
@@ -332,33 +360,6 @@ SpeechBubble.prototype = {
 	    ctx.fill();
 	    ctx.stroke();
 	}
-
-	// The curvy outline, using Parametric equation of ellipse:
-	// x = a * cos(t)
-	// y = b * sin(t)
-	// as t goes from 0 to 2pi.
-	let t = 0; 
-	let centerX = this.left + width/2;
-	let centerY = this.top + height/2;
-	let oldX = centerX + (width/2) * Math.cos(t);
-	let oldY = centerY + (height/2) * Math.sin(t);
-	ctx.beginPath();
-	while (t < 2 * Math.PI) {
-	    let step = 0.2 + 0.2 * Math.random();
-	    t += step;
-	    if (t >= 2*Math.PI) {
-		t = 2*Math.PI;
-	    }
-	    let x = centerX + (width/2) * Math.cos(t);
-	    let y = centerY + (height/2) * Math.sin(t);
-	    let radius = Math.sqrt((x-oldX)*(x-oldX) + (y-oldY)*(y-oldY));
-	    ctx.arc(x, y, 3*radius/4, 0, 2*Math.PI, false);
-	    oldX = x;
-	    oldY = y;
-	}
-	ctx.lineWidth = 2*this.borderLineSize;
-	ctx.stroke();
-	ctx.fill();
     },
     renderTalk: function(ctx) {
 	ctx.beginPath();
