@@ -475,7 +475,10 @@ DialogueManager.prototype = {
 	// Balloons can be grabbed by: tailtip, right edge, left
 	// edge, or main body.
 	let margin = 15;
-	for (let i = 0; i < this.bubbles.length; i++) {
+	// go backwards through list so that balloons that appear
+	// frontmost (i.e. drawn last)
+	// get grabbed before ones in the back
+	for (let i = this.bubbles.length -1; i >= 0; i--) {
 	    let balloon = this.bubbles[i];
 	    let box = balloon.getBoundingBox();
 	    if (Math.abs( x - box.left) < margin &&

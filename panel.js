@@ -107,19 +107,21 @@ RectanglePanel.prototype = {
 	this._height = height;
     },
     getGrabPt: function(x, y) {
-	if (Math.abs( x - this._left) < GRAB_MARGIN) {
-	    if (Math.abs( y - this._top ) < GRAB_MARGIN) {
+	let right = this._width + this._left;
+	let bottom = this._height + this._top;
+	if (x - this._left < GRAB_MARGIN && x >= this._left) {
+	    if ( y - this._top < GRAB_MARGIN && y >= this._top) {
 		return "nw";
 	    }
-	    if (Math.abs(y - (this._top + this._height)) < GRAB_MARGIN) {
+	    if (bottom - y < GRAB_MARGIN && y <= bottom) {
 		return "sw";
 	    }
 	}
-	if (Math.abs( x -(this._left + this._width)) < GRAB_MARGIN) {
-	    if (Math.abs( y - this._top ) < GRAB_MARGIN) {
+	if (right - x < GRAB_MARGIN && x <= right) {
+	    if ( y - this._top < GRAB_MARGIN && y >= this._top) {
 		return "ne";
 	    }
-	    if (Math.abs(y - (this._top + this._height)) < GRAB_MARGIN) {
+	    if (bottom - y < GRAB_MARGIN && y <= bottom) {
 		return "se";
 	    }
 	}
@@ -159,7 +161,7 @@ PolygonPanel.prototype = {
 	// TODO IMPL move everything inside the panel too!
     },
     getGrabPt: function(x, y) {
-	for (let i = 0; i < this.borderPath.length; i++) {
+	for (i = 0; i < this.borderPath.lengt; i++ ) {
 	    if ( Math.abs( x - this.borderPath[i].x ) < GRAB_MARGIN &&
 		 Math.abs( y - this.borderPath[i].y ) < GRAB_MARGIN) {
 		return i;
@@ -215,7 +217,9 @@ PanelManager.prototype = {
 	return null;
     },
     getGrabPt: function(x, y) {
-	for (let i = 0; i < this.panels.length; i++) {
+	// go through backwards so panels that appear in front
+	// (i.e. drawn last i.e. last in list) are grabbed first.
+	for (let i = this.panels.length - 1; i >= 0; i--) {
 	    let panel = this.panels[i];
 	    let hit = panel.getGrabPt(x, y);
 	    if (hit != null) {
