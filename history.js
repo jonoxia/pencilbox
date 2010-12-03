@@ -121,7 +121,7 @@ EraserStrokeAction.prototype = {
 	let self = this;
 	return {type: "eraser",
 		layerName: self.layer.getName(),
-		points: self.pts,
+		points: self.points,
 		size: self.size
 		};
     }

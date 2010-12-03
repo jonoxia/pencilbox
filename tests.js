@@ -12,7 +12,8 @@ TestsAhoy.register(
 	  // Instantiating these requires html elements #pen-size-canvas, 
 	  // #the-canvas, and #debug.
 	  TestsAhoy.output("Settingup");
-	  deleteThatHistory();
+	  window.localStorage.setItem("history", "");
+	  window.localStorage.setItem("layers", "");
 	g_toolInterface = new ToolAreaInterface();
 	g_drawInterface = new DrawAreaInterface();
 	g_drawInterface.clearAllLayers();
@@ -52,34 +53,42 @@ TestsAhoy.register(
 	  // from strings, assert that they're the same as what
 	  // we started with.
 
+	  // Push some actions!
 	  let p = g_panels.createRectanglePanel({x:10, y:10},
 						{x:500, y:400});
-
 	  let panelAction = new RectanglePanelAction(p.getId(),
 						     10, 10, 500, 400);
 	  g_history.pushAction(panelAction);
-
 	  let script = "Hello, World!";
 	  let scriptAction = new ChangeScriptAction(script);
 	  g_dialogue.setScript(script);
 	  g_dialogue.makeBubblesFromText();
 	  g_history.pushAction(scriptAction);
-
 	  let balloonAction = new MoveBalloonAction(0,
 						   "main",
 						   {x:300, y:250});
 	  g_history.pushAction(balloonAction);
+	  g_drawInterface.newLayer();
+	  let eraseAction = new EraserStrokeAction(g_drawInterface.activeLayer,
+						   [{x: 100, y: 50},
+                                                    {x: 102, y: 48},
+	                                            {x: 104, y: 46} ],
+						   20);
+	  g_history.pushAction(eraseAction);
 
-
+	  // Serialize!
 	  let historyStr = g_history.serialize();
 	  TestsAhoy.output(historyStr);
 	  this.tearDown();
 	  this.setUp();
+	  // Recreate!
 	  g_history.recreate(historyStr, TestsAhoy);
-	  TestsAhoy.assertEqual(g_history.currPtr, 3,
-				"CurrPtr should be 3");
-	  TestsAhoy.assertEqual(g_history.actionList.length, 3,
-				"Should have 3 actions in history");
+
+	  // Now test that all the actions were restored!
+	  TestsAhoy.assertEqual(g_history.currPtr, 4,
+				"CurrPtr should be 4");
+	  TestsAhoy.assertEqual(g_history.actionList.length, 4,
+				"Should have 4 actions in history");
 	  let action = g_history.actionList[0];
 	  TestsAhoy.assertEqual(action._left, 10, "Left");
 	  TestsAhoy.assertEqual(action._top, 10, "Top");
@@ -92,6 +101,10 @@ TestsAhoy.register(
 	  TestsAhoy.assertEqual(action.controlPoint, "main");
 	  TestsAhoy.assertEqual(action.point.x, 300);
 	  TestsAhoy.assertEqual(action.point.y, 250);
+	  action = g_history.actionList[3];
+	  TestsAhoy.assertEqual(action.size, 20);
+	  TestsAhoy.assertEqual(action.points[0].x, 100);
+	  TestsAhoy.assertEqual(action.points[0].y, 50);
 	  // TODO restore a DrawAction, test that its colors are right!
       },
 
