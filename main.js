@@ -50,15 +50,27 @@ function adjustToScreen() {
     let screenWidth = window.innerWidth;
     let screenHeight = window.innerHeight;
 
+    let pageName = window.location.href; //.split("/")[-1];
+    let portraitModeFileName = "touchscreen-portraitmode.html";
+    let landscapeModeFileName = "touchscreen.html";
+
     let mainCanvasWidth, mainCanvasHeight;
     if (screenHeight > screenWidth) {
-	// Portrait mode screen
+	// Portrait mode screen  - touchscreen-portraitmode.html
+	if (pageName.indexOf(portraitModeFileName) == -1) {
+	    window.location.href = portraitModeFileName;
+	    return;
+	}
 	mainCanvasWidth = screenWidth;
 	mainCanvasHeight = screenHeight * 0.65;
 	$("#pen-size-canvas").attr("width", screenWidth * 0.4);
 	$("#pen-size-canvas").attr("height", screenHeight * 0.25);
     } else {
-	// Landscape mode screen
+	// Landscape mode screen - touchscreen.html
+	if (pageName.indexOf(landscapeModeFileName) == -1) {
+	    window.location.href = landscapeModeFileName;
+	    return;
+	}
 	mainCanvasWidth = screenWidth * 0.6;
 	mainCanvasHeight = screenHeight;
 	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
@@ -95,6 +107,12 @@ function importImage() {
 function deleteThatHistory() {
     window.localStorage.setItem("history", "");
     window.localStorage.setItem("layers", "");
+}
+
+function clearEverything() {
+    deleteThatHistory();
+    g_history.wipe();
+    g_drawInterface.clearAllLayers();
 }
 
 $(function() {
@@ -137,7 +155,7 @@ $(function() {
 		    g_drawInterface.newLayer(); 
 		    break;
 		case "clear-item":
-		    // TODO implement a "clear-everything" function
+		    clearEverything();
 		    break;
 		case "adjust-item":
 		    adjustToScreen();
@@ -160,5 +178,14 @@ $(function() {
 		let action = new ChangeScriptAction(newScript);
 		g_history.pushAction(action);
 		g_dialogue.dialogueLayer.updateDisplay();
+	    });
+
+	// Call adjustToScreen if screen size changes
+	let resizeTimer = null;
+	$(window).resize(function() {
+		if (resizeTimer) {
+		    clearTimeout(resizeTimer);
+		}
+		resizeTimer = setTimeout(adjustToScreen, 1000);
 	    });
 });
