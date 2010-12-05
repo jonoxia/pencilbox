@@ -711,6 +711,8 @@ DrawAreaInterface.prototype = {
     resetDimensions: function(newX, newY, newWidth, newHeight) {
 	this.offsetX = newX;
 	this.offsetY = newY;
+	this.width = newWidth;
+	this.height = newHeight;
 	for (let i = 0; i < this.layers.length; i++) {
 	    this.layers[i].resetDimensions(newX, newY,
 					   newWidth, newHeight);
