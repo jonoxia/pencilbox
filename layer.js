@@ -105,7 +105,9 @@ Layer.prototype = {
 	    return;
 	}
 	this.name = newName;
-	this.titleCell.html(newName);
+	if (this.titleCell) {
+	    this.titleCell.html(newName);
+	}
     },
     getName: function() {
 	return this.name;

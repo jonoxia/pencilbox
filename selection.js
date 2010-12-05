@@ -65,7 +65,7 @@ function SelectionManager() {
     this._selectionContentsSnapshot = null;
 
 
-    this.selectionLayer = new Layer(-2, {hidden: false});
+    this.selectionLayer = new Layer(-2, {hidden: true});
     this.selectionLayer.setName("Selection");
     let manager = this;
     this.selectionLayer.onRedraw = function(ctx) {
