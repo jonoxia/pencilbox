@@ -468,6 +468,10 @@ History.prototype = {
 	g_drawInterface.recreateLayers(layerString);
 	this.recreate(historyString);
 	$("#debug").html("Loaded.");
+    },
+    wipe: function() {
+	this.actionList = [];
+	this.currPtr = 0;
     }
 };
 
