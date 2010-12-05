@@ -44,6 +44,12 @@ function export2() {
 		dataType: "html"});
 }
 
+function changeLocation(newPage) {
+    // Save history before changing location, so we don't lose everything.
+    g_history.saveToLocalStorage();
+    window.location.href = newPage;
+}
+
 function adjustToScreen() {
     // Set widths and heights dynamically to make optimal
     // use of screen dimensions.
@@ -58,7 +64,7 @@ function adjustToScreen() {
     if (screenHeight > screenWidth) {
 	// Portrait mode screen  - touchscreen-portraitmode.html
 	if (pageName.indexOf(portraitModeFileName) == -1) {
-	    window.location.href = portraitModeFileName;
+	    changeLocation( portraitModeFileName );
 	    return;
 	}
 	mainCanvasWidth = screenWidth;
@@ -68,7 +74,7 @@ function adjustToScreen() {
     } else {
 	// Landscape mode screen - touchscreen.html
 	if (pageName.indexOf(landscapeModeFileName) == -1) {
-	    window.location.href = landscapeModeFileName;
+	    changeLocation( landscapeModeFileName );
 	    return;
 	}
 	mainCanvasWidth = screenWidth * 0.6;
