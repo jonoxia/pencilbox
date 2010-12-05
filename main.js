@@ -5,6 +5,19 @@ var g_dialogue = null;
 var g_panels = null;
 var g_selection = null;
 
+function gup( name )
+{
+    name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+    var regexS = "[\\?&]"+name+"=([^&#]*)";
+    var regex = new RegExp( regexS );
+    var results = regex.exec( window.location.href );
+    if( results == null )
+	return "";
+    else
+	return results[1];
+}
+		    
+
 function export2() {
     // Export each layer as a separate .png, composite them on the
     // server using PIL (Python Image Library)
@@ -46,8 +59,10 @@ function export2() {
 
 function changeLocation(newPage) {
     // Save history before changing location, so we don't lose everything.
+    // Also copy filename param
+    let filename = gup("filename");
     g_history.saveToLocalStorage();
-    window.location.href = newPage;
+    window.location.href = newPage + "?filename=" + filename;
 }
 
 function adjustToScreen() {
@@ -139,18 +154,24 @@ $(function() {
 	g_dialogue = new DialogueManager();
 	g_selection = new SelectionManager();
 	g_panels = new PanelManager();
-	// History must get started last b/c it will try to
-	// restore everything else from localstorage.
 	g_history = new History();
 
-	// Create first drawing layer: 
-	// (skip this if there are already drawing layers due to 
-	// recreated history)
-	if (g_drawInterface.layers.length < 4) {
-	    $("#debug").html("Only " + g_drawInterface.layers.length + " layers");
-	    g_drawInterface.newLayer();
+	let title = gup("filename");
+	if (title) {
+	    g_history.loadFromServer(title, function() {
+		    g_drawInterface.updateAllLayerDisplays();
+		});
+	} else {
+	    // Create first drawing layer: 
+	    // (skip this if there are already drawing layers due to 
+	    // recreated history)
+	    if (g_drawInterface.layers.length < 4) {
+		$("#debug").html("Only " + g_drawInterface.layers.length + " layers");
+		g_drawInterface.newLayer();
+	    }
+	    g_drawInterface.updateAllLayerDisplays();
 	}
-	g_drawInterface.updateAllLayerDisplays();
+
 
 	// Set up the main menu:
 	$("#main-menu").change(function() {
@@ -163,6 +184,10 @@ $(function() {
 		    break;
 		case "save-item":
 		    g_history.saveToLocalStorage();
+		    break;
+		case "save-server-item":
+		    let title = gup("filename");
+		    g_history.saveToServer(title);
 		    break;
 		case "new-layer-item":
 		    g_drawInterface.newLayer(); 

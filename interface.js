@@ -565,8 +565,13 @@ DrawAreaInterface.prototype = {
     newLayer: function() {
 	// New layer needs to have scale, translate set to
 	// same as existing layers
-	let currentZoom = this.activeLayer.getZoomLevel();
-	let currentTranslate = this.activeLayer.getTranslation();
+	let options = null;
+	if (this.activeLayer) {
+	    let currentZoom = this.activeLayer.getZoomLevel();
+	    let currentTranslate = this.activeLayer.getTranslation();
+	    options = {scale: currentZoom,
+			   translate: currentTranslate};
+	}
 	// create at bottom, for now
 	let lowestLayer = 0;
 	for (let i = 0; i < this.layers.length; i++) {
@@ -574,9 +579,7 @@ DrawAreaInterface.prototype = {
 		lowestLayer = this.layers[i].getIndex();
 	    }
 	}
-	let newLayer = new Layer(lowestLayer - 1,
-                                 {scale: currentZoom,
-				  translate: currentTranslate});
+	let newLayer = new Layer(lowestLayer - 1, options);
 	this.layers.push( newLayer );
 	if (this.activeLayer == null) {
 	    this.activeLayer = newLayer;

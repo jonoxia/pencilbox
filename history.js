@@ -295,7 +295,7 @@ function History() {
     this.currPtr = 0;
     // On page load, if there is data in local storage,
     // restore history from that data:
-    this.loadFromLocalStorage();
+    // this.loadFromLocalStorage();
 }
 History.prototype = {
     debug: function() {
@@ -469,6 +469,40 @@ History.prototype = {
 	this.recreate(historyString);
 	$("#debug").html("Loaded.");
     },
+
+    saveToServer: function(title) {
+	let historyString = this.serialize();
+	let layerString = g_drawInterface.serializeLayers();
+	let json = {title: title,
+		    history: historyString,
+		    layers: layerString};
+	jQuery.ajax({url: "save.py",
+		    data: json,
+		    type: "POST",
+		    success: function(data, textStatus) {
+		        $("#debug").html(data);
+                    },
+                    error: function(req, textStatus, error) {
+		        $("#debug").html("error " + textStatus + "; " + error);
+	            },
+		    dataType: "html"});
+    },
+
+    loadFromServer: function(title, callback) {
+	let self = this;
+	jQuery.getJSON("load.py", {title: title}, function(data) {
+		if (data.layers != "" && data.history != "") {
+		    g_drawInterface.recreateLayers(data.layers);
+		    self.recreate(data.history);
+		    $("#debug").html("Loaded from server!");
+		    callback();
+		} else {
+		    $("#debug").html("No data from server!");
+		    callback();
+		}
+	    });
+    },
+    
     wipe: function() {
 	this.actionList = [];
 	this.currPtr = 0;
