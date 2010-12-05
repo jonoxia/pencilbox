@@ -121,8 +121,15 @@ function clearEverything() {
     g_drawInterface.clearAllLayers();
 }
 
+function onScriptChanged() {
+    let newScript = $("#dialogue-edit-area").val();
+    let action = new ChangeScriptAction(newScript);
+    g_toolInterface.setTool(textBalloonTool);
+    g_history.pushAction(action);
+    g_dialogue.dialogueLayer.updateDisplay();
+}
+
 $(function() {
-        //deleteThatHistory();
         document.multitouchData = true;
 	adjustToScreen();
 
@@ -169,21 +176,15 @@ $(function() {
 		}
 		$(this).val("none");
 	    });
-	/* Update balloons with each keystroke, but don't
-	 * push an action to history until onchange event
-	 * (i.e. dialogue edit area loses focus) */
+	/* Update text balloons when you edit the script -- but
+	* not with every keystroke, that's too much work. Wait until
+	* user stops typing for a second.*/
+	let textUpdateTimer = null;
 	$("#dialogue-edit-area").bind("keyup", function() {
-		let newScript = $("#dialogue-edit-area").val();
-		g_dialogue.setScript(newScript);
-		g_dialogue.makeBubblesFromText();
-		g_dialogue.renderAllBubbles();
-		g_toolInterface.setTool(textBalloonTool);
-	    });
-	$("#dialogue-edit-area").bind("change", function() {
-		let newScript = $("#dialogue-edit-area").val();
-		let action = new ChangeScriptAction(newScript);
-		g_history.pushAction(action);
-		g_dialogue.dialogueLayer.updateDisplay();
+		if (textUpdateTimer) {
+		    clearTimeout(textUpdateTimer);
+		}
+		textUpdateTimer = setTimeout(onScriptChanged, 1000);
 	    });
 
 	// Call adjustToScreen if screen size changes

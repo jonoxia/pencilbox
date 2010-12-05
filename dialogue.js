@@ -15,7 +15,6 @@ function SpeechBubble(text, style) {
     this.lineHeight = 20;
     
     // These are instance specific (and need an interface for setting)
-    this.text = text;
     this.textSpans = [];
     this.style = style; // regular, caption, thought?
     
@@ -25,10 +24,7 @@ function SpeechBubble(text, style) {
     this.tailTip = g_dialogue.dialogueLayer.screenToWorld(300 + x, 400);
     this.maxLineWidth = 200;
 
-    // Call these to recalc when data changes:
-    this.wrapText();
-    this.calcBoundingBox();
-    this.calcTail();
+    this.setText(text);
 };
 SpeechBubble.prototype = {
     getFont: function(tagName) {
