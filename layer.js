@@ -20,9 +20,18 @@ function Layer(index, options) {
   this.index = index;
   this.visible = true;
   this.opacity = 1.0;
-  this._scale = 1.0;
-  this._xTranslate = 0;
-  this._yTranslate = 0;
+  if (options && options.scale) {
+      this._scale = options.scale;
+  } else {
+      this._scale = 1.0;
+  }
+  if (options && options.translate) {
+      this._xTranslate = options.translate.x;
+      this._yTranslate = options.translate.y;
+  } else {
+      this._xTranslate = 0;
+      this._yTranslate = 0;
+  }
   this._center = {x: this.width/2,
 		  y: this.height/2};
   this.name = "Layer " + index;
@@ -116,6 +125,11 @@ Layer.prototype = {
     },
     getZoomLevel: function() {
 	return this._scale;
+    },
+    getTranslation: function() {
+	let self = this;
+	return {x: self._xTranslate,
+		y: self._yTranslate};
     },
     setVisible: function(newVal) {
 	this.visible = newVal;	
