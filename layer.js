@@ -101,20 +101,14 @@ Layer.prototype = {
 	this.titleCell = $("<td></td>");
 	this.titleCell.html(this.name);
 	this.tableRow.append(this.titleCell);
-	cell = $("<td></td>");
-	let checkBox = $("<input type=\"checkbox\" checked=\"true\"></input>");
-	let self = this;
-	checkBox.bind("click", function() {
-		self.setVisible(checkBox.attr("checked"));
-	    });
-	cell.append(checkBox);
-	this.tableRow.append(cell);
 	
+	let self = this;
 	cell = $("<td></td>");
-	let selector = $("<select><option value='1.0'>1.0</option>" +
-			 "<option value='0.75'>0.75</option>" +
-			 "<option value='0.50'>0.50</option>" +
-			 "<option value='0.25'>0.25</option></select>");
+	let selector = $("<select><option value='1.0'>100%</option>" +
+			 "<option value='0.75'>75%</option>" +
+			 "<option value='0.50'>50%</option>" +
+			 "<option value='0.25'>25%</option>" +
+			 "<option value='0'>Hide</option></select>");
 	selector.change(function(){
 		let selected = selector.children("option:selected").first();
 		self.setOpacity(parseFloat(selected.val()));
@@ -167,10 +161,6 @@ Layer.prototype = {
 	let self = this;
 	return {x: self._xTranslate,
 		y: self._yTranslate};
-    },
-    setVisible: function(newVal) {
-	this.visible = newVal;	
-	this.tag.css("display", newVal?"block":"none");
     },
     _everythingBrown: function() {
 	this.displayContext.fillStyle = Colors.brown.toStyle();

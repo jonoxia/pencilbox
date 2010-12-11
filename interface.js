@@ -721,7 +721,7 @@ DrawAreaInterface.prototype = {
 		activeLayerIndex = i;
 	    }
 	    layerList.push({index: layer.getIndex(),
-			visible: layer.visible,
+			opacity: layer.getOpacity(),
 			name: layer.getName()
 			});
 	}
@@ -740,8 +740,12 @@ DrawAreaInterface.prototype = {
 	     * dialogue layer, panel layer, etc.) */
 	    if (this.getLayerByName(layerList[i].name) == null) {
 		let newLayer = new Layer(layerList[i].index);
-		newLayer.setVisible(layerList[i].visible);
-		newLayer.setName(layerList[i].name);
+		if (layerList[i].opacity != undefined) {
+		    newLayer.setOpacity(layerList[i].opacity);
+		}
+		if (layerList[i].name != undefined) {
+		    newLayer.setName(layerList[i].name);
+		}
 		this.layers.push(newLayer);
 	    }
 	}
