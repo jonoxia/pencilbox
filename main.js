@@ -133,7 +133,9 @@ function adjustToScreen() {
 	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
 	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
     }
-
+    // subtract a little from height to prevent vertical scroll bar
+    // from appearing:
+    mainCanvasHeight -= 25;
     $("#the-canvas").attr("width", mainCanvasWidth);
     $("#the-canvas").attr("height", mainCanvasHeight);
 
