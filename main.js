@@ -198,6 +198,9 @@ $(function() {
 	let title = gup("filename");
 	if (title) {
 	    g_history.loadFromServer(title, function() {
+		    if (g_drawInterface.layers.length < 4) {
+			g_drawInterface.newLayer();
+		    }
 		    g_drawInterface.updateAllLayerDisplays();
 		});
 	} else {
