@@ -185,8 +185,8 @@ Layer.prototype = {
 	let xCen = this._center.x;
 	let yCen = this._center.y;
 	let scale = this._scale;
-	return {x: (x - xTrans - xCen* ( 1-scale))/ scale,
-		y: (y - yTrans - yCen * (1-scale))/scale };
+	return {x: Math.floor((x - xTrans - xCen* ( 1-scale))/ scale),
+		y: Math.floor((y - yTrans - yCen * (1-scale))/scale) };
     },
     screenToWorldMulti: function(pointList) {
 	let pts = [];
