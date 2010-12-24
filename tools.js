@@ -1,10 +1,15 @@
 function Tool(defaultSize) {
-    this.size = defaultSize;
+    this._trueSize = defaultSize;
+    this.size = Math.floor( this._trueSize + 0.5 );
     this.actionPoints = [];
 }
 Tool.prototype = {
     getStrokeStyle: function() {
 	return g_toolInterface.getPenColor();
+    },
+
+    sizeIsOdd: function() {
+	return (this.size / 2 != Math.floor(this.size / 2));
     },
 
     getLineCap: function() {
@@ -17,7 +22,6 @@ Tool.prototype = {
 
     down: function(ctx, x, y) {
 	// round up size to next whole number:
-	this.size = Math.ceil(this.size);
 	this.resetRecordedAction();
 	this.actionPoints.push( {x: x, y: y} );
 	ctx.beginPath();
@@ -50,7 +54,9 @@ Tool.prototype = {
     },
 
     changeSize: function(ratio) {
-	this.size *= ratio;
+	this._trueSize *= ratio;
+	// round off effective size:
+	this.size = Math.floor( this._trueSize + 0.5 );
 	// minimum:
 	if (this.size < 1.0) {
 	    this.size = 1.0;
@@ -64,8 +70,9 @@ Tool.prototype = {
 		      strokeStyle: self.getStrokeStyle(),
 		      lineCap: self.getLineCap(),
 	              lineJoin: self.getLineJoin()};
-	return new DrawAction(activeLayer, this.actionPoints, styles,
-			      false);
+	let worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
+						      this.sizeIsOdd());
+	return new DrawAction(activeLayer, worldPts, styles, false);
     },
 
     resetRecordedAction: function() {
@@ -107,6 +114,7 @@ eraser.getRecordedAction = function() {
     // Scale down the eraser when you zoom in, so it stays the
     // same size on screen and you can do precision erasing:
     let width = this.size / g_drawInterface.getZoomLevel();
+    // TODO round off width to some kind of whole number?
     let points = activeLayer.screenToWorldMulti(this.actionPoints);
     return new EraserStrokeAction(activeLayer, points,
 				  width);
@@ -152,7 +160,7 @@ line.drawCursor = function(ctx, x, y) {
     }
 };
 
-let bucket = new Tool(1.0);
+let bucket = new Tool(0);
 bucket.display = function(penCtx, x, y) {
     let img = new Image();  
     img.onload = function(){  
@@ -185,10 +193,9 @@ bucket.drawCursor = function(ctx, x, y) {
 bucket.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
     let style = {fillStyle: g_toolInterface.getPaintColor()};
-    return new DrawAction(activeLayer,
-			  this.actionPoints,
-			  style,
-			  true);
+    let worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
+						  false);
+    return new DrawAction(activeLayer, worldPts, style, true);
 };
 
 let rectangle = new Tool(1.0);
@@ -250,7 +257,9 @@ rectangle.getRecordedAction = function() {
     let styles = {strokeStyle: self.getStrokeStyle(),
 		  lineWidth: self.size,
 		  lineCap: self.getLineCap()}
-    return new DrawAction(activeLayer, pointList, styles, false);
+    let worldPts = activeLayer.screenToWorldMulti(pointList,
+						  this.sizeIsOdd());
+    return new DrawAction(activeLayer, worldPts, styles, false);
     // TODO Later
     // Implement filled rectangle simply by setting that last
     // false to a true

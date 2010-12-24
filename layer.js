@@ -177,7 +177,7 @@ Layer.prototype = {
 	  this._yTranslate + this._center.y * (1-this._scale));
 	this.displayContext.scale(this._scale, this._scale);
     },
-    screenToWorld: function(x, y) {
+    screenToWorld: function(x, y, sizeIsOdd) {
 	// Inverse transform, turns screen coordinates into world
 	// coordinates.
 	let xTrans = this._xTranslate;
@@ -185,13 +185,20 @@ Layer.prototype = {
 	let xCen = this._center.x;
 	let yCen = this._center.y;
 	let scale = this._scale;
-	return {x: Math.floor((x - xTrans - xCen* ( 1-scale))/ scale),
-		y: Math.floor((y - yTrans - yCen * (1-scale))/scale) };
+	let worldX = (x - xTrans - xCen* ( 1-scale))/scale;
+	let worldY = (y - yTrans - yCen * (1-scale))/scale;
+	worldX = Math.floor(worldX);
+	worldY = Math.floor(worldY);
+	if (sizeIsOdd) {
+	    worldX += 0.5;
+	    worldY += 0.5;
+	}
+	return {x: worldX, y: worldY };
     },
-    screenToWorldMulti: function(pointList) {
+    screenToWorldMulti: function(pointList, sizeIsOdd) {
 	let pts = [];
 	for each (let pt in pointList) {
-	    pts.push( this.screenToWorld(pt.x, pt.y) );
+          pts.push( this.screenToWorld(pt.x, pt.y, sizeIsOdd) );
 	}
 	return pts;
     },

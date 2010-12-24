@@ -52,6 +52,10 @@ function gup( name )
     else
 	return results[1];
 }
+
+function debug( str ) {
+    $("#debug").html( str );
+}
 		    
 
 function export2() {

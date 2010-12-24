@@ -6,6 +6,11 @@ var g_dialogue = null;
 var g_panels = null;
 var g_selection = null;
 
+function debug( str ) {
+    TestsAhoy.output( str );
+}
+
+// History Save / Reload Tester
 TestsAhoy.register(
   {
       setUp: function() {
@@ -118,3 +123,148 @@ TestsAhoy.register(
       }
   }
 );
+
+
+TestsAhoy.register(
+{
+    name: "Flood Fill Tests",
+
+    setUp: function() {
+	// Instantiating these requires html elements #pen-size-canvas, 
+	// #the-canvas, and #debug.
+	TestsAhoy.output("Settingup");
+	window.localStorage.setItem("history", "");
+	window.localStorage.setItem("layers", "");
+	g_toolInterface = new ToolAreaInterface();
+	g_drawInterface = new DrawAreaInterface();
+	g_drawInterface.clearAllLayers();
+	g_dialogue = new DialogueManager();
+	g_selection = new SelectionManager();
+	g_panels = new PanelManager();
+	g_history = new History();
+    },
+
+    tearDown: function() {
+	g_drawInterface = null;
+	g_toolInterface = null;
+	g_history = null;
+	g_dialogue = null;
+	g_panels = null;
+	g_selection = null;
+    },
+
+    testRectangleFilledCorrectly: function() {
+	/* 1. Make a rectangle in the canvas.
+	 * 2. Click inside the rectangle with the paintbucket tool.
+	 * 3. Get the list of points back from the paintbucket tool and
+	 *    assert they are as we expected.
+	 * 4. use the failure of this test to figure out what, exactly,
+	 *    is wrong with our floodfill algorithm.
+	 * 5. Make some weirder shapes than a rectangle and see what we
+	 *    can learn from floodfilling those guys. */
+	g_drawInterface.newLayer();
+	g_drawInterface.setActiveLayer(-4);
+	let ctx = g_drawInterface.getActiveLayer().getContext();
+	ctx.strokeRect( 5.5, 5.5, 10, 10);
+
+	// todo also try ctx.strokeRect( 5.5, 5.5, 10, 10);
+	// and (5, 5, 10.5, 10.5); shouldn't matter if we're on the whole
+	// pixel or not.
+	
+	bucket.up(ctx, 10, 10);
+	let actualPtList = bucket.actionPoints;
+	debugPtList(actualPtList);
+	expectedPtList = [{x: 10, y: 6},
+			  {x: 15, y: 6},
+			  {x: 15, y: 15},
+			  {x: 6, y: 15},
+			  {x: 6, y: 6}];
+	for (let i = 0; i < expectedPtList.length; i++) {
+	    TestsAhoy.assertEqual(actualPtList[i].x,
+				  expectedPtList[i].x,
+				  "pt " + i + " has wrong X");
+	    TestsAhoy.assertEqual(actualPtList[i].y,
+				  expectedPtList[i].y,
+				  "pt " + i + " has wrong Y");
+	}
+    },
+
+    testFillGoesUpToEdge: function() {
+	// make a partial shape that abuts edge of canvas: verify
+	// that filled region goes up to edge of canvas and stops
+	g_drawInterface.newLayer();
+	g_drawInterface.setActiveLayer(-4);
+	let ctx = g_drawInterface.getActiveLayer().getContext();
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo( 0.5, 10.5);
+	ctx.lineTo( 10.5, 10.5);
+	ctx.lineTo( 10.5, 0.5);
+	ctx.stroke();
+
+	bucket.up(ctx, 5, 5);
+	let actualPtList = bucket.actionPoints;
+	debugPtList(actualPtList);
+	expectedPtList = [{x: 5, y: 0},
+			  {x: 10, y: 0},
+			  {x: 10, y: 10},
+			  {x: 0, y: 10},
+			  {x: 0, y: 0}];
+	for (let i = 0; i < expectedPtList.length; i++) {
+	    TestsAhoy.assertEqual(actualPtList[i].x,
+				  expectedPtList[i].x,
+				  "pt " + i + " has wrong X");
+	    TestsAhoy.assertEqual(actualPtList[i].y,
+				  expectedPtList[i].y,
+				  "pt " + i + " has wrong Y");
+	}
+    },
+
+    testTriangleFilledCorrectly: function() {
+	g_drawInterface.newLayer();
+	g_drawInterface.setActiveLayer(-4);
+	let ctx = g_drawInterface.getActiveLayer().getContext();
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.moveTo( 10.5, 10.5);
+	ctx.lineTo( 20.5, 20.5);
+	ctx.lineTo( 10.5, 20.5);
+	ctx.lineTo( 10.5, 10.5);
+	ctx.stroke();
+
+	bucket.up(ctx, 12, 15);
+	let actualPtList = bucket.actionPoints;
+	debugPtList(actualPtList);
+	// TODO the actual test part
+
+	// test that algorithm deals with diagonal lines
+	// (At the moment it doesn't -- diagonal lines have anti-
+	// aliasing around them maybe?)
+    },
+
+    testFillIgnoresZoom: function() {
+	// set zoom to 50%, set it to 200%, make sure they produce
+	// same result
+	
+    },
+
+    testFillStopsAtIsland: function() {
+	// TODO
+	// make a shape with another shape inside; verify that
+	// algorithm doesn't fill inner shape
+    },
+
+    testCircleFilledCorrectly: function() {
+	// TODO
+	// make a (small) circle, fill it, verify
+	// that algorithm deals with curved lines
+    }
+});
+
+function debugPtList(ptList) {
+    let str = "Point list: ";
+    for (let i in ptList) {
+	str += "{x:" + ptList[i].x + ", " + ptList[i].y + "}, ";
+    }
+    TestsAhoy.output(str);
+}

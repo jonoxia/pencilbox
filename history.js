@@ -35,12 +35,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 function DrawAction(layer, pointList, styleInfo, isFill) {
-    // Expects pointList in screen coordinates (TODO this is
-    // inconsistent with other Actions.)
+    // Expects pointList in world coordinates, like all actions
     this.layer = layer;
     this.ctx = layer.getContext();
-    
-    this.pts = layer.screenToWorldMulti(pointList);
+    this.pts = pointList;
     this.styleInfo = styleInfo;
     // styleInfo is an object that can contain:
     // .lineWidth, .strokeStyle, .fillStyle, .lineCap
@@ -334,10 +332,10 @@ function History() {
     // this.loadFromLocalStorage();
 }
 History.prototype = {
-    debug: function() {
+    /*debug: function() {
 	$("#debug").html("History has " + this.actionList.length +
 			 " items, pointer is at " + this.currPtr);
-    },
+			 },*/
     pushAction: function( action ) {
 	if (!action) {
 	    return;
@@ -349,7 +347,7 @@ History.prototype = {
 	}
 	this.actionList.push(action);
 	this.currPtr = this.actionList.length;
-	$("#debug").html("Action pushed - currPtr now " + this.currPtr);
+	debug("Action pushed - currPtr now " + this.currPtr);
     },
 
     replayActions: function() {
@@ -384,7 +382,7 @@ History.prototype = {
 	    this.currPtr -= 1;
 	    //this.replayActions();
 	    g_drawInterface.updateAllLayerDisplays(); // will replay 
-	    $("#debug").html("Undone - currPtr now " + this.currPtr);
+	    debug("Undone - currPtr now " + this.currPtr);
 	}
     },
 
@@ -392,7 +390,7 @@ History.prototype = {
 	if (this.currPtr < this.actionList.length) {
 	    this.currPtr += 1;
 	    g_drawInterface.updateAllLayerDisplays();
-	    $("#debug").html("Redone - currPtr now " + this.currPtr);
+	    debug("Redone - currPtr now " + this.currPtr);
 	}
     },
 
@@ -414,7 +412,7 @@ History.prototype = {
     },
 
     recreate: function(historyString) {
-	$("#debug").html("History string is " + historyString);
+	debug("History string is " + historyString);
 	let historyObj = JSON.parse(historyString);
 	// Layers must already have been recreated when this
 	// is called.
@@ -479,7 +477,7 @@ History.prototype = {
     },
 
     saveToLocalStorage: function() {
-	$("#debug").html("Saving to local storage...");
+	debug("Saving to local storage...");
 	let historyString = this.serialize();
 	let layerString = g_drawInterface.serializeLayers();
 	window.localStorage.setItem("history", historyString);
@@ -499,12 +497,12 @@ History.prototype = {
 	    if (!historyString || historyString == "") {
 		str += " No history string.";
 	    }
-	    $("#debug").html(str);
+	    debug(str);
 	    return;
 	}
 	g_drawInterface.recreateLayers(layerString);
 	this.recreate(historyString);
-	$("#debug").html("Loaded.");
+	debug("Loaded.");
     },
 
     saveToServer: function(title) {
@@ -517,10 +515,10 @@ History.prototype = {
 		    data: json,
 		    type: "POST",
 		    success: function(data, textStatus) {
-		        $("#debug").html(data);
+		        debug(data);
                     },
                     error: function(req, textStatus, error) {
-		        $("#debug").html("error " + textStatus + "; " + error);
+		        debug("error " + textStatus + "; " + error);
 	            },
 		    dataType: "html"});
     },
@@ -531,10 +529,10 @@ History.prototype = {
 		if (data.layers != "" && data.history != "") {
 		    g_drawInterface.recreateLayers(data.layers);
 		    self.recreate(data.history);
-		    $("#debug").html("Loaded from server!");
+		    debug("Loaded from server!");
 		    callback();
 		} else {
-		    $("#debug").html("No data from server!");
+		    debug("No data from server!");
 		    callback();
 		}
 	    });

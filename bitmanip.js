@@ -118,18 +118,21 @@ var Colors = {
     jungleGreen: new Color(0, 180, 100, 1)
 };
 
-function move(pt, dir) {
+function move(pt, dir, distance) {
+    if (!distance) {
+	distance = 1;
+    }
     switch (dir) {
     case "up":
-	return {x: pt.x, y: pt.y - 1};
+	return {x: pt.x, y: pt.y - distance};
     case "down":
-	return {x: pt.x, y: pt.y + 1};
+	return {x: pt.x, y: pt.y + distance};
     case "left":
-	return {x: pt.x - 1, y: pt.y};
+	return {x: pt.x - distance, y: pt.y};
     case "right":
-	return {x: pt.x + 1, y: pt.y};
+	return {x: pt.x + distance, y: pt.y};
     default:
-	$("#debug").html("Invalid dir: " + dir);
+	debug("Invalid dir: " + dir);
     }
 }
 function clockwise(dir) {
@@ -156,7 +159,28 @@ function counterclockwise(dir) {
 	return "up";
     }
 }
+function opposite(dir) {
+    switch(dir) {
+    case "up":
+	return "down";
+    case "left":
+	return "right";
+    case "down":
+	return "up";
+    case "right":
+	return "left";
+    }
+}
 
+/* BitManipulator currently converts to bitmap at the current
+ * zoom level, which makes flood fill behavior highly dependent on the
+ * view (in fact the paint won't stop at lines that aren't onscreen!)
+ * TODO getImageData at a fixed scale (one where the whole canvas
+ * contents fit onscreen). The more we zoom in, the more accurate our
+ * flood fills will be.  Is there any way to tell it to not use anti-
+ * aliasing? Because the grey anti-alias pixels on diagonal lines really
+ * screw up flood fills.
+ */
 function BitManipulator(context, width, height) {
     this.context = context;
     this.width = width;
@@ -165,6 +189,8 @@ function BitManipulator(context, width, height) {
 }
 BitManipulator.prototype = {
     getColorAt: function(x, y) {
+	x = Math.floor( x - 0.5);
+	y = Math.floor( y - 0.5);
 	let i = 4 * (y * this.width + x);
 	let r = this.dataBlob.data[i];
 	let g = this.dataBlob.data[i + 1];
@@ -178,6 +204,8 @@ BitManipulator.prototype = {
     },
 
     setColorAt: function(x, y, color) {
+	x = Math.floor( x - 0.5);
+	y = Math.floor( x - 0.5);
 	let i = 4 * (y * this.width + x);
 	this.dataBlob.data[i] = color.r;
 	this.dataBlob.data[i + 1] = color.g;
@@ -195,70 +223,98 @@ function debugObj(obj) {
     for (let x in obj) {
 	str += "obj." + x + " = " + obj[x] + ";";
     }
-    $("#debug").html(str);
+    debug(str);
 }
 
 function edgeFindingAlgorithm(data, x, y) {
-    // TODO this algorthm needs to treat edges of canvas as color
-    // boundaries too.
+    /* Key to getting this algorithm right: we're drawing a line
+     * BETWEEN two adjacent pixels, not a line on one pixel or the other.
+     * e.g. a line at y = 15 is a line between the pixel at y = 14.5 and
+     * the pixel at 15.5. */
     let megaList = [];
     let dir = "up";
     let pt = {x: x, y: y};
+    debug("Original point: " + pt.x + ", " + pt.y );
     let seedColor = data.getColorAt(x, y);
-    // Go up until we hit a color boundary:
-    while (seedColor.equals(data.getColorAt(pt.x, pt.y))) {
-	pt = move(pt, dir);
-	if (pt.y < 0) {
-	    break;
+    debug("Seed color is " + seedColor.toStr());
+
+    // treat edges of canvas, as well as points with different color
+    // from seed color, as boundary points:
+    let isBoundary = function(point) {
+	if (point.x < 0.5 || point.y < 0.5) {
+	    return true;
 	}
+	if (point.x > data.width + 0.5 || point.y > data.width + 0.5) {
+	    return true;
+	}
+	let color = data.getColorAtPt(point);
+	if (!seedColor.equals(color)) {
+	    debug("Boundary because color is " + color.toStr());
+	}
+	return (!seedColor.equals(color));
     }
+
+    // Go up until we hit a boundary:
+    while (!isBoundary({x: pt.x - 0.5, y: pt.y - 0.5})) {
+	pt = move(pt, dir);
+    }
+    debug("Point of contact: " + pt.x + ", " + pt.y );
     // Remember the point just before we hit -- we'll be trying to get
     // back here.
-    pt = move(pt, "down");
     let keyPt = {x: pt.x, y: pt.y};
     // TODO this algorithm is going to have a problem with islands.
     // Now hug edges clockwise until we get back to this point.
     let dir = clockwise(dir);
     let i = 0;
-    megaList.push({x: pt.x + 0.5, y: pt.y + 0.5});
-    // the +0.5 is because canvas coords are actually between pixels - without
-    // it we miss a row of pixels on the right and bottom
-    while(i < 5000) {
+    megaList.push({x: pt.x, y: pt.y});
+    while(i < 5000) { // ensures that loop will end
 	i++;
-	// Throw out a feeler counterclockwise to see if there's more
-	// seedColored space that way -- this ensures that we expand
-	// outward as much as possible.
-	let exploreDir = counterclockwise(dir);
-	let centrifugal = exploreDir;
-	let explorePt = move(pt, exploreDir);
-	// Figure out which way we need to move to hug the edge of
-	// the line.
-	let z = 0;
-	let debugStr = "";
-	while (!seedColor.equals(data.getColorAtPt(explorePt))) {
-	    debugStr += explorePt.x + ", " + explorePt.y + ": "
-		+ data.getColorAtPt(explorePt).toStr();
-	    exploreDir = clockwise(exploreDir);
-	    explorePt = move(pt, exploreDir);
-	    z++;
-	    if (z > 4) {
-		$("#debug").html("Infinite inner loop: " + debugStr);
-		break;
-	    }
+	/* Examine points ahead of us to the outside and the inside.
+	 * It looks like one of these cases (where X is a different
+	 * colored pixel, O is same color pixel, and -> is direction of
+         * movement):
+	 *
+         *  X O      X X     X X     X O   X X
+	 *  ->      -->     -->     -->   -->
+	 *  O O      O O     0 X     O X   X X
+         *
+	 * go this way:
+	 *  left  straight  right   right  can't happen
+	 */
+	debug("travel direction is " + dir);
+	let newDir = dir;
+	let frontOuter = move( move(pt, dir, 0.5),
+			       counterclockwise(dir), 0.5);
+	/*let frontOuterColor = data.getColorAtPt(frontOuter);
+	debug("frontOuter is " + frontOuter.x + ", " + frontOuter.y
+	+ " -> " + frontOuterColor.toStr());*/
+
+	let frontInner = move( move(pt, dir, 0.5), clockwise(dir), 0.5);
+	/*let frontInnerColor = data.getColorAtPt(frontInner);
+	debug("frontInner is " + frontInner.x + ", " + frontInner.y
+	+ " -> " + frontInnerColor.toStr());*/
+	// By looking at the front inner and front outer points, we can
+	// decide whether we need to turn clockwise, counterclockwise,
+	// or keep going straight:
+	if (isBoundary(frontInner)) {
+	    newDir = clockwise(dir);
+	} else if (isBoundary(frontOuter)) {
+	    newDir = dir;
+	} else {
+	    newDir = counterclockwise(dir);
 	}
-	pt = move(pt, exploreDir);
-	// Only record points when the direction changes
-	if (dir != exploreDir) {
-	    // TODO what if we adjust one pixel outwards?
-	    //let adjustedPt = move(pt, dir);   // exploreDir?
-	    let adjustedPt = move(pt, centrifugal);
-	    //megaList.push({x: pt.x + 0.5, y: pt.y + 0.5});
-	    megaList.push({x: adjustedPt.x + 0.5, y: adjustedPt.y + 0.5});
-	    /*let opposite = counterclockwise(counterclockwise(exploreDir));
-	    let last = megaList.length -1;
-	    megaList[last] = move( megaList[last], opposite);*/
-	    dir = exploreDir;
+	// Only record points when the direction changes; record the
+	// point before moving it in the new direction.
+	if (newDir != dir) {
+	    debug("Changed direction - time to record pt.");
+	    debug("Recorded point: " + pt.x + ", " + pt.y);
+	    megaList.push({x: pt.x, y: pt.y});
 	}
+	pt = move(pt, newDir);
+	debug("Out of inner loop. Moved point to " + pt.x + ", " + pt.y);
+	dir = newDir;
+
+	// Exit when we arrive back at original point.
 	if (pt.x == keyPt.x && pt.y == keyPt.y) {
 	    break;
 	}
