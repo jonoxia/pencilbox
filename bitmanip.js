@@ -47,6 +47,12 @@ Color.prototype = {
 	this.b == color2.b &&
 	this.a == color2.a;
     },
+    diff: function(color2) {
+	return Math.sqrt( (this.r - color2.r) * (this.r - color2.r) +
+			  (this.g - color2.g) * (this.g - color2.g) +
+			  (this.b - color2.b) * (this.b - color2.b) +
+			  (this.a - color2.a) * (this.a - color2.a));
+    },
     toStr: function() {
 	return "(" + this.r + "," + this.g + "," + this.b + "," + this.a + ")";
     },
@@ -226,6 +232,8 @@ function debugObj(obj) {
     debug(str);
 }
 
+const edge_finding_tolerance = 60;
+
 function edgeFindingAlgorithm(data, x, y) {
     /* Key to getting this algorithm right: we're drawing a line
      * BETWEEN two adjacent pixels, not a line on one pixel or the other.
@@ -250,8 +258,10 @@ function edgeFindingAlgorithm(data, x, y) {
 	let color = data.getColorAtPt(point);
 	if (!seedColor.equals(color)) {
 	    debug("Boundary because color is " + color.toStr());
+	    debug("Diff is " + seedColor.diff(color));
 	}
-	return (!seedColor.equals(color));
+	// Tolerance here:
+	return (seedColor.diff(color) > edge_finding_tolerance);
     }
 
     // Go up until we hit a boundary:
