@@ -95,40 +95,60 @@ DrawAction.prototype = {
 	 * the action back up to the layer when reconstructing. */
 	let styleInfo = {};
 	if (self.styleInfo.lineWidth != undefined) {
-	    styleInfo.lineWidth = self.styleInfo.lineWidth;
+	    styleInfo.lw = self.styleInfo.lineWidth;
 	}
 	if (self.styleInfo.lineCap != undefined) {
-	    styleInfo.lineCap = self.styleInfo.lineCap;
+	    if (self.styleInfo.lineCap != "butt") {
+		styleInfo.lc = self.styleInfo.lineCap;
+	    }
 	}
 	if (self.styleInfo.strokeStyle != undefined) {
-	    styleInfo.strokeStyle = self.styleInfo.strokeStyle.toJSON();
+	    styleInfo.ss = self.styleInfo.strokeStyle.toJSON();
 	}
 	if (self.styleInfo.fillStyle != undefined) {
-	    styleInfo.fillStyle = self.styleInfo.fillStyle.toJSON();
+	    styleInfo.fs = self.styleInfo.fillStyle.toJSON();
 	}
-	return {type: "draw",
-		layerName: self.layer.getName(),
-		points: self.pts,  // already json more or less
-		styleInfo: styleInfo,
-		isFill: self.isFill,
-		};
+	// compress points to single array of ints:
+	let points = [];
+	for (let i = 0; i < self.pts.length; i++) {
+	    points.push( self.pts[i].x );
+	    points.push( self.pts[i].y );
+	}
+	let smallJSON = {t: "draw",
+			 l: self.layer.getName(),
+			 p: points,
+			 s: styleInfo};
+	if (self.isFill) {
+	    smallJson.f = 1;
+	}
+	return smallJSON;
+    },
+
+    restoreFromJSON: function(actionData) {
+	this.pts = [];
+	for (let i = 0; i < actionData.p.length; i += 2) {
+	    this.pts.push( { x: actionData.p[i],
+			y: actionData.p[i+1]});
+	}
+	this.isFill = (actionData.f == 1);
+	this.restoreStyleFromJSON(actionData.s);
     },
 
     restoreStyleFromJSON: function(styleInfo) {
-	if (styleInfo.lineWidth != undefined) {
-	    this.styleInfo.lineWidth = styleInfo.lineWidth;
+	if (styleInfo.lw != undefined) {
+	    this.styleInfo.lineWidth = styleInfo.lw;
 	}
 	if (styleInfo.lineCap != undefined) {
-	    this.styleInfo.lineCap = styleInfo.lineCap;
+	    this.styleInfo.lineCap = styleInfo.lc;
 	}
 	if (styleInfo.strokeStyle != undefined) {
 	    let color = new Color();
-	    color.fromJSON(styleInfo.strokeStyle);
+	    color.fromJSON(styleInfo.ss);
 	    this.styleInfo.strokeStyle = color;
 	}
 	if (styleInfo.fillStyle != undefined) {
 	    let color = new Color();
-	    color.fromJSON(styleInfo.fillStyle);
+	    color.fromJSON(styleInfo.fs);
 	    this.styleInfo.fillStyle = color;
 	}
     }
@@ -153,11 +173,25 @@ EraserStrokeAction.prototype = {
 
     toJSON: function() {
 	let self = this;
-	return {type: "eraser",
-		layerName: self.layer.getName(),
-		points: self.points,
-		size: self.size
+	let points = [];
+	for (let i = 0; i < self.points.length; i++) {
+	    points.push( self.points[i].x );
+	    points.push( self.points[i].y );
+	}
+	return {t: "eraser",
+		l: self.layer.getName(),
+		p: points,
+		s: self.size
 		};
+    },
+
+    restoreFromJSON: function(actionData) {
+	this.points = [];
+	for (let i = 0; i < actionData.p.length; i += 2) {
+	    this.points.push( { x: actionData.p[i],
+			        y: actionData.p[i+1]});
+	}
+	this.size = actionData.s;
     }
 };
 
@@ -181,6 +215,8 @@ ClearRegionAction.prototype = {
 	ctx.globalCompositeOperation = 'destination-out';
 	//ctx.fillStyle = 'rgba(0,0,0,0)';
 	ctx.beginPath();
+	// TODO this gets illegal string when trying to recover saved
+	// drawing that has erasure in it?
 	ctx.moveTo(this.points[0].x, this.points[0].y);
         for (let i= 1; i < this.points.length; i++) {
 	    ctx.lineTo(this.points[i].x, this.points[i].y);
@@ -194,10 +230,23 @@ ClearRegionAction.prototype = {
 	/* Can't save the layer to json as it's a live object ref
 	 * Instead, save the layerName which we can use to match
 	 * the action back up to the layer when reconstructing. */
-	return {type: "clear",
-		layerName: self.layer.getName(),
-		points: self.pts
+	let points = [];
+	for (let i = 0; i < self.points.length; i++) {
+	    points.push( self.points[i].x );
+	    points.push( self.points[i].y );
+	}
+	return {t: "clear",
+		l: self.layer.getName(),
+		p: points
 		};
+    },
+
+    restoreFromJSON: function(actionData) {
+	this.points = [];
+	for (let i = 0; i < actionData.p.length; i += 2) {
+	    this.points.push( { x: actionData.p[i],
+			        y: actionData.p[i+1]});
+	}
     }
 };
 
@@ -221,9 +270,9 @@ ImportImageAction.prototype = {
 	 * from a URL so we have to actually save the pixel level
 	 * data and serialize that to a string to store it in JSON! */
 	let self = this;
-	return {type: "image",
-		layerName: self.layer.getName(),
-		point: self.importPt
+	return {t: "image",
+		l: self.layer.getName(),
+		p: self.importPt
 		};
     }
 
@@ -247,8 +296,8 @@ ChangeScriptAction.prototype = {
     toJSON: function() {
 
 	let self = this;
-	return {type: "script",
-		layerName: self.layer.getName(),
+	return {t: "script",
+		l: self.layer.getName(),
 	        text: self.newScript};
     }
 };
@@ -277,11 +326,11 @@ MoveBalloonAction.prototype = {
 
     toJSON: function() {
 	let self = this;
-	return {type: "balloon",
-		layerName: self.layer.getName(),
-		balloonIndex: self.balloonIndex,
-		controlPoint: self.controlPoint,
-		point: self.point};
+	return {t: "balloon",
+		l: self.layer.getName(),
+		i: self.balloonIndex,
+		c: self.controlPoint,
+		p: self.point};
     }
 };
 
@@ -314,13 +363,13 @@ RectanglePanelAction.prototype = {
     },
     toJSON: function() {
 	let self = this;
-	return {type: "rectanglePanel",
-		layerName: self.layer.getName(),
-		panelId: self._panelId,
+	return {t: "rectanglePanel",
+		l: self.layer.getName(),
+		i: self._panelId,
 		left: self._left,
 		top: self._top,
-		width: self._width,
-		height: self._height};
+		w: self._width,
+		h: self._height};
     }
 };
 
@@ -419,55 +468,50 @@ History.prototype = {
 	this.actionList = [];
 	for (let i = 0; i < historyObj.actions.length; i++) {
 	    let actionData = historyObj.actions[i];
-	    let layerName = actionData.layerName;
+	    let layerName = actionData.l;
 	    let layer = g_drawInterface.getLayerByName(layerName);
 	    if (!layer) {
 		continue;
 	    }
 	    let action;
-	    switch (actionData.type) {
+	    switch (actionData.t) {
 	    case "draw":
-		action = new DrawAction(layer,
-					actionData.points,
-					{},
-					actionData.isFill);
-		/* DrawAction constructor transforms points to world
-		 * coords (this is inconsistent with other actions!)
-		 * The following line is a workaround: */
-		action.pts = actionData.points;
-		action.restoreStyleFromJSON(actionData.styleInfo);
+		action = new DrawAction(layer, [],{}, false);
+		action.restoreFromJSON(actionData);
 		break;
 	    case "clear":
 		action = new ClearRegionAction(layer,
-					       actionData.points);
+					       actionData.p);
+		action.restoreFromJSON(actionData);
 		break;
 	    case "eraser":
 		action = new EraserStrokeAction(layer,
-						actionData.points,
-						actionData.size);
-
+						[],
+						actionData.s);
+		action.restoreFromJSON(actionData);
 		break;
 	    case "image":
 		let img = null; // TODO store image data in json
-		let pt = actionData.point;
+		let pt = actionData.p;
 		action = new ImportImageAction(layer, img, pt.x, pt.y);
 		break;
 	    case "rectanglePanel":
-		action = new RectanglePanelAction(actionData.panelId,
+		action = new RectanglePanelAction(actionData.i,
 						  actionData.left,
 						  actionData.top,
-						  actionData.width,
-						  actionData.height);
+						  actionData.w,
+						  actionData.h);
 		break;
 	    case "script":
 		action = new ChangeScriptAction(actionData.text);
 		break;
 	    case "balloon":
-		action = new MoveBalloonAction(actionData.balloonIndex,
-					       actionData.controlPoint,
-					       actionData.point);
+		action = new MoveBalloonAction(actionData.i,
+					       actionData.c,
+					       actionData.p);
 		break;
 	    default:
+		throw "Bad action type: " + actionData.t;
 		break;
 	    }
 	    this.actionList.push(action);
@@ -482,11 +526,11 @@ History.prototype = {
 	let layerString = g_drawInterface.serializeLayers();
 	window.localStorage.setItem("history", historyString);
 	window.localStorage.setItem("layers", layerString);
-	//$("#debug").html("Saved.");
+	$("#debug").html("Saved.");
     },
 
     loadFromLocalStorage: function() {
-	//$("#debug").html("Loading from local storage...");
+	$("#debug").html("Loading from local storage...");
 	let layerString = window.localStorage.getItem("layers");
 	let historyString = window.localStorage.getItem("history");
 	if (!layerString || !historyString || layerString == "" || historyString == "") {
@@ -507,6 +551,7 @@ History.prototype = {
 
     saveToServer: function(title) {
 	let historyString = this.serialize();
+	let size = Math.floor( historyString.length / 1000 );
 	let layerString = g_drawInterface.serializeLayers();
 	let json = {title: title,
 		    history: historyString,
@@ -515,7 +560,7 @@ History.prototype = {
 		    data: json,
 		    type: "POST",
 		    success: function(data, textStatus) {
-		        debug(data);
+		        debug(data +" size: " + size + "kb");
                     },
                     error: function(req, textStatus, error) {
 		        debug("error " + textStatus + "; " + error);
@@ -528,8 +573,9 @@ History.prototype = {
 	jQuery.getJSON("load.py", {title: title}, function(data) {
 		if (data.layers != "" && data.history != "") {
 		    g_drawInterface.recreateLayers(data.layers);
+		    let size = Math.floor( data.history.length / 1000 );
 		    self.recreate(data.history);
-		    debug("Loaded from server!");
+		    debug("Loaded from server! " + size + "kb");
 		    callback();
 		} else {
 		    debug("No data from server!");

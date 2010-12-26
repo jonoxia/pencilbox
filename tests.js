@@ -82,16 +82,21 @@ TestsAhoy.register(
 	  g_history.pushAction(eraseAction);
 
 	  // Serialize!
+	  let layerStr = g_drawInterface.serializeLayers();
 	  let historyStr = g_history.serialize();
 	  TestsAhoy.output(historyStr);
 	  this.tearDown();
 	  this.setUp();
 	  // Recreate!
+	  g_drawInterface.recreateLayers(layerStr, TestsAhoy);	  
 	  g_history.recreate(historyStr, TestsAhoy);
 
 	  // Now test that all the actions were restored!
 	  TestsAhoy.assertEqual(g_history.currPtr, 4,
 				"CurrPtr should be 4");
+	  for (let z= 0; z < g_history.actionList.length; z++) {
+	      TestsAhoy.output("Action restored: " + JSON.stringify(g_history.actionList[z].toJSON()));
+	  }
 	  TestsAhoy.assertEqual(g_history.actionList.length, 4,
 				"Should have 4 actions in history");
 	  let action = g_history.actionList[0];

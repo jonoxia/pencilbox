@@ -68,16 +68,13 @@ Color.prototype = {
     },
     toJSON: function() {
 	let self = this;
-	return {r: self.r,
-		g: self.g,
-		b: self.b,
-		a: self.a};
+	return [self.r, self.g, self.b, self.a];
     },
     fromJSON: function(jsonObj) {
-	this.r = jsonObj.r;
-	this.g = jsonObj.g;
-	this.b = jsonObj.b;
-	this.a = jsonObj.a;
+	this.r = jsonObj[0];
+	this.g = jsonObj[1];
+	this.b = jsonObj[2];
+	this.a = jsonObj[3];
     }
 };
 
