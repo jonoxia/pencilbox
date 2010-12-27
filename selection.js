@@ -58,7 +58,7 @@
  *  There are two things potentially wrong with this.
  *  1. When replaying all actions for export,the clearRect will
  *    delete chunks of underlying layers that we don't want
- *    deleted.
+ *    deleted.  (Now Solved)
  *  2. If you drag, drop, and then undo, it undoes the drop, but
  *    it does not undo the clear in the original location; it also
  *    doesn't recreate the selection state, so the content will

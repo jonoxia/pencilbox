@@ -256,26 +256,47 @@ function ImportImageAction(layer, img, x, y) {
     this.ctx = layer.getContext();
     this.importPt = {x: x, y: y};
     this.img = img;
+    if (img && img.src) {
+	this._url = img.src
+    } else {
+	// TODO if we get img with no src Url, we should
+	// convert img to a dataUrl and store it.
+	this._url = null;
+    }
 }
 ImportImageAction.prototype = {
     replay: function(newCtx) {
 	let ctx = newCtx ? newCtx : this.ctx;
-	// TODO error here with data: no
-	ctx.drawImage(this.img, this.importPt.x, this.importPt.y);
+	if (this.img != null) {
+	    ctx.drawImage(this.img, this.importPt.x, this.importPt.y);
+	}
     },
 
     toJSON: function() {
-	// Not yet being reconstructed.
-	/* TODO This is going to be hard.  The image may not have come
-	 * from a URL so we have to actually save the pixel level
-	 * data and serialize that to a string to store it in JSON! */
 	let self = this;
 	return {t: "image",
 		l: self.layer.getName(),
-		p: self.importPt
+		p: self.importPt,
+		u: self._url
 		};
+    },
+    
+    restoreFromJSON: function(actionData) {
+	let self = this;
+	if (actionData.p) {
+	    this.importPt = {x: actionData.p.x,
+			     y: actionData.p.y};
+	}
+	this.img = null;
+	if (actionData.u) {
+	    let newImg = new Image();
+	    self._url = actionData.u;
+	    newImg.src = actionData.u;
+	    newImg.onload = function() {
+		self.img = newImg;
+	    }
+	}
     }
-
 };
 
 function ChangeScriptAction(newScript) {
@@ -474,6 +495,10 @@ History.prototype = {
 		continue;
 	    }
 	    let action;
+	    // TODO all action constructors should be able to be called
+	    // with just layer as an argument and all the others undefined,
+	    // and then restore using the restoreFromJSON function. That
+	    // would let me simplify the below code a lot.
 	    switch (actionData.t) {
 	    case "draw":
 		action = new DrawAction(layer, [],{}, false);
@@ -491,9 +516,8 @@ History.prototype = {
 		action.restoreFromJSON(actionData);
 		break;
 	    case "image":
-		let img = null; // TODO store image data in json
-		let pt = actionData.p;
-		action = new ImportImageAction(layer, img, pt.x, pt.y);
+		action = new ImportImageAction(layer);
+		action.restoreFromJSON(actionData);
 		break;
 	    case "rectanglePanel":
 		action = new RectanglePanelAction(actionData.i,
