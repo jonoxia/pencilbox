@@ -34,12 +34,82 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+function StyleRecord(styleInfo) {
+    if (styleInfo) {
+	this.styleInfo = styleInfo;
+    } else {
+	this.styleInfo = {};
+    }
+}
+StyleRecord.prototype = {
+    apply: function(ctx) {
+	if (this.styleInfo.strokeStyle) {
+	    let strokeColor = this.styleInfo.strokeStyle.copy();
+	    // TODO opacity has to be applied elsewhere now
+	    //strokeColor.a *= opacity;
+	    ctx.strokeStyle = strokeColor.style;
+	}
+	if (this.styleInfo.fillStyle) {
+	    let fillColor = this.styleInfo.fillStyle.copy();
+	    //fillColor.a *= opacity;
+	    ctx.fillStyle = fillColor.style;
+	}
+	if (this.styleInfo.lineWidth) {
+	    ctx.lineWidth = this.styleInfo.lineWidth;
+	}
+	if (this.styleInfo.lineCap) {
+	    ctx.lineCap = this.styleInfo.lineCap;
+	}
+	if (this.styleInfo.lineCap) {
+	    ctx.lineJoin = this.styleInfo.lineJoin;
+	}
+    },
+    toJSON: function() {
+	let styleInfo = {};
+	let self = this;
+	if (self.styleInfo.lineWidth != undefined) {
+	    styleInfo.lw = self.styleInfo.lineWidth;
+	}
+	if (self.styleInfo.lineCap != undefined) {
+	    if (self.styleInfo.lineCap != "butt") {
+		styleInfo.lc = self.styleInfo.lineCap;
+	    }
+	}
+	if (self.styleInfo.strokeStyle != undefined) {
+	    styleInfo.ss = self.styleInfo.strokeStyle.toJSON();
+	}
+	if (self.styleInfo.fillStyle != undefined) {
+	    styleInfo.fs = self.styleInfo.fillStyle.toJSON();
+	}
+	return styleInfo;
+    },
+    restoreFromJSON: function(styleInfo) {
+	this.styleInfo = {};
+	if (styleInfo.lw != undefined) {
+	    this.styleInfo.lineWidth = styleInfo.lw;
+	}
+	if (styleInfo.lineCap != undefined) {
+	    this.styleInfo.lineCap = styleInfo.lc;
+	}
+	if (styleInfo.strokeStyle != undefined) {
+	    let color = new Color();
+	    color.fromJSON(styleInfo.ss);
+	    this.styleInfo.strokeStyle = color;
+	}
+	if (styleInfo.fillStyle != undefined) {
+	    let color = new Color();
+	    color.fromJSON(styleInfo.fs);
+	    this.styleInfo.fillStyle = color;
+	}
+    }
+};
+
 function DrawAction(layer, pointList, styleInfo, isFill) {
     // Expects pointList in world coordinates, like all actions
     this.layer = layer;
     this.ctx = layer.getContext();
     this.pts = pointList;
-    this.styleInfo = styleInfo;
+    this.styleRecord = new StyleRecord(styleInfo);
     // styleInfo is an object that can contain:
     // .lineWidth, .strokeStyle, .fillStyle, .lineCap
     this.isFill = isFill;
@@ -55,27 +125,8 @@ DrawAction.prototype = {
 	    // different layers than they started in so need to take
 	    // that into account.
 	    let opacity = this.layer.getOpacity();
+	    this.styleRecord.apply(ctx);
 	    ctx.beginPath();
-	    if (this.styleInfo.strokeStyle) {
-		// TODO bug: strokeStyle.copy is not a function?
-		let strokeColor = this.styleInfo.strokeStyle.copy();
-		strokeColor.a *= opacity;
-		ctx.strokeStyle = strokeColor.style;
-	    }
-	    if (this.styleInfo.fillStyle) {
-		let fillColor = this.styleInfo.fillStyle.copy();
-		fillColor.a *= opacity;
-		ctx.fillStyle = fillColor.style;
-	    }
-	    if (this.styleInfo.lineWidth) {
-		ctx.lineWidth = this.styleInfo.lineWidth;
-	    }
-	    if (this.styleInfo.lineCap) {
-		ctx.lineCap = this.styleInfo.lineCap;
-	    }
-	    if (this.styleInfo.lineCap) {
-		ctx.lineJoin = this.styleInfo.lineJoin;
-	    }
 	    ctx.moveTo(this.pts[0].x, this.pts[0].y);
 	    for (let i = 1; i < this.pts.length; i++) {
 		ctx.lineTo(this.pts[i].x, this.pts[i].y);
@@ -93,21 +144,6 @@ DrawAction.prototype = {
 	/* Can't save the layer to json as it's a live object ref
 	 * Instead, save the layerName which we can use to match
 	 * the action back up to the layer when reconstructing. */
-	let styleInfo = {};
-	if (self.styleInfo.lineWidth != undefined) {
-	    styleInfo.lw = self.styleInfo.lineWidth;
-	}
-	if (self.styleInfo.lineCap != undefined) {
-	    if (self.styleInfo.lineCap != "butt") {
-		styleInfo.lc = self.styleInfo.lineCap;
-	    }
-	}
-	if (self.styleInfo.strokeStyle != undefined) {
-	    styleInfo.ss = self.styleInfo.strokeStyle.toJSON();
-	}
-	if (self.styleInfo.fillStyle != undefined) {
-	    styleInfo.fs = self.styleInfo.fillStyle.toJSON();
-	}
 	// compress points to single array of ints:
 	let points = [];
 	for (let i = 0; i < self.pts.length; i++) {
@@ -117,7 +153,7 @@ DrawAction.prototype = {
 	let smallJSON = {t: "draw",
 			 l: self.layer.getName(),
 			 p: points,
-			 s: styleInfo};
+			 s: self.styleRecord.toJSON()};
 	if (self.isFill) {
 	    smallJson.f = 1;
 	}
@@ -131,26 +167,8 @@ DrawAction.prototype = {
 			y: actionData.p[i+1]});
 	}
 	this.isFill = (actionData.f == 1);
-	this.restoreStyleFromJSON(actionData.s);
-    },
-
-    restoreStyleFromJSON: function(styleInfo) {
-	if (styleInfo.lw != undefined) {
-	    this.styleInfo.lineWidth = styleInfo.lw;
-	}
-	if (styleInfo.lineCap != undefined) {
-	    this.styleInfo.lineCap = styleInfo.lc;
-	}
-	if (styleInfo.strokeStyle != undefined) {
-	    let color = new Color();
-	    color.fromJSON(styleInfo.ss);
-	    this.styleInfo.strokeStyle = color;
-	}
-	if (styleInfo.fillStyle != undefined) {
-	    let color = new Color();
-	    color.fromJSON(styleInfo.fs);
-	    this.styleInfo.fillStyle = color;
-	}
+	this.styleRecord = new StyleRecord();
+	this.styleRecord.restoreFromJSON(actionData.s);
     }
 };
 
@@ -173,11 +191,6 @@ EraserStrokeAction.prototype = {
 
     toJSON: function() {
 	let self = this;
-	let points = [];
-	for (let i = 0; i < self.points.length; i++) {
-	    points.push( self.points[i].x );
-	    points.push( self.points[i].y );
-	}
 	return {t: "eraser",
 		l: self.layer.getName(),
 		p: points,
@@ -247,6 +260,49 @@ ClearRegionAction.prototype = {
 	    this.points.push( { x: actionData.p[i],
 			        y: actionData.p[i+1]});
 	}
+    }
+};
+
+function EllipseAction(layer, center, radius, styleInfo, isFill) {
+    this.layer = layer;
+    this.ctx = layer.getContext();
+    this.center = center;
+    this.radius = radius;
+    this.styleRecord = new StyleRecord(styleInfo);
+    this.isFill = isFill;
+}
+EllipseAction.prototype = {
+    replay: function(newCtx) {
+	let ctx = newCtx ? newCtx : this.ctx;
+	let opacity = this.layer.getOpacity();
+	this.styleRecord.apply(ctx);
+	ctx.beginPath();
+	ctx.arc(this.center.x, this.center.y, this.radius,
+		0, Math.PI *2, false);
+	if (this.isFill) {
+	    ctx.fill();
+	} else {
+	    ctx.stroke();
+	}
+    },
+    toJSON: function() {
+	let self = this;
+	return {t: "clear",
+		l: self.layer.getName(),
+		x: self.center.x,
+		y: self.center.y,
+		r: self.radius,
+		s: self.styleRecord.toJSON(),
+		f: self.isFill
+		};
+    },
+
+    restoreFromJSON: function(actionData) {
+	this.center = {x: actionData.x, y: actionData.y};
+	this.radius = actionData.r;
+	this.isFill = actionData.f;
+	this.styleRecord = new StyleRecord();
+	this.styleRecord.restoreFromJSON(actionData.s);
     }
 };
 

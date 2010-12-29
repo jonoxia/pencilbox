@@ -1,9 +1,81 @@
-function Tool(defaultSize) {
+function ToolOptions(optList) {
+    // expects like [{name: "filled", type: "bool", defawlt: false}]
+    this._optList = optList;
+    this._values = {};
+    for (let x = 0; x < optList.length; x++) {
+	this._values[optList[x].name] = optList[x].defawlt;
+    }
+}
+ToolOptions.prototype = {
+    generateHtml: function(rootElem) {
+	$("#tool-opts").empty();
+	let self = this;
+	let ctrl;
+	for (let x = 0; x < this._optList.length; x++) {
+	    let key = this._optList[x].name;
+	    switch (this._optList[x].type) {
+	    case "bool":
+	    ctrl = $("<input type=\"checkbox\">");
+	    ctrl.change(function() {
+		    self.setValue(key, ctrl.val());
+		    g_toolInterface.updateToolImage();
+		});
+	    ctrl.val(self._values[key]);
+	    break;
+	    case "scale":
+	    // A 0 - 100 scale
+		// TODO make this some kind of draggable slider thing
+		// instead of a drop-down box, and give it more
+		// inbetween values!
+		ctrl = $("<select><option value='100'>100%</option>" +
+			 "<option value='75'>75%</option>" +
+			 "<option value='50'>50%</option>" +
+			 "<option value='25'>25%</option>" +
+			 "<option value='0'>0%</option></select>");
+		ctrl.change(function() {
+		  let selected = ctrl.children("option:selected").first();
+		  self.setValue(key, parseInt(selected.val()));
+		  g_toolInterface.updateToolImage();
+	        });
+		// TODO initially select the option corresponding
+		// to the current value!!
+	    break;
+	    }
+	    $("#tool-opts").append(ctrl);
+	    $("#tool-opts").append($("<span>" + key + "</span><br/>"));
+	}
+    },
+    
+    setValue: function(key, value) {
+	this._values[key] = value;
+    },
+
+    getValue: function(key) {
+	return this._values[key];
+    }
+};
+
+
+function Tool(defaultSize, optList) {
+    // TODO size could be a ToolOption couldn't it?
     this._trueSize = defaultSize;
     this.size = Math.floor( this._trueSize + 0.5 );
     this.actionPoints = [];
+    if (optList) {
+	this.options = new ToolOptions(optList);
+    } else {
+	this.options = null;
+    }
 }
 Tool.prototype = {
+    generateOptionHtml: function(rootElem) {
+	if (this.options) {
+	    this.options.generateHtml(rootElem);
+	} else {
+	    $("#tool-opts").empty();
+	}
+    },
+
     getStrokeStyle: function() {
 	return g_toolInterface.getPenColor();
     },
@@ -21,12 +93,10 @@ Tool.prototype = {
     },
 
     down: function(ctx, x, y) {
-	// round up size to next whole number:
 	this.resetRecordedAction();
 	this.actionPoints.push( {x: x, y: y} );
 	ctx.beginPath();
 	ctx.moveTo(x, y);
-
     },
 
     up: function(ctx, x, y) {
@@ -77,6 +147,9 @@ Tool.prototype = {
 
     resetRecordedAction: function() {
 	this.actionPoints = [];
+    },
+
+    getOptions: function() {
     }
 }
 
@@ -142,7 +215,6 @@ line.up = function(ctx, x, y) {
     ctx.lineWidth = this.size;
     ctx.lineTo(x, y);
     ctx.stroke();
-    this.lastDrawCtx = ctx;
     this.inProgress = false;
     this.actionPoints.push( {x: x, y: y} );
 };
@@ -160,7 +232,8 @@ line.drawCursor = function(ctx, x, y) {
     }
 };
 
-let bucket = new Tool(0);
+let bucket = new Tool(0, [{name: "tolerance",
+			   type: "scale", defawlt: 0}]);
 bucket.display = function(penCtx, x, y) {
     let img = new Image();  
     img.onload = function(){  
@@ -173,9 +246,8 @@ bucket.down = function(ctx, x, y) {
 bucket.up = function(ctx, x, y) {
     let layer = g_drawInterface.getActiveLayer();
     let bm = new BitManipulator(ctx, layer.width, layer.height);
-    this.lastDrawCtx = ctx;
-
-    this.actionPoints = edgeFindingAlgorithm(bm, x, y);
+    let tolerance = this.options.getValue("tolerance");
+    this.actionPoints = edgeFindingAlgorithm(bm, x, y, tolerance);
     ctx.fillStyle = g_toolInterface.getPaintColor().style;
     ctx.beginPath();
     ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
@@ -198,8 +270,10 @@ bucket.getRecordedAction = function() {
     return new DrawAction(activeLayer, worldPts, style, true);
 };
 
-let rectangle = new Tool(1.0);
+let rectangle = new Tool(1.0, [{name: "fill", type: "bool",
+				defawlt: false}]);
 rectangle.display = function(penCtx, x, y) {
+    penCtx.clearRect(x - 20, y - 20, 40, 40);
     penCtx.strokeStyle=this.getStrokeStyle().style;
     penCtx.lineWidth = this.size;
     penCtx.beginPath();
@@ -208,7 +282,11 @@ rectangle.display = function(penCtx, x, y) {
     penCtx.lineTo(x+ 20, y+20);
     penCtx.lineTo(x- 20, y+20);
     penCtx.lineTo(x- 20, y-20);
-    penCtx.stroke();
+    if (this.options.getValue("fill")) {
+	penCtx.fill();
+    } else {
+	penCtx.stroke();
+    }
 };
 rectangle.down = function(ctx, x, y) {
     this.startX = x;
@@ -227,7 +305,6 @@ rectangle.up = function(ctx, x, y) {
     ctx.stroke();
     this.endX = x;
     this.endY = y;
-    this.lastDrawCtx = ctx;
     this.inProgress = false;
 };
 rectangle.drag = function(ctx, x, y) {
@@ -256,26 +333,110 @@ rectangle.getRecordedAction = function() {
     pointList.push({x: self.startX, y: self.startY});
     let styles = {strokeStyle: self.getStrokeStyle(),
 		  lineWidth: self.size,
-		  lineCap: self.getLineCap()}
+		  lineCap: self.getLineCap(),
+		  fillStyle: g_toolInterface.getPaintColor().copy()}
     let worldPts = activeLayer.screenToWorldMulti(pointList,
 						  this.sizeIsOdd());
-    return new DrawAction(activeLayer, worldPts, styles, false);
-    // TODO Later
-    // Implement filled rectangle simply by setting that last
-    // false to a true
+    let filled = this.options.getValue("fill");
+    return new DrawAction(activeLayer, worldPts, styles, filled);
 };
 rectangle.resetRecordedAction = function() {
     // Nothing to do
 };
 
+let ellipse = new Tool(1.0, [{name: "fill", type: "bool",
+				defawlt: false}]);
+ellipse.display = function(penCtx, x, y) {
+    // TODO this is going to just be "circle" until I look up the
+    // api for quadratic curves
+    penCtx.strokeStyle = this.getStrokeStyle().style;
+    penCtx.lineWidth = this.size;
+    penCtx.beginPath();
+    penCtx.arc(x, y, 30, 0, Math.PI *2, false);
+    if (this.options.getValue("fill")) {
+	penCtx.fill();
+    } else {
+	penCtx.stroke();
+    }
+};
+ellipse._getRadius = function(x, y) {
+    let dx = Math.abs(x - this.startX);
+    let dy = Math.abs(y - this.startY);
+    let radius;
+    if (dx > dy) {
+	radius = dx;
+    } else {
+	radius = dy;
+    }
+    return radius;
+}
+ellipse.down = function(ctx, x, y) {
+    this.startX = x;
+    this.startY = y;
+    this.inProgress = true;
+};
+ellipse.up = function(ctx, x, y) {
+    this.endX = x;
+    this.endY = y;
+    ctx.lineWidth = this.size;
+    ctx.strokeStyle=this.getStrokeStyle().style;
+    ctx.beginPath();
+    ctx.arc(this.startX, this.startY, 
+	    this._getRadius(this.endX, this.endY),
+	    0, Math.PI *2, false);
+    if (this.options.getValue("fill")) {
+	ctx.fillStyle = g_toolInterface.getPaintColor().style;
+	ctx.fill();
+    } else {
+	ctx.stroke();
+    }
+    this.inProgress = false;
+};
+ellipse.drag = function(ctx, x, y) {
+};
+ellipse.drawCursor = function(ctx, x, y) {
+    $("#the-canvas").css("cursor", "crosshair");
+    if (this.inProgress) {
+	ctx.lineWidth = this.size;
+	ctx.strokeStyle=this.getStrokeStyle().style;
+	ctx.beginPath();
+	ctx.arc(this.startX, this.startY, 
+		this._getRadius(x, y),
+		0, Math.PI *2, false);
+	ctx.stroke();
+    }
+};
+ellipse.getRecordedAction = function() {
+    let activeLayer = g_drawInterface.getActiveLayer();
+    let radius = this._getRadius(this.endX, this.endY);
+    radius /= g_drawInterface.getZoomLevel();
+    let worldCenter = activeLayer.screenToWorld(this.startX,
+						this.startY);
+    let self = this;
+    let styleInfo = {
+	lineWidth: self.size,
+	strokeStyle: self.getStrokeStyle(),
+	lineCap: self.getLineCap(),
+	lineJoin: self.getLineJoin(),
+	fillStyle: g_toolInterface.getPaintColor()};
+    let isFill = this.options.getValue("fill");
+    return new EllipseAction(activeLayer, worldCenter, radius,
+			     styleInfo, isFill);
+    //return new DrawAction(activeLayer, worldPts, styles, false);
+    return null;
+};
+ellipse.resetRecordedAction = function() {
+    // Nothing to do
+};
 
-let paintbrush = new Tool(10.0);
-// TODO paintbrush needs a way to set messiness and opacity as well
-// as size.  
+
+let paintbrush = new Tool(10.0, [{name: "opacity", type: "scale",
+				  defawlt: 50}]);
+// TODO paintbrush needs a way to set messiness
+// as well as size and opacity... but we have to define 'messiness' first.
 paintbrush.getStrokeStyle = function() {
-    this.transparency = 0.5;
     let color = g_toolInterface.getPaintColor().copy();
-    color.a = this.transparency;
+    color.a = this.options.getValue("opacity") / 100;
     return color;
 };
 paintbrush.getLineCap = function() {
@@ -344,8 +505,40 @@ eyedropper.resetRecordedAction = function() {
 };
 
 
+let polygon = new Tool(1.0);
+polygon.lastPoint = null;
+polygon.firstPoint = null;
+polygon.display = function(penCtx, x, y) {
+};
+polygon.down = function(ctx, x, y) {
+};
+polygon.up = function(ctx, x, y) {
+    let lp = this.lastPoint;
+    if (lp) {
+	ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
+	ctx.lineCap = this.getLineCap();
+	ctx.strokeStyle = this.getStrokeStyle().style;
+	ctx.beginPath();
+	ctx.moveTo(lp.x, lp.y);
+	ctx.lineTo(x, y);
+	ctx.stroke();
+	this.actionPoints = [{x: lp.x, y: lp.y}, {x: x, y: y}];
+    } else {
+	this.firstPoint
+    }
+    this.lastPoint = {x: x, y: y};
+};
+polygon.drag = function(ctx, x, y) {
+};
+polygon.drawCursor = function(ctx, x, y) {
+};
+// TODO:  watch for a double-click, and when we get one, we either
+// close or we don't, but either way that's when we reset our lastPoint.
+// Otherwise, you'll still be adding on to the same polygon even after
+// you switch tools!  Which is pretty crazy.
+
+
 // More tools:
-// Filled rect (an option on rect tool?)
 // Porygon (like pencil but adds a new point to actionPoints list
 // only when you click - options: close or not, fill or not)
 // Fancy line tool? (TBH i never use these)
@@ -362,4 +555,3 @@ eyedropper.resetRecordedAction = function() {
 // rectangle filled-or-not-filledness, etc.  When we have ellipse, it will
 // need filledness, circleness, and orthogonality of axis
 
-// But what I really want to play with is... selections!!!

@@ -142,9 +142,6 @@ Layer.prototype = {
 	return this.name;
     },
     setOpacity: function(opacity) {
-	// TODO can also implement opacity by setting
-	// ctx.globalAlpha = opacity before playing layer's actions;
-	// that's a  much cleaner way.
 	this.opacity = opacity;
 	this.updateDisplay();
     },
@@ -232,6 +229,7 @@ Layer.prototype = {
 	this.displayContext.save();
 	this._setTransformMatrix();
 	this._clearPageArea();
+	this.displayContext.globalAlpha = this.opacity;
 	g_history.replayActionsForLayer(this);
 	this.onRedraw(this.displayContext);
 	this.displayContext.restore();
@@ -240,6 +238,7 @@ Layer.prototype = {
 	this.displayContext.save();
 	this._setTransformMatrix();
 	this._clearPageArea();
+	this.displayContext.globalAlpha = this.opacity;
 	this.onRedraw(this.displayContext);
 	this.displayContext.restore();
     },

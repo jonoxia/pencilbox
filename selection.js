@@ -565,7 +565,8 @@ lasso.resetRecordedAction = function() {
 // base class??
 // TODO magic wand seems to be missing exactly one pixel all the way
 // around the edge.  This is probably fault of the edgeFinder algorithm.
-magicWand = new Tool(1.0);
+magicWand = new Tool(1.0, [{name: "tolerance",
+			   type: "scale", defawlt: 0}]);
 magicWand._moveMode = false;
 magicWand.display = function(penCtx, x, y) {
     let img = new Image();  
@@ -590,7 +591,8 @@ magicWand.up = function(ctx, x, y) {
 	let layer = g_drawInterface.getActiveLayer();
 	let ctx = layer.getContext();
 	let bm = new BitManipulator(ctx, layer.width, layer.height);
-	let megaPoints = edgeFindingAlgorithm(bm, x, y);
+	let tolerance = this.options.getValue("tolerance");
+	let megaPoints = edgeFindingAlgorithm(bm, x, y, tolerance);
 
 	let worldPts = [];
         for (let i= 0; i < megaPoints.length; i++) {

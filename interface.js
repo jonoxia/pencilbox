@@ -376,7 +376,7 @@ function ToolAreaInterface() {
 		    {name: "Bucket", icon: "icons/32x32/Fill.png",
 		     execute: function() {self.setTool(bucket);}},
 	            {name: "Ellipse", icon: "icons/32x32/Ellipse.png",
-		     execute: function() {}},
+		     execute: function() {self.setTool(ellipse);}},
 	            {name: "Rect", icon: "icons/32x32/Rectangle.png",
 		     execute: function() {self.setTool(rectangle);}},
 		    {name: "Brush", icon: "icons/32x32/Fine_brush.png",
@@ -386,7 +386,7 @@ function ToolAreaInterface() {
                     {name: "Speech", icon: "icons/32x32/Hints.png",
 		     execute: function() {self.setTool(textBalloonTool);}},
                     {name: "Polygon", icon: "icons/32x32/Hexagon.png",
-		     execute: function() {}},
+		     execute: function() {self.setTool(polygon);}},
                     {name: "3d Obj.", icon: "icons/32x32/Transparency.png",
 		     execute: function() {}}
 		     ];
@@ -472,6 +472,7 @@ function ToolAreaInterface() {
 ToolAreaInterface.prototype = {
     setTool: function(newTool) {
 	this.selectedTool = newTool;
+	this.selectedTool.generateOptionHtml();
 	this.updateToolImage();
     },
 

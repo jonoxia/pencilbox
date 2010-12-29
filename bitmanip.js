@@ -229,9 +229,7 @@ function debugObj(obj) {
     debug(str);
 }
 
-const edge_finding_tolerance = 60;
-
-function edgeFindingAlgorithm(data, x, y) {
+function edgeFindingAlgorithm(data, x, y, tolerance) {
     /* Key to getting this algorithm right: we're drawing a line
      * BETWEEN two adjacent pixels, not a line on one pixel or the other.
      * e.g. a line at y = 15 is a line between the pixel at y = 14.5 and
@@ -258,7 +256,7 @@ function edgeFindingAlgorithm(data, x, y) {
 	    debug("Diff is " + seedColor.diff(color));
 	}
 	// Tolerance here:
-	return (seedColor.diff(color) > edge_finding_tolerance);
+	return (seedColor.diff(color) > tolerance);
     }
 
     // Go up until we hit a boundary:
