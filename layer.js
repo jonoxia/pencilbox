@@ -42,6 +42,7 @@ function Layer(index, options) {
   this.height = can.height;
   this.tag = $("<canvas></canvas>");
   this.tag.appendTo('body');
+  this.tag.addClass("layer-canvas");
   this.tag.attr("width", this.width);
   this.tag.attr("height", this.height);
   this.tag.css("position", "absolute");

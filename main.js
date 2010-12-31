@@ -97,12 +97,48 @@ function export2() {
 		dataType: "html"});
 }
 
-function changeLocation(newPage) {
-    // Save history before changing location, so we don't lose everything.
-    // Also copy filename param
-    let filename = gup("filename");
-    g_history.saveToLocalStorage();
-    window.location.href = newPage + "?filename=" + filename;
+var g_screenOrientation = "landscape";
+
+function restructureDOM() {
+    let controlDiv = $("#control-div");
+    let penSizeCanvas = $("#pen-size-canvas");
+    let otherControls = $("#other-controls");
+    let textDiv = $("#text-div");
+    let body = $("#the-body");
+    let canvasDiv = $("#canvas-div");
+
+    controlDiv.detach();
+    textDiv.detach();
+    canvasDiv.detach();
+    penSizeCanvas.detach();
+    otherControls.detach();
+
+    // rescue all the layer canvases 
+    let layerCanvases = $(".layer-canvas");
+    layerCanvases.detach();
+
+    body.empty();
+    controlDiv.empty();
+
+    if (g_screenOrientation == "landscape") {
+	controlDiv.append(penSizeCanvas);
+	controlDiv.append("<br/>");
+	controlDiv.append(otherControls);
+	body.append(controlDiv);
+	body.append(canvasDiv);
+	body.append(textDiv);
+    } else {
+	body.append(penSizeCanvas);
+	penSizeCanvas.css("float", "left");
+	controlDiv.append(otherControls);
+	controlDiv.css("float", "left");
+	body.append(controlDiv);
+	body.append(textDiv);
+	body.append("<br/>");
+	body.append(canvasDiv);
+    }
+
+    layerCanvases.appendTo(body);
 }
 
 function adjustToScreen() {
@@ -111,26 +147,22 @@ function adjustToScreen() {
     let screenWidth = window.innerWidth;
     let screenHeight = window.innerHeight;
 
-    let pageName = window.location.href; //.split("/")[-1];
-    let portraitModeFileName = "touchscreen-portraitmode.html";
-    let landscapeModeFileName = "touchscreen.html";
-
     let mainCanvasWidth, mainCanvasHeight;
     if (screenHeight > screenWidth) {
-	// Portrait mode screen  - touchscreen-portraitmode.html
-	if (pageName.indexOf(portraitModeFileName) == -1) {
-	    changeLocation( portraitModeFileName );
-	    return;
+	// Portrait mode screen
+	if (g_screenOrientation != "portrait") {
+	    g_screenOrientation = "portrait";
+	    restructureDOM();
 	}
 	mainCanvasWidth = screenWidth;
 	mainCanvasHeight = screenHeight * 0.65;
 	$("#pen-size-canvas").attr("width", screenWidth * 0.4);
 	$("#pen-size-canvas").attr("height", screenHeight * 0.25);
     } else {
-	// Landscape mode screen - touchscreen.html
-	if (pageName.indexOf(landscapeModeFileName) == -1) {
-	    changeLocation( landscapeModeFileName );
-	    return;
+	// Landscape mode screen
+	if (g_screenOrientation != "landscape") {
+	    g_screenOrientation = "landscape";
+	    restructureDOM();
 	}
 	mainCanvasWidth = screenWidth * 0.6;
 	mainCanvasHeight = screenHeight;
