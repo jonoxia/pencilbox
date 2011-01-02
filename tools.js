@@ -13,14 +13,19 @@ ToolOptions.prototype = {
 	let ctrl;
 	for (let x = 0; x < this._optList.length; x++) {
 	    let key = this._optList[x].name;
+	    let curVal = this._values[key];
 	    switch (this._optList[x].type) {
 	    case "bool":
 	    ctrl = $("<input type=\"checkbox\">");
 	    ctrl.change(function() {
-		    self.setValue(key, ctrl.val());
+		    self.setValue(key, ctrl.attr("checked"));
 		    g_toolInterface.updateToolImage();
 		});
-	    ctrl.val(self._values[key]);
+	    if (curVal) {
+		ctrl.attr("checked", true);
+	    } else {
+		ctrl.attr("checked", false);
+	    }
 	    break;
 	    case "scale":
 	    // A 0 - 100 scale
@@ -37,8 +42,13 @@ ToolOptions.prototype = {
 		  self.setValue(key, parseInt(selected.val()));
 		  g_toolInterface.updateToolImage();
 	        });
-		// TODO initially select the option corresponding
-		// to the current value!!
+		// Initially select the option corresponding to
+		// current value:
+		ctrl.children().each(function() {
+			if ($(this).attr("value") == curVal) {
+			    $(this).attr("selected", true);
+			}
+		    });
 	    break;
 	    }
 	    $("#tool-opts").append(ctrl);
@@ -188,7 +198,7 @@ eraser.getRecordedAction = function() {
     // same size on screen and you can do precision erasing:
     let width = this.size / g_drawInterface.getZoomLevel();
     // TODO round off width to some kind of whole number?
-    let points = activeLayer.screenToWorldMulti(this.actionPoints);
+    let points = activeLayer.screenToWorldMulti(this.actionPoints, false);
     return new EraserStrokeAction(activeLayer, points,
 				  width);
 };
@@ -539,19 +549,8 @@ polygon.drawCursor = function(ctx, x, y) {
 
 
 // More tools:
-// Porygon (like pencil but adds a new point to actionPoints list
-// only when you click - options: close or not, fill or not)
 // Fancy line tool? (TBH i never use these)
-// Ellipse tool!!
-// Magic-wand selector (select continuous region)
-// 
 
 // A gradient fill tool (Canvas supports it!!) Could also be a
 // selection option?
-
-// In general, tools need individualized setting controls beyond
-// the all-purpose color and line width controls.  Bucket needs to
-// be able to set sensitivity, paintbush transparency (and noise!)
-// rectangle filled-or-not-filledness, etc.  When we have ellipse, it will
-// need filledness, circleness, and orthogonality of axis
 
