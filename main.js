@@ -193,7 +193,7 @@ function importImage() {
     var img = new Image();   // Create new Image object  
     img.onload = function(){  
 	let layer = g_drawInterface.getActiveLayer();
-	let action = new ImportImageAction(layer, img, 0, 0);
+	let action = new PlopBitmapAction(layer, img, 0, 0);
 	g_history.pushAction(action);
 	layer.doActionNow(action);
     }  

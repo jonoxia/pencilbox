@@ -102,7 +102,7 @@ Tool.prototype = {
 	return "miter";
     },
 
-    down: function(ctx, x, y) {
+    down: function(ctx, x, y, isDblClick) {
 	this.resetRecordedAction();
 	this.actionPoints.push( {x: x, y: y} );
 	ctx.beginPath();
@@ -213,7 +213,7 @@ line.display = function(penCtx, x, y) {
     penCtx.lineTo(x+ 20, y+20);
     penCtx.stroke();
 };
-line.down = function(ctx, x, y) {
+line.down = function(ctx, x, y, isDblClick) {
     ctx.beginPath();
     ctx.moveTo(x, y);
     this.startX = x;
@@ -251,7 +251,7 @@ bucket.display = function(penCtx, x, y) {
     }  
     img.src = 'icons/paint-can.png'; 
 };
-bucket.down = function(ctx, x, y) {
+bucket.down = function(ctx, x, y, isDblClick) {
 };
 bucket.up = function(ctx, x, y) {
     let layer = g_drawInterface.getActiveLayer();
@@ -298,7 +298,7 @@ rectangle.display = function(penCtx, x, y) {
 	penCtx.stroke();
     }
 };
-rectangle.down = function(ctx, x, y) {
+rectangle.down = function(ctx, x, y, isDblClick) {
     this.startX = x;
     this.startY = y;
     this.inProgress = true;
@@ -355,7 +355,9 @@ rectangle.resetRecordedAction = function() {
 };
 
 let ellipse = new Tool(1.0, [{name: "fill", type: "bool",
-				defawlt: false}]);
+			      defawlt: false},
+{name: "circle", type: "bool", defawlt: false},
+{name: "center", type: "bool", defawlt: true}]);
 ellipse.display = function(penCtx, x, y) {
     // TODO this is going to just be "circle" until I look up the
     // api for quadratic curves
@@ -380,7 +382,7 @@ ellipse._getRadius = function(x, y) {
     }
     return radius;
 }
-ellipse.down = function(ctx, x, y) {
+ellipse.down = function(ctx, x, y, isDblClick) {
     this.startX = x;
     this.startY = y;
     this.inProgress = true;
@@ -492,7 +494,7 @@ eyedropper.display = function(penCtx, x, y) {
     }  
     img.src = "icons/pipette.png";
 };
-eyedropper.down = function(ctx, x, y) {
+eyedropper.down = function(ctx, x, y, isDblClick) {
 };
 eyedropper.up = function(ctx, x, y) {
     // do it here
@@ -520,11 +522,24 @@ polygon.lastPoint = null;
 polygon.firstPoint = null;
 polygon.display = function(penCtx, x, y) {
 };
-polygon.down = function(ctx, x, y) {
+polygon.down = function(ctx, x, y, isDblClick) {
+    if (isDblClick) {
+	// Double click = end the polygon
+	this.inProgress = false;
+	// close the loop:
+	let lp = this.lastPoint;
+	let fp = this.firstPoint;
+	this.actionPoints = [{x: lp.x, y: lp.y}, {x: fp.x, y: fp.y}];
+    } else if (!this.inProgress) {
+	this.resetRecordedAction();
+	this.inProgress = true;
+	this.lastPoint = {x: x, y: y};
+	this.firstPoint = {x: x, y: y};
+    }
 };
 polygon.up = function(ctx, x, y) {
     let lp = this.lastPoint;
-    if (lp) {
+    if (this.inProgress) {
 	ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
 	ctx.lineCap = this.getLineCap();
 	ctx.strokeStyle = this.getStrokeStyle().style;
@@ -533,14 +548,21 @@ polygon.up = function(ctx, x, y) {
 	ctx.lineTo(x, y);
 	ctx.stroke();
 	this.actionPoints = [{x: lp.x, y: lp.y}, {x: x, y: y}];
-    } else {
-	this.firstPoint
     }
     this.lastPoint = {x: x, y: y};
 };
 polygon.drag = function(ctx, x, y) {
 };
 polygon.drawCursor = function(ctx, x, y) {
+    $("#the-canvas").css("cursor", "crosshair");
+    if (this.inProgress) {
+      ctx.strokeStyle=this.getStrokeStyle().style;
+      ctx.lineWidth = this.size;
+      ctx.beginPath();
+      ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
 };
 // TODO:  watch for a double-click, and when we get one, we either
 // close or we don't, but either way that's when we reset our lastPoint.

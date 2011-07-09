@@ -307,6 +307,8 @@ Layer.prototype = {
 					this.displayContext);
 	// TODO any reason not to call onRedraw?
 	parentLayer.onRedraw(this.displayContext);
+	// TODO this produces a Security Error if picture contains
+	// an imported picture
 	let dataUrl = this.displayCanvas.toDataURL("image/png");
 
 	// Return canvas to original size:

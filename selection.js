@@ -1,10 +1,10 @@
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License
+ * at http://www.mozilla.org/MPL/
  *
  * Software distributed under the License is distributed on an "AS IS" basis,
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
@@ -20,17 +20,19 @@
  * Contributor(s):
  *   Jono X <jono@mozilla.com>
  *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
+ * Alternatively, the contents of this file may be used under the
+ * terms of either the GNU General Public License Version 2 or later
+ * (the "GPL"), or the GNU Lesser General Public License Version 2.1
+ * or later (the "LGPL"), in which case the provisions of the GPL or
+ * the LGPL are applicable instead of those above. If you wish to
+ * allow use of your version of this file only under the terms of
+ * either the GPL or the LGPL, and not to allow others to use your
+ * version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the
+ * notice and other provisions required by the GPL or the LGPL. If you
+ * do not delete the provisions above, a recipient may use your
+ * version of this file under the terms of any one of the MPL, the GPL
+ * or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
 
@@ -98,7 +100,7 @@ function SelectionManager() {
 
     this._parentLayer = null; // the layer the selection came from
     this._selectionContentsSnapshot = null;
-
+    this._selectionScaleFactor = 1.0;
 
     this.selectionLayer = new Layer(-2, {hidden: true});
     this.selectionLayer.setName("Selection");
@@ -121,9 +123,9 @@ function SelectionManager() {
 		    {name: "Duplicate", icon: "icons/32x32/Copy.png",
 		     execute: function() {self.dupeSelectionCmd();}},
 		    {name: "Flip H.", icon: "icons/32x32/Flip_horiz.png",
-		     execute: function() {$("#debug").html("Flip H");}},
+		     execute: function() {self.mirrorSelection(false);}},
 		    {name: "Flip V.", icon: "icons/32x32/Flip_vert.png",
-		     execute: function() {$("#debug").html("Flip V");}},
+		     execute: function() {self.mirrorSelection(true);}},
 		    {name: "To Layer", icon: "icons/32x32/Layers.png",
 		     execute: function() {$("#debug").html("2Layer");}},
 		    {name: "Invert", icon: "icons/32x32/Contrast.png",
@@ -225,6 +227,10 @@ SelectionManager.prototype = {
 	}
 	this._selectionPresent = true;
 
+	// new selections need to start at 100%
+	let currentZoom = g_drawInterface.activeLayer.getZoomLevel();
+	this.selectionLayer._scale = currentZoom; // breaks encapsulation
+
 	// For now assume clippingPath is a rectangle.
 	// what we actually get passed is a list of points.
 	this._clippingPath = clippingPath;
@@ -275,8 +281,11 @@ SelectionManager.prototype = {
 	this.selectionLayer.clearLayer();
 
 	// Create a new action in history importing the dropped
-	// selection picture contents into the target layer.
-	let action = new ImportImageAction(targetLayer,
+	// selection picture contents into the target layer, with the
+	// transforms applied!
+	// TODO PlopBitmapAction needs arguments for scaleX, scaleY, and
+	// rotation.
+	let action = new PlopBitmapAction(targetLayer,
 					   this._selectionImg,
 					   this._clipRect.left,
 					   this._clipRect.top);
@@ -322,7 +331,7 @@ SelectionManager.prototype = {
     dupeSelectionCmd: function() {
 	// Create a new action in history importing the dropped
 	// selection picture contents into the target layer.
-	let action = new ImportImageAction(this._parentLayer,
+	let action = new PlopBitmapAction(this._parentLayer,
 					   this._selectionImg,
 					   this._clipRect.left,
 					   this._clipRect.top);
@@ -332,7 +341,16 @@ SelectionManager.prototype = {
     },
 
     resizeSelection: function(ratio) {
+	this._xScale *= ratio;
+	this._yScale *= ratio;
+	// I think we don't actually want to change the scale of the
+	// whole layer - because that effects screen-to-world which affects
+	// the user interface and stuff -- instead we want to add an extra
+	// transformation factor?
+	// No, we do want to change scale of whole layer, because
+	// that makes isScreenPtInsideSelection work correctly.
 	this.selectionLayer.scale(ratio);
+	//this.selectionLayer.updateWithoutReplay();
 	// TODO:
 	// 1. suppress selection drag when resizing selection
 	// 2. Reset scale factor of selection layer to be 100% when
@@ -341,12 +359,31 @@ SelectionManager.prototype = {
 	//     weird things when resizing!
 	// 4. Apply scale factor to the ImportImageAction 
 	//    (requires re-snapshotting?
+
+	// Redo this stuff here??:
+	/*let imgDataUrl = this.selectionLayer.pngSnapshot(this._parentLayer,
+							 this._clipRect,
+							 this._clippingPath);
+	// Draw image in selection layer:
+	this._selectionImg = new Image();
+	let self = this;
+	this._selectionImg.onload = function() {
+	    self.selectionLayer.updateDisplay();
+	}
+	this._selectionImg.src = imgDataUrl;*/
+	// TODO this doesn't actually persist yet bc there is no
+	// ImportImageAction (should be called SetBitmapAction) added
     },
 
     rotateSelection: function(dTheta) {
     },
 
     mirrorSelection: function(isVertical) {
+	if (isVertical) {
+	    this._yScale *= -1;
+	} else {
+	    this._xScale *= -1;
+	}
     }
 };
 
@@ -357,18 +394,13 @@ When the user doubletaps within the selection, bring up the selection
 context menu.
 */
 
-const DBL_CLICK_SPEED = 750;  //maximum milliseconds
-
 selectionMovingTool = new Tool(0);
-selectionMovingTool._lastTimeDown = 0;
-selectionMovingTool._lastTimeUp = 0;
 selectionMovingTool.mode = null;
 selectionMovingTool.display = function(penCtx, x, y) {
 };
-selectionMovingTool.down = function(ctx, x, y) {
-    let now = Date.now();
-    if (now - this._lastTimeUp < DBL_CLICK_SPEED && 
-	this._lastTimeUp - this._lastTimeDown < DBL_CLICK_SPEED) {
+selectionMovingTool.down = function(ctx, x, y, isDblClick) {
+    $("#debug").html("Selection mousedown dblclick? " + isDblClick);
+    if (isDblClick) {
 	this.mode = "menu";
 	g_selection.selectionMenu.onMouseDown({pageX: x, pageY: y});
     } else {
@@ -380,7 +412,6 @@ selectionMovingTool.down = function(ctx, x, y) {
 	    this.mode = "drag";
 	}
     }
-    this._lastTimeDown = now;
 };
 selectionMovingTool.up = function(ctx, x, y) {
     if (this.mode == "drag") {
@@ -392,7 +423,6 @@ selectionMovingTool.up = function(ctx, x, y) {
     } else if (this.mode == "menu") {
 	g_selection.selectionMenu.onMouseUp({pageX: x, pageY: y});
     }
-    this._lastTimeUp = Date.now();
 };
 selectionMovingTool.drag = function(ctx, x, y) {
     if (this.mode == "drag") {
@@ -430,10 +460,10 @@ rectSelect.display = function(penCtx, x, y) {
     }  
     img.src = 'icons/border.png'; 
 };
-rectSelect.down = function(ctx, x, y) {
+rectSelect.down = function(ctx, x, y, isDblClick) {
     if (g_selection.isScreenPtInsideSelection(x, y)) {
 	this._moveMode = true;
-	selectionMovingTool.down(ctx, x, y);
+	selectionMovingTool.down(ctx, x, y, isDblClick);
     } else {
 	this.startX = x;
 	this.startY = y;
@@ -501,10 +531,10 @@ lasso.display = function(penCtx, x, y) {
     }  
     img.src = 'icons/wand.png'; 
 };
-lasso.down = function(ctx, x, y) {
+lasso.down = function(ctx, x, y, isDblClick) {
     if (g_selection.isScreenPtInsideSelection(x, y)) {
 	this._moveMode = true;
-	selectionMovingTool.down(ctx, x, y);
+	selectionMovingTool.down(ctx, x, y, isDblClick);
     } else {
 	this.points = [];
 	this.points.push({x: x, y: y});
@@ -575,10 +605,10 @@ magicWand.display = function(penCtx, x, y) {
     }  
     img.src = "icons/wand.png";
 };
-magicWand.down = function(ctx, x, y) {
+magicWand.down = function(ctx, x, y, isDblClick) {
     if (g_selection.isScreenPtInsideSelection(x, y)) {
 	this._moveMode = true;
-	selectionMovingTool.down(ctx, x, y);
+	selectionMovingTool.down(ctx, x, y, isDblClick);
     }
 };
 magicWand.up = function(ctx, x, y) {
