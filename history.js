@@ -265,11 +265,12 @@ ClearRegionAction.prototype = {
     }
 };
 
-function EllipseAction(layer, center, radius, styleInfo, isFill) {
+function EllipseAction(layer, center, dx, dy, styleInfo, isFill) {
     this.layer = layer;
     this.ctx = layer.getContext();
     this.center = center;
-    this.radius = radius;
+    this.dx = dx;
+    this.dy = dy;
     this.styleRecord = new StyleRecord(styleInfo);
     this.isFill = isFill;
 }
@@ -278,9 +279,12 @@ EllipseAction.prototype = {
 	let ctx = newCtx ? newCtx : this.ctx;
 	let opacity = this.layer.getOpacity();
 	this.styleRecord.apply(ctx);
+	ctx.save();
+	ctx.translate(this.center.x, this.center.y);
+	ctx.scale(this.dx, this.dy);
 	ctx.beginPath();
-	ctx.arc(this.center.x, this.center.y, this.radius,
-		0, Math.PI *2, false);
+	ctx.arc(0, 0, 1, 0, Math.PI *2, false);
+	ctx.restore();
 	if (this.isFill) {
 	    ctx.fill();
 	} else {
@@ -293,7 +297,8 @@ EllipseAction.prototype = {
 		l: self.layer.getName(),
 		x: self.center.x,
 		y: self.center.y,
-		r: self.radius,
+		dx: self.dx,
+                dy: self.dy,
 		s: self.styleRecord.toJSON(),
 		f: self.isFill
 		};
@@ -301,7 +306,8 @@ EllipseAction.prototype = {
 
     restoreFromJSON: function(actionData) {
 	this.center = {x: actionData.x, y: actionData.y};
-	this.radius = actionData.r;
+	this.dx = actionData.dx;
+        this.dy = actionData.dy;
 	this.isFill = actionData.f;
 	this.styleRecord = new StyleRecord();
 	this.styleRecord.restoreFromJSON(actionData.s);

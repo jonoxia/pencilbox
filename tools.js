@@ -10,8 +10,8 @@ ToolOptions.prototype = {
     generateHtml: function(rootElem) {
 	$("#tool-opts").empty();
 	let self = this;
-	let ctrl;
 	for (let x = 0; x < this._optList.length; x++) {
+	    let ctrl;
 	    let key = this._optList[x].name;
 	    let curVal = this._values[key];
 	    switch (this._optList[x].type) {
@@ -174,9 +174,7 @@ pen.drawCursor = pen.display;
 
 let eraser = new Tool(10.0);
 // This is a square eraser that erases to transparent
-// Could also have round one that erases to white (same as 100% opacity
-// paintbrush) - but round & transparent is hard because there's no
-// ClearCircle().
+// Could also have round one: beginPath() arc() clearPath())
 eraser.display = function(penCtx, x, y) {
     penCtx.strokeStyle=Colors.black.style;
     penCtx.lineWidth = 1.0;
@@ -359,8 +357,6 @@ let ellipse = new Tool(1.0, [{name: "fill", type: "bool",
 {name: "circle", type: "bool", defawlt: false},
 {name: "center", type: "bool", defawlt: true}]);
 ellipse.display = function(penCtx, x, y) {
-    // TODO this is going to just be "circle" until I look up the
-    // api for quadratic curves
     penCtx.strokeStyle = this.getStrokeStyle().style;
     penCtx.lineWidth = this.size;
     penCtx.beginPath();
@@ -371,17 +367,6 @@ ellipse.display = function(penCtx, x, y) {
 	penCtx.stroke();
     }
 };
-ellipse._getRadius = function(x, y) {
-    let dx = Math.abs(x - this.startX);
-    let dy = Math.abs(y - this.startY);
-    let radius;
-    if (dx > dy) {
-	radius = dx;
-    } else {
-	radius = dy;
-    }
-    return radius;
-}
 ellipse.down = function(ctx, x, y, isDblClick) {
     this.startX = x;
     this.startY = y;
@@ -390,38 +375,62 @@ ellipse.down = function(ctx, x, y, isDblClick) {
 ellipse.up = function(ctx, x, y) {
     this.endX = x;
     this.endY = y;
-    ctx.lineWidth = this.size;
-    ctx.strokeStyle=this.getStrokeStyle().style;
-    ctx.beginPath();
-    ctx.arc(this.startX, this.startY, 
-	    this._getRadius(this.endX, this.endY),
-	    0, Math.PI *2, false);
-    if (this.options.getValue("fill")) {
-	ctx.fillStyle = g_toolInterface.getPaintColor().style;
-	ctx.fill();
-    } else {
-	ctx.stroke();
-    }
+    this._drawEllipse(ctx, this.endX, this.endY);
     this.inProgress = false;
 };
 ellipse.drag = function(ctx, x, y) {
 };
 ellipse.drawCursor = function(ctx, x, y) {
+    // TODO if center is checked, then startX and startY are center,
+    // otherwise they're a corner.
     $("#the-canvas").css("cursor", "crosshair");
     if (this.inProgress) {
+	this._drawEllipse(ctx, x, y);
+    }
+};
+ellipse._getDimensions = function(x, y) {
+    let dx = Math.abs(x - this.startX);
+    let dy = Math.abs(y - this.startY);
+    if (dx == 0 || dy == 0) {
+	return null;
+    }
+    if (this.options.getValue("circle")) {
+	if (dx > dy) {
+	    dy = dx;
+	} else {
+	    dx = dy;
+	}
+    }
+    return {dx: dx, dy: dy};
+};
+ellipse._drawEllipse = function(ctx, x, y) {
+    let dimensions = this._getDimensions(x, y);
+    if (dimensions == null) {
+	return;
+    }
+    ctx.save();
+    ctx.translate(this.startX, this.startY);
+    ctx.scale(dimensions.dx, dimensions.dy);
+    ctx.beginPath();
+    ctx.arc(0, 0, 1, 0, Math.PI *2, false);
+    ctx.restore();
+    if (this.options.getValue("fill")) {
+	ctx.fillStyle = g_toolInterface.getPaintColor().style;
+	ctx.fill();
+    } else {
 	ctx.lineWidth = this.size;
-	ctx.strokeStyle=this.getStrokeStyle().style;
-	ctx.beginPath();
-	ctx.arc(this.startX, this.startY, 
-		this._getRadius(x, y),
-		0, Math.PI *2, false);
+	ctx.strokeStyle = this.getStrokeStyle().style;
 	ctx.stroke();
     }
 };
 ellipse.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
-    let radius = this._getRadius(this.endX, this.endY);
-    radius /= g_drawInterface.getZoomLevel();
+    let dimensions = this._getDimensions(this.endX, this.endY);
+    if (dimensions == null) {
+	return null;
+    }
+    let dx = dimensions.dx / g_drawInterface.getZoomLevel();
+    let dy = dimensions.dy / g_drawInterface.getZoomLevel();
     let worldCenter = activeLayer.screenToWorld(this.startX,
 						this.startY);
     let self = this;
@@ -432,10 +441,8 @@ ellipse.getRecordedAction = function() {
 	lineJoin: self.getLineJoin(),
 	fillStyle: g_toolInterface.getPaintColor()};
     let isFill = this.options.getValue("fill");
-    return new EllipseAction(activeLayer, worldCenter, radius,
+    return new EllipseAction(activeLayer, worldCenter, dx, dy,
 			     styleInfo, isFill);
-    //return new DrawAction(activeLayer, worldPts, styles, false);
-    return null;
 };
 ellipse.resetRecordedAction = function() {
     // Nothing to do
@@ -517,7 +524,8 @@ eyedropper.resetRecordedAction = function() {
 };
 
 
-let polygon = new Tool(1.0);
+let polygon = new Tool(1.0, [{name: "close", type: "bool",
+				  defawlt: true}]);
 polygon.lastPoint = null;
 polygon.firstPoint = null;
 polygon.display = function(penCtx, x, y) {
@@ -526,10 +534,13 @@ polygon.down = function(ctx, x, y, isDblClick) {
     if (isDblClick) {
 	// Double click = end the polygon
 	this.inProgress = false;
-	// close the loop:
-	let lp = this.lastPoint;
-	let fp = this.firstPoint;
-	this.actionPoints = [{x: lp.x, y: lp.y}, {x: fp.x, y: fp.y}];
+	if (this.options.getValue("close")) {
+            // close the loop:
+            let lp = this.lastPoint;
+	    let fp = this.firstPoint;
+            this.actionPoints = [{x: lp.x, y: lp.y},
+                                 {x: fp.x, y: fp.y}];
+        }
     } else if (!this.inProgress) {
 	this.resetRecordedAction();
 	this.inProgress = true;
