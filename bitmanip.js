@@ -328,3 +328,153 @@ function edgeFindingAlgorithm(data, x, y, tolerance) {
     }
     return megaList;
 }
+
+
+
+
+function Feeler(x, y, direction, seedColor, data, fillMap, tolerance) {
+    this.startX = x;
+    this.startY = y;
+    this.direction = direction;
+    this.seedColor = seedColor;
+    this.data = data;
+    this.fillMap = fillMap;
+    this.tolerance = tolerance;
+};
+Feeler.prototype = {
+    _isBoundary: function(pt) {
+	// Treat edges of canvas as boundary
+	// TODO: Treat edges of PANEL as boundary
+	if (pt.x < 0 || pt.y < 0) {
+	    return true;
+	}
+	if (pt.x >= this.data.width || pt.y >= this.data.height) {
+	    return true;
+	}
+	// treat as bondary if we've already filled it:
+	if (this.fillMap.getBoolAt(pt.x, pt.y)) {
+	    return true;
+	}
+	let color = this.data.getColorAtPt(pt);
+	// Tolerance here:
+	return (this.seedColor.diff(color) > this.tolerance);
+    },
+
+    findEndPoint: function(ctx) {
+	let pt = {x: this.startX, y: this.startY};
+	let nextPt = move(pt, this.direction);
+	while(!this._isBoundary(nextPt)) {
+	    this.fillMap.setBoolAt(pt.x, pt.y, true);
+	    pt.x = nextPt.x;
+	    pt.y = nextPt.y;
+	    nextPt = move(pt, this.direction);
+	}
+	this.endX = pt.x;
+	this.endY = pt.y;
+	// temporary drawing for debug:
+	ctx.beginPath();
+	ctx.moveTo(this.startX, this.startY);
+	ctx.lineTo(this.endX, this.endY);
+	ctx.stroke();
+    },
+
+    get len() {
+	// only one of x or y will be different
+	return (Math.abs(this.endX - this.startX) +
+		Math.abs(this.endY - this.startY));
+    },
+
+    launchSubFeelers: function(ctx) {
+	// shift to remove oldest sub feeler
+	// push to add newewst sub feeler to other end
+	// return list of any subfeelers that are live
+
+	let right = clockwise(this.direction);
+	let left = counterclockwise(this.direction);
+	let liveChildren = [];
+	
+	for each (let dir in [right, left]) {
+            let children = [];
+            let pt = {x: this.startX, y: this.startY};
+            for (let i = 0; i < this.len; i++) {
+	        // TODO move before or after sending out subfeeler?
+                pt = move(pt, this.direction);
+                let subFeeler = new Feeler(pt.x, pt.y, dir,
+                                           this.seedColor,
+                                           this.data,
+                                           this.fillMap,
+                                           this.tolerance);
+
+                subFeeler.findEndPoint(ctx);
+                children.push(subFeeler);
+
+                // first and last subfeelers always are live:
+                if (i == 0 || i == this.len - 1) {
+                    liveChildren.push(subFeeler);
+                }
+                if (i >= 2) {
+                    // otherwise, you are live if you're longer than
+                    // at least one of your neighbors:
+                    if (children[i].len < children[i - 1].len ||
+                        children[i - 2].len < children[i - 1].len) {
+                           liveChildren.push(children[i - 1]);
+                    }
+                }
+	    /* Future optimizations:
+	       1 - we only need to store the last 2 subfeelers, not all
+	       2 - if we remember the length of subfeeler's neighbors,
+	          then we can tell it to start making its sub-sub-feelers
+		  from that point along its length istead of from 0.
+	    */
+	    }
+	}
+	return liveChildren;
+    }
+};
+
+function BoolMap(width, height) {
+    this._data = [];
+    for (let y = 0; y < height; y++) {
+	let row = [];
+	for (let x = 0; x < width; x++) {
+	    row.push(false);
+	}
+	this._data.push(row);
+    }
+}
+BoolMap.prototype = {
+    setBoolAt: function(x, y, val) {
+	this._data[y][x] = val;
+    },
+    getBoolAt: function(x, y) {
+	return this._data[y][x];
+    }
+};
+
+// UNTESTED
+function betterEdgeFinder(ctx, data, x, y, tolerance) {
+    let liveFeelers = [];
+
+    let fillMap = new BoolMap(data.width, data.height);
+    let seedColor = data.getColorAt(x, y);
+    
+    liveFeelers.push(new Feeler(x, y, "up", seedColor, 
+				data, fillMap, tolerance));
+    liveFeelers.push(new Feeler(x, y, "down", seedColor,
+				data, fillMap, tolerance));
+    liveFeelers[0].findEndPoint(ctx);
+    liveFeelers[1].findEndPoint(ctx);
+    while(liveFeelers.length > 0) {
+	let feeler = liveFeelers.pop();
+	if (feeler.len > 0) {
+            let childFeelers = feeler.launchSubFeelers(ctx);
+            for (let i = 0; i < childFeelers.length; i++) {
+               liveFeelers.push(childFeelers[i]);
+            }
+	}
+    }
+    return fillMap;
+}
+
+// this will have to result in a PlopBitmap action, so we'll have to
+// make PlopBitmapActions work right before it can be tested.

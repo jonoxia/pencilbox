@@ -242,6 +242,8 @@ line.drawCursor = function(ctx, x, y) {
 
 let bucket = new Tool(0, [{name: "tolerance",
 			   type: "scale", defawlt: 0}]);
+bucket.paintPng = null;
+bucket.tmpLayer = null;
 bucket.display = function(penCtx, x, y) {
     let img = new Image();  
     img.onload = function(){  
@@ -255,14 +257,30 @@ bucket.up = function(ctx, x, y) {
     let layer = g_drawInterface.getActiveLayer();
     let bm = new BitManipulator(ctx, layer.width, layer.height);
     let tolerance = this.options.getValue("tolerance");
-    this.actionPoints = edgeFindingAlgorithm(bm, x, y, tolerance);
-    ctx.fillStyle = g_toolInterface.getPaintColor().style;
-    ctx.beginPath();
-    ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
-    for (let i = 1; i < this.actionPoints.length; i++) {
-	ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
+
+    // Create new layer here, paint to it
+    if (this.tmpLayer == null) {
+      this.tmpLayer = new Layer(-1, {hidden: true});
+      this.tmpLayer.setName("Temporary paint layer");
     }
-    ctx.fill();
+    let paintCtx = this.tmpLayer.getContext();
+
+    paintCtx.strokeStyle = g_toolInterface.getPaintColor().style;
+    let fillMap = betterEdgeFinder(paintCtx, bm, x, y, tolerance);
+
+    // TODO optimization: clip layer to size of bounding rectangle
+    // of filled region (see layer.pngSnapshot) to make the
+    // resulting png smaller
+    let pngDataUrl = this.tmpLayer.displayCanvas.toDataURL("image/png");
+
+    let paintPng = new Image();
+    paintPng = new Image();
+    paintPng.onload = function() {
+        ctx.drawImage(paintPng, 0, 0);
+    };
+    paintPng.src = pngDataUrl;
+    this.paintPng = paintPng;
+    this.tmpLayer.clearLayer();
 };
 bucket.drag = function(ctx, x, y) {
 };
@@ -272,10 +290,10 @@ bucket.drawCursor = function(ctx, x, y) {
 };
 bucket.getRecordedAction = function() {
     let activeLayer = g_drawInterface.getActiveLayer();
-    let style = {fillStyle: g_toolInterface.getPaintColor()};
-    let worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
-						  false);
-    return new DrawAction(activeLayer, worldPts, style, true);
+    if (this.paintPng) {
+	return new PlopBitmapAction(activeLayer, this.paintPng, 0, 0);
+    }
+    return null;
 };
 
 let rectangle = new Tool(1.0, [{name: "fill", type: "bool",
