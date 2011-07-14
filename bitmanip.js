@@ -371,10 +371,12 @@ Feeler.prototype = {
 	}
 	this.endX = pt.x;
 	this.endY = pt.y;
-	// temporary drawing for debug:
+	// Fill in as we go:
 	ctx.beginPath();
-	ctx.moveTo(this.startX, this.startY);
-	ctx.lineTo(this.endX, this.endY);
+	/* Subtracting 0.5 solves the half-pixels-at-edges problem.
+	 * without this there is an ugly gap on northwest borders. */
+	ctx.moveTo(this.startX - 0.5, this.startY - 0.5);
+	ctx.lineTo(this.endX - 0.5, this.endY - 0.5);
 	ctx.stroke();
     },
 

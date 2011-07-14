@@ -174,21 +174,37 @@ DrawAction.prototype = {
     }
 };
 
-function EraserStrokeAction(layer, pointsList, size) {
+function EraserStrokeAction(layer, pointsList, size, isRound) {
+    // TODO optimization - somehow do it as a single clear operation
+    // instead of one for each and every point along the way?
     this.layer = layer;
     this.ctx = layer.getContext();
     this.points = pointsList;  // expected in world coordinates
     this.size = size;
+    this.isRound = isRound;
 }
 EraserStrokeAction.prototype = {
     replay: function(newCtx) {
 	let ctx = newCtx ? newCtx : this.ctx;
+	ctx.save();
+	if (this.isRound) {
+	    ctx.globalCompositeOperation = 'destination-out';
+	}
 	for (let i= 0; i < this.points.length; i++) {
+	    if (this.isRound) {
+		ctx.beginPath();
+		ctx.arc(this.points[i].x,
+			this.points[i].y,
+			this.size/2, 0, 2*Math.PI, true);
+		ctx.fill();
+	    } else {
 	    ctx.clearRect( this.points[i].x - this.size/2,
 			   this.points[i].y - this.size/2,
 			   this.size,
 			   this.size );
+	    }
 	}
+	ctx.restore();
     },
 
     toJSON: function() {
@@ -196,7 +212,8 @@ EraserStrokeAction.prototype = {
 	return {t: "eraser",
 		l: self.layer.getName(),
 		p: points,
-		s: self.size
+		s: self.size,
+		r: self.isRound
 		};
     },
 
@@ -206,6 +223,7 @@ EraserStrokeAction.prototype = {
 	    this.points.push( { x: actionData.p[i],
 			        y: actionData.p[i+1]});
 	}
+	this.isRound = actionData.r;
 	this.size = actionData.s;
     }
 };
@@ -314,12 +332,13 @@ EllipseAction.prototype = {
     }
 };
 
-function PlopBitmapAction(layer, img, x, y) {
+function PlopBitmapAction(layer, img, x, y, scaleFactor) {
     // Note: This expects x, y in world coordinates.
     this.layer = layer;
     this.ctx = layer.getContext();
     this.importPt = {x: x, y: y};
     this.img = img;
+    this.scaleFactor = scaleFactor;
     if (img && img.src) {
 	this._url = img.src
     } else {
@@ -332,7 +351,13 @@ PlopBitmapAction.prototype = {
     replay: function(newCtx) {
 	let ctx = newCtx ? newCtx : this.ctx;
 	if (this.img != null) {
-	    ctx.drawImage(this.img, this.importPt.x, this.importPt.y);
+	    ctx.save();
+	    ctx.translate( this.importPt.x,this.importPt.y);
+	    //ctx.scale(this.scaleFactor, this.scaleFactor);
+	    /*ctx.translate(this.importPt.x / this.scaleFactor, 
+	      this.importPt.y / this.scaleFactor);*/
+	    ctx.drawImage(this.img, 0, 0);
+	    ctx.restore();
 	}
     },
 

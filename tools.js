@@ -146,16 +146,23 @@ Tool.prototype = {
     getRecordedAction: function() {
 	let activeLayer = g_drawInterface.getActiveLayer();
 	let self = this;
+	let fill = false;
+	if (this.options && this.options.getValue("fill")) {
+	    fill = true;
+	}
+
 	let styles = {lineWidth: self.size,
 		      strokeStyle: self.getStrokeStyle(),
 		      lineCap: self.getLineCap(),
-	              lineJoin: self.getLineJoin()};
+	              lineJoin: self.getLineJoin(),
+		      fillStyle: g_toolInterface.getPaintColor()};
 	let worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
 						      this.sizeIsOdd());
-	return new DrawAction(activeLayer, worldPts, styles, false);
+	return new DrawAction(activeLayer, worldPts, styles, fill);
     },
 
     resetRecordedAction: function() {
+	$("#debug").html("Reset recorded action.");
 	this.actionPoints = [];
     },
 
@@ -163,7 +170,8 @@ Tool.prototype = {
     }
 }
 
-let pen = new Tool(1.0);
+let pen = new Tool(1.0, [{name: "fill",
+			   type: "bool", defawlt: false}]);
 pen.display = function(penCtx, x, y) {
     penCtx.beginPath();
     penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
@@ -172,22 +180,39 @@ pen.display = function(penCtx, x, y) {
 };
 pen.drawCursor = pen.display;
 
-let eraser = new Tool(10.0);
+
+let eraser = new Tool(10.0, [{name: "round",
+			      type: "bool", defawlt: false}]);
 // This is a square eraser that erases to transparent
 // Could also have round one: beginPath() arc() clearPath())
 eraser.display = function(penCtx, x, y) {
     penCtx.strokeStyle=Colors.black.style;
     penCtx.lineWidth = 1.0;
-    penCtx.strokeRect(x - this.size/2, y - this.size/2,
-		      this.size, this.size);
+    if (this.options.getValue("round")) {
+      penCtx.beginPath();
+      penCtx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
+      penCtx.strokeStyle=Colors.black.style;
+      penCtx.stroke();
+    } else {
+      penCtx.strokeRect(x - this.size/2, y - this.size/2,
+                        this.size, this.size);
+    }
 };
 eraser.drawCursor = eraser.display;
 eraser.drag = function(ctx, x, y) {
     // Don't scale up eraser, so it stays the same size on the screen
     // when you zoom in.
-
-    ctx.clearRect(x - this.size/2, y - this.size/2,
-		      this.size, this.size);
+    if (this.options.getValue("round")) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, this.size/2, 0, 2*Math.PI, true);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.clearRect(x - this.size/2, y - this.size/2,
+                        this.size, this.size);
+    }
     this.actionPoints.push( {x: x, y: y} );
 };
 eraser.getRecordedAction = function() {
@@ -198,7 +223,7 @@ eraser.getRecordedAction = function() {
     // TODO round off width to some kind of whole number?
     let points = activeLayer.screenToWorldMulti(this.actionPoints, false);
     return new EraserStrokeAction(activeLayer, points,
-				  width);
+				  width, this.options.getValue("round"));
 };
 
 
@@ -241,8 +266,11 @@ line.drawCursor = function(ctx, x, y) {
 };
 
 let bucket = new Tool(0, [{name: "tolerance",
-			   type: "scale", defawlt: 0}]);
-bucket.paintPng = null;
+			   type: "scale", defawlt: 0},
+                          {name: "ignore other layers",
+                           type: "bool", defawlt: true}]);
+// WHY DO HUMANS LEAVE CERTAIN RECEPTACLES WHERE ANYONE CAN SEE THEM
+bucket.paintAction = null;
 bucket.tmpLayer = null;
 bucket.display = function(penCtx, x, y) {
     let img = new Image();  
@@ -254,19 +282,41 @@ bucket.display = function(penCtx, x, y) {
 bucket.down = function(ctx, x, y, isDblClick) {
 };
 bucket.up = function(ctx, x, y) {
-    let layer = g_drawInterface.getActiveLayer();
-    let bm = new BitManipulator(ctx, layer.width, layer.height);
+    let parentLayer = g_drawInterface.getActiveLayer();
     let tolerance = this.options.getValue("tolerance");
 
-    // Create new layer here, paint to it
+    // Create the temp layer if it doesn't already exist:
     if (this.tmpLayer == null) {
       this.tmpLayer = new Layer(-1, {hidden: true});
       this.tmpLayer.setName("Temporary paint layer");
+      // TODO set size of tmpLayer to size of parent layer
     }
+
+    /* The temp layer will be used for a full scale
+     * reconstruction of the underlying layer(s), which will then be
+     * turned into a bit manipulator and erased.  That will get us
+     * a bit manipulator containing the source data at 100% zoom.
+     * Then we erase the temp layer and re-use it to draw the pixels of
+     * the paint fill, which will be captured as a data url and turned 
+     * into a plopBitmapAction. */
+    this.tmpLayer.clearLayer();
     let paintCtx = this.tmpLayer.getContext();
 
+    // TODO if the obey lines from other layers option is turned on,
+    // then also replay those other layers into the paint context.
+    g_history.replayActionsForLayer(parentLayer, paintCtx);
+
+    let bm = new BitManipulator(paintCtx, this.tmpLayer.width,
+                                this.tmpLayer.height);
+
+    // We've got the bit data, now clear the tmp layer and paint it in
+    this.tmpLayer.clearLayer();
     paintCtx.strokeStyle = g_toolInterface.getPaintColor().style;
-    let fillMap = betterEdgeFinder(paintCtx, bm, x, y, tolerance);
+    // tmpLayer doesn't share parentLayer's transform, so de-transform
+    // the location of the click:
+    let worldPt = parentLayer.screenToWorld(x, y);
+    let fillMap = betterEdgeFinder(paintCtx, bm, worldPt.x, worldPt.y,
+                                   tolerance);
 
     // TODO optimization: clip layer to size of bounding rectangle
     // of filled region (see layer.pngSnapshot) to make the
@@ -274,12 +324,14 @@ bucket.up = function(ctx, x, y) {
     let pngDataUrl = this.tmpLayer.displayCanvas.toDataURL("image/png");
 
     let paintPng = new Image();
-    paintPng = new Image();
+    let paintAction = new PlopBitmapAction(parentLayer, paintPng,
+                                           0, 0, 1);
     paintPng.onload = function() {
-        ctx.drawImage(paintPng, 0, 0);
+	parentLayer.doActionNow(paintAction);
     };
     paintPng.src = pngDataUrl;
-    this.paintPng = paintPng;
+    
+    this.paintAction = paintAction;
     this.tmpLayer.clearLayer();
 };
 bucket.drag = function(ctx, x, y) {
@@ -289,9 +341,8 @@ bucket.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "url(icons/paint-can.png)");
 };
 bucket.getRecordedAction = function() {
-    let activeLayer = g_drawInterface.getActiveLayer();
-    if (this.paintPng) {
-	return new PlopBitmapAction(activeLayer, this.paintPng, 0, 0);
+    if (this.paintAction) {
+	return this.paintAction;
     }
     return null;
 };
@@ -349,22 +400,14 @@ rectangle.drawCursor = function(ctx, x, y) {
     }
 };
 rectangle.getRecordedAction = function() {
-    let activeLayer = g_drawInterface.getActiveLayer();
-    let pointList = [];
     let self = this;
-    pointList.push({x: self.startX, y: self.startY});
-    pointList.push({x: self.startX, y: self.endY});
-    pointList.push({x: self.endX, y: self.endY});
-    pointList.push({x: self.endX, y: self.startY});
-    pointList.push({x: self.startX, y: self.startY});
-    let styles = {strokeStyle: self.getStrokeStyle(),
-		  lineWidth: self.size,
-		  lineCap: self.getLineCap(),
-		  fillStyle: g_toolInterface.getPaintColor().copy()}
-    let worldPts = activeLayer.screenToWorldMulti(pointList,
-						  this.sizeIsOdd());
-    let filled = this.options.getValue("fill");
-    return new DrawAction(activeLayer, worldPts, styles, filled);
+    this.actionPoints = [
+        {x: self.startX, y: self.startY},
+        {x: self.startX, y: self.endY},
+        {x: self.endX, y: self.endY},
+        {x: self.endX, y: self.startY},
+        {x: self.startX, y: self.startY} ];
+    return Tool.prototype.getRecordedAction.call(this);
 };
 rectangle.resetRecordedAction = function() {
     // Nothing to do
@@ -542,45 +585,63 @@ eyedropper.resetRecordedAction = function() {
 };
 
 
-let polygon = new Tool(1.0, [{name: "close", type: "bool",
-				  defawlt: true}]);
-polygon.lastPoint = null;
+let polygon = new Tool(1.0, [{name: "close", type: "bool", defawlt: true},
+                             {name:"fill", type: "bool", defawlt: false}
+                      ]);
 polygon.firstPoint = null;
+polygon.inProgress = false;
 polygon.display = function(penCtx, x, y) {
+    penCtx.strokeStyle = this.getStrokeStyle().style;
+    penCtx.lineWidth = this.size;
+    penCtx.beginPath();
+    penCtx.lineTo(x-30, y);
+    penCtx.lineTo(x-15, y -30);
+    penCtx.lineTo(x+30, y-30);
+    penCtx.lineTo(x, y);
+    penCtx.lineTo(x+15, y+30);
+    if (this.options.getValue("close")) {
+        penCtx.lineTo(x-30, y);
+    }
+    if (this.options.getValue("fill")) {
+	penCtx.fill();
+    } else {
+	penCtx.stroke();
+    }
 };
 polygon.down = function(ctx, x, y, isDblClick) {
     if (isDblClick) {
 	// Double click = end the polygon
-	this.inProgress = false;
-	if (this.options.getValue("close")) {
-            // close the loop:
-            let lp = this.lastPoint;
-	    let fp = this.firstPoint;
-            this.actionPoints = [{x: lp.x, y: lp.y},
-                                 {x: fp.x, y: fp.y}];
+	if (this.inProgress) {
+	    $("#debug").html("Ended polygon");
+            if (this.options.getValue("close")) {
+                // close the loop:
+                let fp = this.firstPoint;
+                this.actionPoints.push({x: fp.x, y: fp.y});
+	    }
         }
+	this.inProgress = false;
     } else if (!this.inProgress) {
+	$("#debug").html("Started polygon");
 	this.resetRecordedAction();
 	this.inProgress = true;
-	this.lastPoint = {x: x, y: y};
 	this.firstPoint = {x: x, y: y};
+	this.actionPoints.push({x: x, y: y});
     }
 };
 polygon.up = function(ctx, x, y) {
-    let lp = this.lastPoint;
     if (this.inProgress) {
-	ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
-	ctx.lineCap = this.getLineCap();
-	ctx.strokeStyle = this.getStrokeStyle().style;
-	ctx.beginPath();
-	ctx.moveTo(lp.x, lp.y);
-	ctx.lineTo(x, y);
-	ctx.stroke();
-	this.actionPoints = [{x: lp.x, y: lp.y}, {x: x, y: y}];
+	this.actionPoints.push({x: x, y: y});
     }
-    this.lastPoint = {x: x, y: y};
 };
 polygon.drag = function(ctx, x, y) {
+};
+polygon.getRecordedAction = function() {
+    // Record no action until the whole polygon is done:
+    if (this.inProgress) {
+	return null;
+    } else {
+	return Tool.prototype.getRecordedAction.call(this);
+    }
 };
 polygon.drawCursor = function(ctx, x, y) {
     $("#the-canvas").css("cursor", "crosshair");
@@ -588,16 +649,15 @@ polygon.drawCursor = function(ctx, x, y) {
       ctx.strokeStyle=this.getStrokeStyle().style;
       ctx.lineWidth = this.size;
       ctx.beginPath();
-      ctx.moveTo(this.lastPoint.x, this.lastPoint.y);
+      ctx.moveTo(this.firstPoint.x, this.firstPoint.y);
+      //$("#debug").html("Len is " + this.actionPoints.length);
+      for (let i = 0; i < this.actionPoints.length; i++) {
+	  ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
+      }
       ctx.lineTo(x, y);
       ctx.stroke();
     }
 };
-// TODO:  watch for a double-click, and when we get one, we either
-// close or we don't, but either way that's when we reset our lastPoint.
-// Otherwise, you'll still be adding on to the same polygon even after
-// you switch tools!  Which is pretty crazy.
-
 
 // More tools:
 // Fancy line tool? (TBH i never use these)

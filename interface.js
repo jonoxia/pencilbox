@@ -641,10 +641,12 @@ DrawAreaInterface.prototype = {
 
 	// Record action to undo history
 	let action = tool.getRecordedAction();
-	g_history.pushAction(action);
-	tool.resetRecordedAction();
-	// refresh the layer the action was in:
-	if (action) action.layer.updateDisplay();
+	if (action) {
+            g_history.pushAction(action);
+            tool.resetRecordedAction();
+             // refresh the layer the action was in:
+	    action.layer.updateDisplay();
+	}
 	// refresh my cursor layer:
 	this.cursorCtx.clearRect(0, 0, this.width, this.height);
 
@@ -653,7 +655,7 @@ DrawAreaInterface.prototype = {
 
     mouseDownHandler: function(evt) {
 	if (this.interpreter.touchPointCount > 0) return;
-	this.getSelectedTool().resetRecordedAction();
+	//this.getSelectedTool().resetRecordedAction();
 
 	let x = evt.pageX - this.offsetX;
 	let y = evt.pageY - this.offsetY;

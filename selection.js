@@ -100,7 +100,7 @@ function SelectionManager() {
 
     this._parentLayer = null; // the layer the selection came from
     this._selectionContentsSnapshot = null;
-    this._selectionScaleFactor = 1.0;
+    this._scaleFactor = 1.0;
 
     this.selectionLayer = new Layer(-2, {hidden: true});
     this.selectionLayer.setName("Selection");
@@ -283,14 +283,14 @@ SelectionManager.prototype = {
 	// Create a new action in history importing the dropped
 	// selection picture contents into the target layer, with the
 	// transforms applied!
-	// TODO PlopBitmapAction needs arguments for scaleX, scaleY, and
-	// rotation.
+	let wpt = this.selectionLayer.screenToWorld( this._clipRect.left,
+                                                     this._clipRect.top);
 	let action = new PlopBitmapAction(targetLayer,
-					   this._selectionImg,
-					   this._clipRect.left,
-					   this._clipRect.top);
-	g_history.pushAction(action);
-	targetLayer.doActionNow(action);
+		                          this._selectionImg,
+                                          wpt.x, wpt.y,
+					  this._scaleFactor);
+        g_history.pushAction(action);
+        targetLayer.doActionNow(action);
 
 	// Reset all selection-related state.
 	this._selectionPresent = false;
@@ -298,6 +298,7 @@ SelectionManager.prototype = {
 	this._parentLayer = null;
 	this._clipRect = null;
 	this._selectionImg = null;
+	this._scaleFactor = 1;
     },
 
     drawSelection: function(ctx) {
@@ -332,23 +333,24 @@ SelectionManager.prototype = {
 	// Create a new action in history importing the dropped
 	// selection picture contents into the target layer.
 	let action = new PlopBitmapAction(this._parentLayer,
-					   this._selectionImg,
-					   this._clipRect.left,
-					   this._clipRect.top);
+					  this._selectionImg,
+					  this._clipRect.left,
+					  this._clipRect.top,
+                                          1);
 	g_history.pushAction(action);
 	this._parentLayer.doActionNow(action);
 	// But don't clear out the selection.
     },
 
     resizeSelection: function(ratio) {
-	this._xScale *= ratio;
-	this._yScale *= ratio;
+	
 	// I think we don't actually want to change the scale of the
 	// whole layer - because that effects screen-to-world which affects
 	// the user interface and stuff -- instead we want to add an extra
 	// transformation factor?
 	// No, we do want to change scale of whole layer, because
 	// that makes isScreenPtInsideSelection work correctly.
+	this._scaleFactor *= ratio;
 	this.selectionLayer.scale(ratio);
 	//this.selectionLayer.updateWithoutReplay();
 	// TODO:
