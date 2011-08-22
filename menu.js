@@ -221,7 +221,7 @@ GridMenu.prototype = {
 			    this._squareSize, this._squareSize);
 	this._ctx.save();
 	this._ctx.translate(this._left + this._squareSize * col + margin, this._top + this._squareSize * (row + 1) - margin );
-	this._ctx.mozDrawText(commandObj.name);
+	this._ctx.fillText(commandObj.name, 0, 0);
 	this._ctx.restore();
 
 	if (commandObj.img) {
