@@ -164,10 +164,10 @@ function adjustToScreen() {
 	    g_screenOrientation = "landscape";
 	    restructureDOM();
 	}
-	mainCanvasWidth = screenWidth * 0.6;
+	mainCanvasWidth = screenWidth * 0.75;
 	mainCanvasHeight = screenHeight;
 	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
-	$("#pen-size-canvas").attr("height", screenHeight * 0.7);
+	$("#pen-size-canvas").attr("height", screenHeight * 0.85);
     }
     // subtract a little from height to prevent vertical scroll bar
     // from appearing:
