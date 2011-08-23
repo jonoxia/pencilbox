@@ -184,7 +184,7 @@ function adjustToScreen() {
     }
 }
 
-function importImage() {
+function importImage(imgUrl) {
     // TODO interface for picking a local image to upload
     /* TODO also need a way of moving imported image
      * where we want it!!  Maybe treat it as a selection? */
@@ -197,7 +197,17 @@ function importImage() {
 	g_history.pushAction(action);
 	layer.doActionNow(action);
     }  
-    img.src = 'myImage.png';
+    img.src = imgUrl;
+}
+
+function doImportFromUrl() {
+    importImage($("#import-image-url").val());
+    $("#import-image-controls").slideUp();
+}
+
+function doImportFromFile() {
+    $("#debug").html("Not implemented.");
+    $("#import-image-controls").slideUp();
 }
 
 function deleteThatHistory() {
@@ -217,6 +227,10 @@ function onScriptChanged() {
     g_toolInterface.setTool(textBalloonTool);
     g_history.pushAction(action);
     g_dialogue.dialogueLayer.updateDisplay();
+}
+
+function doNewLayer() {
+  g_drawInterface.newLayer(); 
 }
 
 $(function() {
@@ -249,36 +263,7 @@ $(function() {
 	    g_drawInterface.updateAllLayerDisplays();
 	}
 
-
-	// Set up the main menu:
-	$("#main-menu").change(function() {
-		switch($(this).val()) {
-		case "import-item":
-		    importImage();
-		    break;
-		case "export-item":
-		    export2();
-		    break;
-		case "save-item":
-		    g_history.saveToLocalStorage();
-		    break;
-		case "save-server-item":
-		    let title = gup("filename");
-		    g_history.saveToServer(title);
-		    break;
-		case "new-layer-item":
-		    g_drawInterface.newLayer(); 
-		    break;
-		case "clear-item":
-		    clearEverything();
-		    break;
-		case "adjust-item":
-		    adjustToScreen();
-		    break;
-		}
-		$(this).val("none");
-	    });
-	/* Update text balloons when you edit the script -- but
+      	/* Update text balloons when you edit the script -- but
 	* not with every keystroke, that's too much work. Wait until
 	* user stops typing for a second.*/
 	let textUpdateTimer = null;
@@ -298,3 +283,12 @@ $(function() {
 		resizeTimer = setTimeout(adjustToScreen, 1000);
 	    });
 });
+
+
+	// Things that used to be in the main menu:
+        /* g_history.saveToLocalStorage();
+           let title = gup("filename");
+           g_history.saveToServer(title);
+           clearEverything();
+           adjustToScreen(); */
+

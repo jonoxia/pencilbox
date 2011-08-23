@@ -19,19 +19,19 @@
 <br/>
 <div id="other-controls">
 <span id="tool-opts"></span>
-<select id="main-menu">
-<option value="none" selected="true">Menu</option>
-<option value="import-item">Import Image</option>
-<option value="export-item">Export Image</option>
-<option value="save-item">Save Local</option>
-<option value="save-server-item">Save To Server</option>
-<option value="new-layer-item">New Layer</option>
-<option value="clear-item">Clear</option>
-<option value="adjust-item">Adjust to Screen</option>
-</select><br/>
+<button onclick="$('#import-image-controls').slideDown();">Import Img</button>
+<button onclick="export2();">Export Img</button><br/>
+<div id="import-image-controls" style="display:none">
+  From Url:<br/><input id="import-image-url" type="text"/>
+  <button onclick="doImportFromUrl()">Import</button><br/>
+  From File:<br/><input id="import-image-file" type="file"/>
+  <button onclick="doImportFromFile()">Upload</button><br/>
+  <button onclick="$('#import-image-controls').slideUp();">Cancel</button>
+</div>
 <span id="debug"></span><br/>
 <table id="layers-table" border="true">
 </table>
+<button onclick="doNewLayer();">New Layer</button>
 </div>
 </div>
 <div id="canvas-div" style="float: left;">
