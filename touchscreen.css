@@ -11,23 +11,19 @@
 #page-title {
   font-size: 14pt;
   font-weight: bold;
+  text-decoration: underline;
   padding-bottom: 1em;
-  padding-left: 1em;
-  padding-right: 1em;
-  color: blue;
+}
+
+.not-autosaved {
+  color: red;
 }
 
 #main-menu {
   left: 0px;
   top: 0px;
-  border-style: solid;
-  border-color: black;
   background-color: white;
   padding: 0.5em;
-}
-
-#main-menu img {
-  padding-left: 0.5em;
 }
 
 #import-image-controls {
@@ -46,4 +42,13 @@ canvas {
 
 .floaty {
   float: left;
+}
+
+.floatr {
+  float: right;
+  padding-left: 0.5em;
+}
+
+.tiny {
+  font-size: 10pt;
 }

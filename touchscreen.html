@@ -18,8 +18,50 @@
 
 <div id="control-div" class="floaty">
   <div id="main-menu">
-    <span id="page-title">Untitled</span>
-    <img src="icons/32x32/Graphic file.png" onclick="$('#import-image-controls').slideDown();"/>
+    <span id="page-title">Untitled</span> by
+    <span id="username">Jono</span>
+    <span id="autosave-status" class="not-autosaved">needs autosave</span>
+    <br/>
+
+    <div class="floatr" onclick="$('#settings-div').slideDown();">
+      <img src="icons/32x32/Pinion.png"/>
+      <br/>
+      <span class="tiny">Settings</span>
+    </div>
+    <div id="settings-div" class="control-panel">
+       Global settings go here
+    </div>
+
+    <div class="floatr" onclick="$('#text-div').slideDown();">
+      <img src="icons/32x32/Hints.png"/>
+      <br/>
+      <span class="tiny">Script</span>
+    </div>
+
+    <div id="text-div" class="control-panel">
+      <textarea rows="30"></textarea>
+      <button onclick="$('#text-div').slideUp();">Hide</button>
+    </div>
+
+    <div class="floatr" onclick="$('#layer-controls').slideDown();">
+      <img src="icons/32x32/Layers.png"/>
+      <br/>
+      <span class="tiny">Layers</span>
+    </div>
+
+    <div id="layer-controls" class="control-panel">
+      <table id="layers-table" border="true">
+      </table>
+      <button onclick="doNewLayer();">New Layer</button>
+      <button onclick="$('#layer-controls').slideUp();">Hide</button>
+    </div>
+
+    <div class="floatr"
+         onclick="$('#import-image-controls').slideDown();">
+      <img src="icons/32x32/Graphic file.png"/>
+      <br/>
+      <span class="tiny">Import</span>
+    </div>
     <div id="import-image-controls" class="control-panel">
       <button onclick="export2();">Export Img</button><br/>
       From Url:<br/><input id="import-image-url" type="text"/>
@@ -28,19 +70,8 @@
       <button onclick="doImportFromFile()">Upload</button><br/>
       <button onclick="$('#import-image-controls').slideUp();">Cancel</button>
     </div>
-    <img src="icons/32x32/Layers.png" onclick="$('#layer-controls').slideDown();"/>
-    <div id="layer-controls" class="control-panel">
-      <table id="layers-table" border="true">
-      </table>
-      <button onclick="doNewLayer();">New Layer</button>
-      <button onclick="$('#layer-controls').slideUp();">Hide</button>
-    </div>
 
-    <img src="icons/32x32/Hints.png" onclick="$('#text-div').slideDown();"/>
-    <div id="text-div" class="control-panel">
-      <textarea rows="30"></textarea>
-      <button onclick="$('#text-div').slideUp();">Hide</button>
-    </div>
+
   </div>
 
   <canvas id="pen-size-canvas"></canvas>
