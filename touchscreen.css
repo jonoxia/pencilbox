@@ -1,0 +1,19 @@
+#import-image-controls {
+  display:none;
+  z-index: 5;
+  border-style: solid;
+  border-color: black;
+  position: absolute;
+  left: 20px;
+  top: 360px;
+  background-color: white;
+  padding: 1em;
+}
+
+canvas {
+  border-style:solid;
+}
+
+.floaty {
+  float: left;
+}

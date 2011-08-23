@@ -11,17 +11,18 @@
 <script src="selection.js" type="text/javascript;version=1.8"></script>
 <script src="interface.js" type="text/javascript;version=1.8"></script>
 <script src="main.js" type="text/javascript;version=1.8"></script>
+<link rel="stylesheet" type="text/css" href="touchscreen.css" />
 </head>
 <!-- Icons by Yusuke Kamiyamane, http://p.yusukekamiyamane.com, CC Attribution 3.0 license -->
 <body id="the-body">
-<div id="control-div" style="float: left;">
-<canvas id="pen-size-canvas" style="border-style:solid;"></canvas>
+<div id="control-div" class="floaty">
+<canvas id="pen-size-canvas"></canvas>
 <br/>
 <div id="other-controls">
 <span id="tool-opts"></span>
 <button onclick="$('#import-image-controls').slideDown();">Import Img</button>
 <button onclick="export2();">Export Img</button><br/>
-<div id="import-image-controls" style="display:none">
+<div id="import-image-controls">
   From Url:<br/><input id="import-image-url" type="text"/>
   <button onclick="doImportFromUrl()">Import</button><br/>
   From File:<br/><input id="import-image-file" type="file"/>
@@ -34,11 +35,11 @@
 <button onclick="doNewLayer();">New Layer</button>
 </div>
 </div>
-<div id="canvas-div" style="float: left;">
-<canvas id="the-canvas" style="border-style:solid;"></canvas>
+<div id="canvas-div" class="floaty">
+<canvas id="the-canvas"></canvas>
 </div>
-<div id="text-div" style="float: left;">
-<textarea rows="30" id="dialogue-edit-area"></textarea>
+<div id="text-div" class="floaty">
+<textarea rows="30"></textarea>
 </div>
 </body>
 </html>
