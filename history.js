@@ -36,6 +36,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+const AUTOSAVE_DELAY = 2000;
+// The time it will wait for you to be idle before autosaving
+
 function StyleRecord(styleInfo) {
     if (styleInfo) {
 	this.styleInfo = styleInfo;
@@ -486,6 +489,7 @@ RectanglePanelAction.prototype = {
 function History() {
     this.actionList = [];
     this.currPtr = 0;
+    this._autosaveTimer = null;
     // On page load, if there is data in local storage,
     // restore history from that data:
     // this.loadFromLocalStorage();
@@ -507,6 +511,15 @@ History.prototype = {
 	this.actionList.push(action);
 	this.currPtr = this.actionList.length;
 	debug("Action pushed - currPtr now " + this.currPtr);
+
+	// History modified, so start autosave timer
+        let self = this;
+        if (this._autosaveTimer) {
+            clearTimeout(this._autosaveTimer);
+	}
+        this._autosaveTimer = setTimeout(function() {
+            self.autosave();
+        }, AUTOSAVE_DELAY);
     },
 
     replayActions: function() {
@@ -634,12 +647,14 @@ History.prototype = {
     },
 
     saveToLocalStorage: function() {
+	// TODO this needs to save based on name!
 	debug("Saving to local storage...");
 	let historyString = this.serialize();
 	let layerString = g_drawInterface.serializeLayers();
 	window.localStorage.setItem("history", historyString);
 	window.localStorage.setItem("layers", layerString);
 	$("#debug").html("Saved.");
+	return true;  // TODO return false if anything goes wrong?
     },
 
     loadFromLocalStorage: function() {
@@ -662,7 +677,7 @@ History.prototype = {
 	debug("Loaded.");
     },
 
-    saveToServer: function(title) {
+    saveToServer: function(title, callback) {
 	let historyString = this.serialize();
 	let size = Math.floor( historyString.length / 1000 );
 	let layerString = g_drawInterface.serializeLayers();
@@ -674,9 +689,11 @@ History.prototype = {
 		    type: "POST",
 		    success: function(data, textStatus) {
 		        debug(data +" size: " + size + "kb");
+			callback(true);
                     },
                     error: function(req, textStatus, error) {
 		        debug("error " + textStatus + "; " + error);
+			callback(false);
 	            },
 		    dataType: "html"});
     },
@@ -700,12 +717,36 @@ History.prototype = {
     wipe: function() {
 	this.actionList = [];
 	this.currPtr = 0;
+    },
+
+    restartAutosaveTimer: function() {
+        // TODO have interface.js call this when panning, zooming,
+        // switching tools, and other non-modifying activities
+        let self = this;
+        if (this._autosaveTimer) {
+            clearTimeout(this._autosaveTimer);
+            this._autosaveTimer = setTimeout(function() {
+               self.autosave();
+            }, AUTOSAVE_DELAY);
+        }
+    },
+
+    autosave: function() {
+        let title = $("#page-title").html();
+        debug("Autosaving as " + title);
+	this._autosaveTimer = null;
+        this.saveToServer(title, function(success) {
+            if (success) {
+                $("#autosave-status").html("saved to server");
+                this._autosaveTimer = null;
+            } else {
+                if (this.saveToLocalStorage()) {
+                    $("#autosave-status").html("saved locally");
+                    this._autosaveTimer = null;
+                } else {
+                    $("#autosave-status").html("autosave failed");
+                }
+	    }
+	});
     }
 };
-
-/* TODO need to call g_history.serialize() automatically on some
- * sort of timer and put the results in localStorage.
- * The timer should be perhaps 10 seconds after you add an action?
- * (if you add more actions in those 10 seconds the timer resets.)
- * So it's saving whenever the action list has changed AND you're
- * idle for 10 seconds.*/
