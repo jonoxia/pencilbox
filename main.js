@@ -230,65 +230,62 @@ function onScriptChanged() {
 }
 
 function doNewLayer() {
-  g_drawInterface.newLayer(); 
+    g_drawInterface.newLayer(); 
+}
+
+function changeTitle() {
+    $("#page-title").html( $("#new-title").val() );
+    $("#edit-title-div").slideUp();
 }
 
 $(function() {
-        document.multitouchData = true;
-	adjustToScreen();
+    document.multitouchData = true;
+    adjustToScreen();
 
-	g_toolInterface = new ToolAreaInterface();
-	g_drawInterface = new DrawAreaInterface();
-	g_drawInterface.clearAllLayers();
-	g_dialogue = new DialogueManager();
-	g_selection = new SelectionManager();
-	g_panels = new PanelManager();
-	g_history = new History();
+    g_toolInterface = new ToolAreaInterface();
+    g_drawInterface = new DrawAreaInterface();
+    g_drawInterface.clearAllLayers();
+    g_dialogue = new DialogueManager();
+    g_selection = new SelectionManager();
+    g_panels = new PanelManager();
+    g_history = new History();
 
-	let title = gup("filename");
-	if (title) {
-	    g_history.loadFromServer(title, function() {
-		    if (g_drawInterface.layers.length < 4) {
-			g_drawInterface.newLayer();
-		    }
-		    g_drawInterface.updateAllLayerDisplays();
-		});
-	} else {
-	    // Create first drawing layer: 
-	    // (skip this if there are already drawing layers due to 
-	    // recreated history)
-	    if (g_drawInterface.layers.length < 4) {
-		g_drawInterface.newLayer();
-	    }
-	    g_drawInterface.updateAllLayerDisplays();
-	}
+    let title = gup("filename");
+    if (title) {
+        g_history.loadFromServer(title, function() {
+            if (g_drawInterface.layers.length < 4) {
+                g_drawInterface.newLayer();
+            }
+            g_drawInterface.updateAllLayerDisplays();
+        });
+    } else {
+        // Create first drawing layer: 
+        // (skip this if there are already drawing layers due to 
+        // recreated history)
+        if (g_drawInterface.layers.length < 4) {
+            g_drawInterface.newLayer();
+        }
+        g_drawInterface.updateAllLayerDisplays();
+    }
 
-      	/* Update text balloons when you edit the script -- but
-	* not with every keystroke, that's too much work. Wait until
-	* user stops typing for a second.*/
-	let textUpdateTimer = null;
-	$("#dialogue-edit-area").bind("keyup", function() {
-		if (textUpdateTimer) {
-		    clearTimeout(textUpdateTimer);
-		}
-		textUpdateTimer = setTimeout(onScriptChanged, 1000);
-	    });
+    /* Update text balloons when you edit the script -- but
+     * not with every keystroke, that's too much work. Wait until
+     * user stops typing for a second.*/
+    let textUpdateTimer = null;
+    $("#dialogue-edit-area").bind("keyup", function() {
+        if (textUpdateTimer) {
+            clearTimeout(textUpdateTimer);
+        }
+        textUpdateTimer = setTimeout(onScriptChanged, 1000);
+    });
 
-	// Call adjustToScreen if screen size changes
-	let resizeTimer = null;
-	$(window).resize(function() {
-		if (resizeTimer) {
-		    clearTimeout(resizeTimer);
-		}
-		resizeTimer = setTimeout(adjustToScreen, 1000);
-	    });
+    // Call adjustToScreen if screen size changes
+    let resizeTimer = null;
+    $(window).resize(function() {
+        if (resizeTimer) {
+            clearTimeout(resizeTimer);
+        }
+        resizeTimer = setTimeout(adjustToScreen, 1000);
+    });
 });
-
-
-	// Things that used to be in the main menu:
-        /* g_history.saveToLocalStorage();
-           let title = gup("filename");
-           g_history.saveToServer(title);
-           clearEverything();
-           adjustToScreen(); */
 

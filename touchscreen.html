@@ -18,9 +18,15 @@
 
 <div id="control-div" class="floaty">
   <div id="main-menu">
-    <span id="page-title">Untitled</span> by
+    <span id="page-title" onclick="$('#edit-title-div').slideDown();">
+      Untitled
+    </span> by
     <span id="username">Jono</span>
     <span id="autosave-status" class="not-autosaved">needs autosave</span>
+    <div id="edit-title-div" class="control-panel">
+        Change title to: <input type="text" id="new-title"/>
+        <button onclick="changeTitle();">Change</button>
+    </div>
     <br/>
 
     <div class="floatr" onclick="$('#settings-div').slideDown();">
