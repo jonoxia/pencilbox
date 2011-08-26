@@ -22,14 +22,19 @@ def printList(artist):
     print "Content-type: text/html"
     print
 
-    matches = DrawingHistory.selectBy(owner = artist)
+    matches = DrawingHistory.select(DrawingHistory.q.owner == artist,
+                                    orderBy = "-date")
     if matches.count() > 0:
         work_list = ""
         for match in matches:
             title = match.title
             url = "touchscreen.html?filename=%s" % title
+            date = match.date
+            size = len(match.history_json) + len(match.layer_json)
+            size = "%d KB" % int(size/1024)
             work_list += render_template_file( "listwork_row.html",
-                                               {"url": url,
+                                               {"moddate": date,
+                                                "size": size,
                                                 "title": title,
                                                 "artist": artist} )
     
