@@ -514,6 +514,7 @@ History.prototype = {
 
 	// History modified, so start autosave timer
         let self = this;
+        $("#autosave-status").html("needs autosave");
         if (this._autosaveTimer) {
             clearTimeout(this._autosaveTimer);
 	}

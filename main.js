@@ -250,8 +250,16 @@ $(function() {
     g_panels = new PanelManager();
     g_history = new History();
 
-    let title = gup("filename");
+    let title = gup("title");
+    let artist = gup("artist");
+    if (artist) {
+	$("#artist").html(artist);
+	$("#artist").attr("href", "listworks.py?artist=" + artist);
+    } else {
+	$("#artist").html("Anonymous");
+    }
     if (title) {
+	$("#page-title").html(title);
         g_history.loadFromServer(title, function() {
             if (g_drawInterface.layers.length < 4) {
                 g_drawInterface.newLayer();
@@ -259,6 +267,7 @@ $(function() {
             g_drawInterface.updateAllLayerDisplays();
         });
     } else {
+	$("#page-title").html("Untitled");
         // Create first drawing layer: 
         // (skip this if there are already drawing layers due to 
         // recreated history)
