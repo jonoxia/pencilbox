@@ -3,13 +3,14 @@
 # This script takes a username and spits out a list of links to all
 # works drawn by that user.
 from savedHistoryTable import DrawingHistory
-
-TEMPLATE_DIR = "/var/www/pencilbox2"
-
+from database_tables import Artist
 import os
 import cgi
 import cgitb
 import string
+from Cookie import SimpleCookie
+
+TEMPLATE_DIR = "/var/www/pencilbox2"  # TODO get this from config file
 
 def render_template_file( filename, substitutionDict ):
     file = open( os.path.join( TEMPLATE_DIR, filename ), "r")
@@ -17,12 +18,22 @@ def render_template_file( filename, substitutionDict ):
     file.close()
     return template.substitute( substitutionDict )
 
+def verifyId():   # TODO all files will need this, put in common location
+    if os.environ.has_key('HTTP_COOKIE'):
+        cookie = SimpleCookie(os.environ['HTTP_COOKIE'])
+        if cookie.has_key("email") and cookie.has_key("session"):
+                matches = Artist.selectBy(email = cookie["email"].value,
+                                          session = cookie["session"].value)
+                if matches.count() > 0:
+                    return matches[0]
+    return False
+
 
 def printList(artist):
     print "Content-type: text/html"
     print
 
-    matches = DrawingHistory.select(DrawingHistory.q.owner == artist,
+    matches = DrawingHistory.select(DrawingHistory.q.owner == artist.name,
                                     orderBy = "-date")
     if matches.count() > 0:
         work_list = ""
@@ -36,20 +47,20 @@ def printList(artist):
                                                {"moddate": date,
                                                 "size": size,
                                                 "title": title,
-                                                "artist": artist} )
+                                                "artist": artist.name} )
     
-        print render_template_file( "listworks.html", {"artist": artist,
+        print render_template_file( "listworks.html", {"artist": artist.name,
                                                        "work_list": work_list})
     else:
-        print "No matches for %s" % artist
+        print "No matches for %s" % artist.name
 
 
 if __name__ == "__main__":
     cgitb.enable()
     q = cgi.FieldStorage()
 
+    artist = verifyId()
     action = q.getfirst("action", "")
-    artist = q.getfirst("artist", "")
     title = q.getfirst("title", "")
 
     if action == "del":

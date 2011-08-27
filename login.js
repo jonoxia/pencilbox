@@ -4,18 +4,25 @@ function doBrowserIdLogin() {
         if (assertion) {
             // This code will be invoked once the user has successfully
 	    // selected an email address they control to sign in with.
-
-	    $.ajax({url: "https://browserid.org/verify",
-                    data: {"assertion": assertion,
-			    "audience": "evilbrainjono.net"},
+	    $.ajax({url: "login.py",
+                    data: {"assertion": assertion},
                     type: "POST",
 		    success: function(data, textStatus) {
-		        $("#debug").html(data);
+			var json = JSON.parse(data);
+                        if (json["logged_in"] == "true") {
+                            // TODO set cookie with email and sessionID and redirect
+                            // to listworks.py
+			    document.cookie = "email=" + json["email"];
+			    document.cookie = "session=" + json["session"];
+			    document.location = "listworks.py";
+			} else {
+			    $("#debug").html("Login rejected.");
+			}
                     },
                     error: function(req, textStatus, error) {
-		        $("#debug").html(error);
+		        $("#debug").html("Error");
 	            },
-		    dataType: "json"});
+		    dataType: "html"});
         } else {
 	    $("#debug").html("BrowserID login failed.");
             // something went wrong!  the user isn't logged in.
