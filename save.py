@@ -8,12 +8,12 @@ import cgitb
 import datetime
 
 
-def createNew(title, owner, history, layers):
+def createNew(title, creator, history, layers):
     kwargs = {"date": datetime.datetime.now(),
               "title": title,
               "history_json": history,
               "layer_json": layers,
-              "owner": owner}
+              "creator": creator}
     newEntry = DrawingHistory(**kwargs)
 
 def updateOld(entry, history, layers):
@@ -29,11 +29,11 @@ layers = q.getfirst("layers", "")
 title = q.getfirst("title", "")
 artist = verify_id() 
 
-matches = DrawingHistory.selectBy(title = title, owner=artist.name)
+matches = DrawingHistory.selectBy(title = title, creator=artist)
 if matches.count() > 0:
     updateOld(matches[0], history, layers)
 else:
-    createNew(title, history, layers)
+    createNew(title, artist, history, layers)
 
 print "Content-type: text/html"
 print

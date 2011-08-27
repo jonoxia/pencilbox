@@ -14,7 +14,7 @@ class DrawingHistory( SQLObject ):
     history_json = StringCol()
     layer_json = StringCol()
     title = StringCol()
-    owner = StringCol()
+    creator = ForeignKey("Artist")
 
 class Artist( SQLObject ):
     email = StringCol()

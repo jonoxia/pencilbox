@@ -16,7 +16,7 @@ artist = verify_id()
 print "Content-type: text/html"
 print
 
-matches = DrawingHistory.selectBy(title = title, owner = artist.name)
+matches = DrawingHistory.selectBy(title = title, creator = artist)
 if matches.count() > 0:
     history = matches[0].history_json
     layers = matches[0].layer_json

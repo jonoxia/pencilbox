@@ -254,7 +254,6 @@ $(function() {
     let artist = gup("artist");
     if (artist) {
 	$("#artist").html(artist);
-	$("#artist").attr("href", "listworks.py?artist=" + artist);
     } else {
 	$("#artist").html("Anonymous");
     }
