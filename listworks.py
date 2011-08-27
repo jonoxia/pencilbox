@@ -6,7 +6,7 @@ import cgi
 import cgitb
 
 from database_tables import DrawingHistory
-from webserver_utils import render_template_file, verify_id
+from webserver_utils import *
 
 def printList(artist):
     print "Content-type: text/html"
@@ -46,7 +46,13 @@ if __name__ == "__main__":
         matches = DrawingHistory.selectBy(owner = artist.name, title = title)
         if matches.count() > 0:
             DrawingHistory.delete(matches[0].id)
-
-    printList(artist)
+        printList(artist)
+    elif action == "new":
+        # todo redirect to touchscreen.html with name made up to not collide?
+        pass
+    elif action == "logout":
+        logout() # will clear cookie and redirect
+    else:
+        printList(artist)
 
 
