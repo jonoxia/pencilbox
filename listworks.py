@@ -33,6 +33,17 @@ def printList(artist):
     else:
         print "No matches for %s" % artist.name
 
+def work_exists(artist, title):
+    matches = DrawingHistory.selectBy(owner = artist.name, title = title)
+    return (matches.count() > 0)
+
+def make_new_title(artist):
+    title = "Untitled"
+    num = 0
+    while work_exists(artist, title):
+        num += 1
+        title = "Untitled_%d" % num
+    return title
 
 if __name__ == "__main__":
     cgitb.enable()
@@ -48,11 +59,13 @@ if __name__ == "__main__":
             DrawingHistory.delete(matches[0].id)
         printList(artist)
     elif action == "new":
-        # todo redirect to touchscreen.html with name made up to not collide?
-        pass
+        new_title = make_new_title(artist)
+        url = "touchscreen.html?artist=%s&title=%s" % (artist.name, new_title)
+        print_redirect(url)
     elif action == "logout":
         logout() # will clear cookie and redirect
     else:
+        # No action = show the list
         printList(artist)
 
 
