@@ -1,18 +1,19 @@
 #!/usr/bin/python
 from database_tables import DrawingHistory
+from webserver_utils import verify_id
+
 
 import cgi
 import cgitb
 import datetime
 
-# TODO verifyID here, make sure it's your own drawing you're modifying
 
-def createNew(title, history, layers):
+def createNew(title, owner, history, layers):
     kwargs = {"date": datetime.datetime.now(),
               "title": title,
               "history_json": history,
               "layer_json": layers,
-              "owner": "Jono"}
+              "owner": owner}
     newEntry = DrawingHistory(**kwargs)
 
 def updateOld(entry, history, layers):
@@ -26,8 +27,9 @@ q = cgi.FieldStorage()
 history = q.getfirst("history", "")
 layers = q.getfirst("layers", "")
 title = q.getfirst("title", "")
+artist = verify_id() 
 
-matches = DrawingHistory.selectBy(title = title)
+matches = DrawingHistory.selectBy(title = title, owner=artist.name)
 if matches.count() > 0:
     updateOld(matches[0], history, layers)
 else:
