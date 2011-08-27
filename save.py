@@ -1,9 +1,11 @@
 #!/usr/bin/python
-from savedHistoryTable import DrawingHistory
+from database_tables import DrawingHistory
 
 import cgi
 import cgitb
 import datetime
+
+# TODO verifyID here, make sure it's your own drawing you're modifying
 
 def createNew(title, history, layers):
     kwargs = {"date": datetime.datetime.now(),

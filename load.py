@@ -1,5 +1,7 @@
 #!/usr/bin/python
-from savedHistoryTable import DrawingHistory
+from database_tables import DrawingHistory
+
+# TODO verifyID here, make sure it's your own drawing you're modifying
 
 import cgi
 import cgitb

@@ -2,8 +2,7 @@
 
 # This script takes a username and spits out a list of links to all
 # works drawn by that user.
-from savedHistoryTable import DrawingHistory
-from database_tables import Artist
+from database_tables import Artist, DrawingHistory
 import os
 import cgi
 import cgitb
