@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# TODO the JS from the sign in button needs to XHR the assertion to this code here
+# The JS from the sign in button needs to XHR the assertion to this code here
 # login.py will then verify it against the browserID server  
 # see https://browserid.org/developers
 # if that works then we generate a session id

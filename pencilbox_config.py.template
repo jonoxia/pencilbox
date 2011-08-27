@@ -1,1 +1,3 @@
 URL_STRING = "Replace this with your SQL database connection string"
+DOMAIN = "Replace this with the name of the domain where you're hosting pencilbox"
+TEMPLATE_DIR = "Replace this with absolute path to the dir where pencilbox is installed"

@@ -2,31 +2,11 @@
 
 # This script takes a username and spits out a list of links to all
 # works drawn by that user.
-from database_tables import Artist, DrawingHistory
-import os
 import cgi
 import cgitb
-import string
-from Cookie import SimpleCookie
 
-TEMPLATE_DIR = "/var/www/pencilbox2"  # TODO get this from config file
-
-def render_template_file( filename, substitutionDict ):
-    file = open( os.path.join( TEMPLATE_DIR, filename ), "r")
-    template = string.Template(file.read())
-    file.close()
-    return template.substitute( substitutionDict )
-
-def verifyId():   # TODO all files will need this, put in common location
-    if os.environ.has_key('HTTP_COOKIE'):
-        cookie = SimpleCookie(os.environ['HTTP_COOKIE'])
-        if cookie.has_key("email") and cookie.has_key("session"):
-                matches = Artist.selectBy(email = cookie["email"].value,
-                                          session = cookie["session"].value)
-                if matches.count() > 0:
-                    return matches[0]
-    return False
-
+from database_tables import DrawingHistory
+from webserver_utils import render_template_file, verify_id
 
 def printList(artist):
     print "Content-type: text/html"
@@ -58,12 +38,12 @@ if __name__ == "__main__":
     cgitb.enable()
     q = cgi.FieldStorage()
 
-    artist = verifyId()
+    artist = verify_id()
     action = q.getfirst("action", "")
     title = q.getfirst("title", "")
 
     if action == "del":
-        matches = DrawingHistory.selectBy(owner = artist, title = title)
+        matches = DrawingHistory.selectBy(owner = artist.name, title = title)
         if matches.count() > 0:
             DrawingHistory.delete(matches[0].id)
 
