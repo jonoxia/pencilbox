@@ -27,24 +27,27 @@ import cgi
 import cgitb
 import time
 from PIL import Image
+from webserver_utils import get_dir_for_artist, verify_id
+from pencilbox_config import FILE_PUB_URL
 
-BASE_PATH = "/var/www/multicanvas/tmpimages"
-
-def compositeFiles(fileNameList, outFileName):
-  baseImage = Image.open( os.path.join(BASE_PATH, fileNameList[0]) )
+def compositeFiles(artist, fileNameList, outFileName):
+  tmp_dir = get_dir_for_artist(artist, "tmp")
+  pub_dir = get_dir_for_artist(artist, "pub")
+  baseImage = Image.open( os.path.join(tmp_dir, fileNameList[0]) )
   for fileName in fileNameList[1:]:
-    layerImage = Image.open( os.path.join(BASE_PATH, fileName) )
+    layerImage = Image.open( os.path.join(tmp_dir, fileName) )
     baseImage.paste(layerImage, (0, 0), layerImage)
-  baseImage.save( os.path.join(BASE_PATH, outFileName ))
+  baseImage.save( os.path.join(pub_dir, outFileName ))
 
-def writeTempFiles(dataBlob, outFileName):
+def writeTempFiles(artist, dataBlob, outFileName):
+  tmp_dir = get_dir_for_artist(artist, "tmp")
   layerBlobs = dataBlob.split(",")
   filenames = []
   for i in xrange(len(layerBlobs)):
     data = layerBlobs[i]
     filename = "layer%d-%s" % (i, outFileName)
     filenames.append(filename)
-    file = open( os.path.join(BASE_PATH, filename), "wb")
+    file = open( os.path.join(tmp_dir, filename), "wb")
     # Get an "incorrect padding" error on trying to decode.
     # Correct b64 padding:
     while len(data) % 4 != 0:
@@ -61,15 +64,17 @@ data = q.getfirst("data", "")
 filename = q.getfirst("filename", "untitled")
 filename = "%s-%d.png" % (filename, time.time())
 
-tempFileNames = writeTempFiles(data, filename)
+artist = verify_id()
+tempFileNames = writeTempFiles(artist, data, filename)
 
-compositeFiles(tempFileNames, filename)
+compositeFiles(artist, tempFileNames, filename)
 
+url = FILE_PUB_URL % (str(artist.id), filename)
 # TODO delete temp files
 
 print "Content-type: text/html"
 print
-print "Saved as <a href=\"%s\">%s</a>" % ("/multicanvas/tmpimages/" + filename, filename)
+print "Saved as <a href=\"%s\">%s</a>" % (url, filename)
 #except Exception as e:
 #  print "Content-type: text/html"
 #  print

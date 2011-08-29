@@ -1,3 +1,6 @@
 URL_STRING = "Replace this with your SQL database connection string"
 DOMAIN = "Replace this with the name of the domain where you're hosting pencilbox"
 TEMPLATE_DIR = "Replace this with absolute path to the dir where pencilbox is installed"
+ARTIST_FILE_BASE_DIR = "Replace this with absolute path to where artist files can be stored."
+FILE_PUB_URL = ""
+TMP_FILE_URL = ""
