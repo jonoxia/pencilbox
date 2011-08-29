@@ -70,8 +70,14 @@
       <button onclick="export2();">Export Img</button><br/>
       From Url:<br/><input id="import-image-url" type="text"/>
       <button onclick="doImportFromUrl()">Import</button><br/>
-      From File:<br/><input id="import-image-file" type="file"/>
-      <button onclick="doImportFromFile()">Upload</button><br/>
+      From File:<br/>
+      <form enctype="multipart/form-data" action="upload.py" method="post">
+      <p>File: <input type="file" name="file"></p>
+      <p><input type="submit" value="Upload"></p>
+      </form>
+
+      <!-- <input id="import-image-file" type="file"/>
+      <button onclick="doImportFromFile()">Upload</button><br/> -->
       <button onclick="$('#import-image-controls').slideUp();">Cancel</button>
     </div>
 

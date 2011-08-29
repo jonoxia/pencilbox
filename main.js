@@ -83,7 +83,7 @@ function export2() {
 	
     }
     let postArgs = {data: dataUrls.join(","),
-		    filename: "ExportedPic"};
+		    filename: $("#page-title").html()};
 
     jQuery.ajax({url:"export.py",
 		data: postArgs,
@@ -201,11 +201,20 @@ function importImage(imgUrl) {
 }
 
 function doImportFromUrl() {
+    /* TODO send a message up to upload.py telling it to sideload
+     * the image from the url to the tmp dir */
     importImage($("#import-image-url").val());
     $("#import-image-controls").slideUp();
 }
 
 function doImportFromFile() {
+    /* TODO doan XHR to upload.py replicating what the following form
+        would do:
+	<form enctype="multipart/form-data" action="upload.py" method="post">
+      <p>File: <input type="file" name="file"></p>
+      <p><input type="submit" value="Upload"></p>
+</form>
+    */
     $("#debug").html("Not implemented.");
     $("#import-image-controls").slideUp();
 }
