@@ -185,7 +185,6 @@ function adjustToScreen() {
 }
 
 function importImage(imgUrl) {
-    // TODO interface for picking a local image to upload
     /* TODO also need a way of moving imported image
      * where we want it!!  Maybe treat it as a selection? */
 
@@ -201,22 +200,42 @@ function importImage(imgUrl) {
 }
 
 function doImportFromUrl() {
-    /* TODO send a message up to upload.py telling it to sideload
+    /* Send a message up to upload.py telling it to sideload
      * the image from the url to the tmp dir */
-    importImage($("#import-image-url").val());
-    $("#import-image-controls").slideUp();
+    // with src_type = "url" and url = whatever
+    $.ajax({url:"upload.py",
+            data: {src_type: "url",
+                   url: $("#import-image-url").val()},
+            type: "POST",
+            success: function(data, textStatus) {
+                $("#debug").html(data);
+		importImage(data);
+                $("#import-image-controls").slideUp();
+            },
+            error: function(req, textStatus, error) {
+                $("#debug").html("error " + textStatus + "; " + error);
+            },
+            dataType: "html"});
 }
 
 function doImportFromFile() {
-    /* TODO doan XHR to upload.py replicating what the following form
-        would do:
-	<form enctype="multipart/form-data" action="upload.py" method="post">
-      <p>File: <input type="file" name="file"></p>
-      <p><input type="submit" value="Upload"></p>
-</form>
-    */
-    $("#debug").html("Not implemented.");
-    $("#import-image-controls").slideUp();
+    // Not going to user jQuery here because I don't know how to
+    // upload files with jQuery (it may require jQuery plugin
+    // This XMLHttpRequest may not be cross-browser though. bluh.
+    $("#debug").html("doImportFromFile");
+    var data = new FormData($("#img-upload-form")[0]);
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "upload.py", true);
+    xhr.onload = function(e) {
+        if (xhr.status == 200) {
+            $("#debug").html(xhr.responseText);
+	    importImage(xhr.responseText);
+            $("#import-image-controls").slideUp();
+	} else {
+	    output.innerHTML += "Error " + xhr.status + " occurred uploading your file.<br />";
+        }
+    };
+    xhr.send(data); 
 }
 
 function deleteThatHistory() {

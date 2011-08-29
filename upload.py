@@ -1,37 +1,73 @@
 #!/usr/bin/python
 from database_tables import DrawingHistory
 from webserver_utils import verify_id, get_dir_for_artist
-frompencilbox_config import TMP_FILE_URL
+from pencilbox_config import TMP_FILE_URL
 
 import cgi, os
-import cgitb; cgitb.enable()
+import cgitb
+import urllib2
+import time
 
-if __name__ == "__main__":
-    form = cgi.FieldStorage()
+def createUniqueFilename(filename):
+    # TODO what if it's not a png -- use file extension of original
+    # filename if present?
+    # TODO include some info in here like the title of the
+    # image it belongs to?
+    return "%d.png" % time.time()
 
-    artist = verify_id()
-
-    # A nested FieldStorage instance holds the file
-    fileitem = form['file']
-
+def uploadFromClient(fileitem):
     # Test if the file was uploaded
     if fileitem.filename:
-   
-        # strip leading path from file name to avoid 
-        # directory traversal attacks
-        fn = os.path.basename(fileitem.filename)
+        # Don't care about original filename; make a new one up
+        # that way we don't have to worry about spaces, collisions, etc
+        filename = createUniqueFilename(fileitem.filename)
         tmp_dir = get_dir_for_artist(artist, "tmp")
-        # TODO rename if needed to avoid name collision
-        # Also strip any non-url-kosher characters from filename
-        # e.g. 
-        file = open(os.path.join(tmp_dir, fn), 'wb')
+        file = open(os.path.join(tmp_dir, filename), "wb")
         file.write(fileitem.file.read())
         file.close()
-        message = TMP_FILE_URL % (str(artist.id), fn)
-   
+        url = TMP_FILE_URL % (str(artist.id), filename)
+        return url
     else:
-        message = "Failed"
-   
+        return False
+
+def sideloadFromWeb(url):
+    # TODO need to think about security - can someone fuck up my server
+    # by using the url import to force it into downloading some bad
+    # juju?
+    response = urllib2.urlopen(url)
+    data = response.read()
+    # TODO how big a file will this work on?  might we need to stream
+    # it for larger files?
+    response.close()
+  
+    filename = createUniqueFilename(url.split("/")[-1])
+    tmp_dir = get_dir_for_artist(artist, "tmp")
+
+    file = open(os.path.join(tmp_dir, filename), "wb")
+    file.write(data)
+    file.close()
+    url = TMP_FILE_URL % (str(artist.id), filename)
+    return url
+    # TODO error handling - return false if urlopen fails or whatever
+
+
+if __name__ == "__main__":
+    cgitb.enable()
+    q = cgi.FieldStorage()
+
+    artist = verify_id()
+    url = False
+    src_type = q.getfirst("src_type", "")
+    
+    if src_type == "file":
+        url = uploadFromClient(q["file"])
+    elif src_type == "url":
+        url = sideloadFromWeb(q.getfirst("url", ""))
+
     print "Content-Type: text/html"
     print
-    print message
+
+    if url == False:
+        print "Failed"
+    else:
+        print url
