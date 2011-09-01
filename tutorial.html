@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>Pencilbox - Tutorial</title>
+</head>
+<body>
+
+<h1>Pencilbox Tutorial</h1>
+
+<p>TODO: Replace these crude text instructions with a totally rockin' interactive tutorial!</p>
+
+<h2>Requirements</h2>
+<p>To use this interface requires a multitouch-capable screen with a stylus; that's the hardware I'm optimizing for. A keyboard-and-mouse or keyboard-and-drawing-tablet interface is planned for later but not implemented yet.</p>
+
+<p>Also, you'll need to be using Firefox 4+ since I don't have it working in other browsers yet (see bug #2)</p>
+
+<p>Assuming you have multitouch input hardware and a recent Firefox, here's how to use the interface:</p>
+
+<h2>Step by step</h2>
+<ol>
+<li>Touch and hold the left sidebar with one finger to bring up the pie menu of tools.  Not all these tools are implemented yet.  Slide your finger to the desired tool and release.<br/>
+      (The benefit of this interface is that it doesn't matter where you put your finger initially, only which direction you slide it in.  With practice, it's possible to switch to any tool without looking away from the contents of your drawing)</li>
+<li>Do a pinch gesture with two fingers on the left sidebar to change the size of the tool where applicable.</li>
+<li>The two color squares are line color and fill color respectively.  Touch either one for a pop-up color palette.</li>
+<li>Do a swipe gesture with two fingers on the main drawing area to scroll around the page.  (Grey is part of the page, brown is the imaginary desktop behind the page)</li>
+<li>Do a pinch gesture with two fingers on the main drawing area to zoom in or out.</li>
+<li>To draw anything, you need a panel (as in comics panel).  Switch to the Panel tool and drag a stylus across the main drawing area to create the panel.  You can also drag corners of a panel with this tool to resize it, or drag the middle to move it around the page. (Note to self: have a new page start out with at least one panel already there, so that new artists don't get stuck on this step.)</li>
+<li>Try drawing inside the panel with the stylus, with various tools selected.</li>
+<li>In the upper left, click the link that says "Untitled" to give your drawing a name.  It will then be periodically autosaved to the server using that name.</li>
+<li>When you're happy with a drawing, click Export in the upper left.  It will take some time exporting your drawing to a .png file.  Eventually it will show you a URL to the .png file, as well as a preview that you can right-click and "Save As" in order to get the file to your local machine.</li>
+<li>You can also experiment with Import to pull an image file from a web URL or upload one from your local machine and include it in the drawing.</li>
+<li>Layers are supported (click Layers to see the layers UI where you can create additional layers) but they're not very well tested yet.</li>
+<li>If you select part of the picture using any of the three selection tools, you can then drag the selection around with the stylus, or do a two-finger pinch gesture to resize it (buggy), or use one finger double-tap-and-hold on the selection to bring up the selection context menu.  (Most options in this menu are not yet implemented.)</li>
+<li>click "Script" to bring up the script-editing pane.  You can type dialog in here; each line will be turned into a cartoon speech bubble.  You can then use the dialogue tool and the stylus to resize and reposition the bubbles and their tails.</li>
+<li>There are some HTML-style tags that can be used to change the style of the speech bubbles.  For instance, <thought>text</thought> will put the line into a cartoon thought cloud instead.</li>
+<li>"Settings" doesn't do anything yet, but global settings will go here.</li>
+</ol>
+</body>
+</html>
