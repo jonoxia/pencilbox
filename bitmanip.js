@@ -69,7 +69,7 @@ Color.prototype = {
 	return this.toStyle();
     },
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return [self.r, self.g, self.b, self.a];
     },
     fromJSON: function(jsonObj) {
@@ -196,11 +196,11 @@ BitManipulator.prototype = {
     getColorAt: function(x, y) {
 	x = Math.floor( x - 0.5);
 	y = Math.floor( y - 0.5);
-	let i = 4 * (y * this.width + x);
-	let r = this.dataBlob.data[i];
-	let g = this.dataBlob.data[i + 1];
-	let b = this.dataBlob.data[i + 2];
-	let a = this.dataBlob.data[i + 3];
+	var i = 4 * (y * this.width + x);
+	var r = this.dataBlob.data[i];
+	var g = this.dataBlob.data[i + 1];
+	var b = this.dataBlob.data[i + 2];
+	var a = this.dataBlob.data[i + 3];
 	return new Color(r, g, b, a);
     },
 
@@ -211,7 +211,7 @@ BitManipulator.prototype = {
     setColorAt: function(x, y, color) {
 	x = Math.floor( x - 0.5);
 	y = Math.floor( x - 0.5);
-	let i = 4 * (y * this.width + x);
+	var i = 4 * (y * this.width + x);
 	this.dataBlob.data[i] = color.r;
 	this.dataBlob.data[i + 1] = color.g;
 	this.dataBlob.data[i + 2] = color.b;
@@ -224,8 +224,8 @@ BitManipulator.prototype = {
 };
 
 function debugObj(obj) {
-    let str = "";
-    for (let x in obj) {
+    var str = "";
+    for (var x in obj) {
 	str += "obj." + x + " = " + obj[x] + ";";
     }
     debug(str);
@@ -236,23 +236,23 @@ function edgeFindingAlgorithm(data, x, y, tolerance) {
      * BETWEEN two adjacent pixels, not a line on one pixel or the other.
      * e.g. a line at y = 15 is a line between the pixel at y = 14.5 and
      * the pixel at 15.5. */
-    let megaList = [];
-    let dir = "up";
-    let pt = {x: x, y: y};
+    var megaList = [];
+    var dir = "up";
+    var pt = {x: x, y: y};
     debug("Original point: " + pt.x + ", " + pt.y );
-    let seedColor = data.getColorAt(x, y);
+    var seedColor = data.getColorAt(x, y);
     debug("Seed color is " + seedColor.toStr());
 
     // treat edges of canvas, as well as points with different color
     // from seed color, as boundary points:
-    let isBoundary = function(point) {
+    var isBoundary = function(point) {
 	if (point.x < 0.5 || point.y < 0.5) {
 	    return true;
 	}
 	if (point.x > data.width + 0.5 || point.y > data.width + 0.5) {
 	    return true;
 	}
-	let color = data.getColorAtPt(point);
+	var color = data.getColorAtPt(point);
 	if (!seedColor.equals(color)) {
 	    debug("Boundary because color is " + color.toStr());
 	    debug("Diff is " + seedColor.diff(color));
@@ -268,11 +268,12 @@ function edgeFindingAlgorithm(data, x, y, tolerance) {
     debug("Point of contact: " + pt.x + ", " + pt.y );
     // Remember the point just before we hit -- we'll be trying to get
     // back here.
-    let keyPt = {x: pt.x, y: pt.y};
+    var keyPt = {x: pt.x, y: pt.y};
     // TODO this algorithm is going to have a problem with islands.
     // Now hug edges clockwise until we get back to this point.
-    let dir = clockwise(dir);
-    let i = 0;
+    var dir = clockwise(dir);
+    var i = 0;
+    var frontOuter, frontInner, newDir;
     megaList.push({x: pt.x, y: pt.y});
     while(i < 5000) { // ensures that loop will end
 	i++;
@@ -289,14 +290,14 @@ function edgeFindingAlgorithm(data, x, y, tolerance) {
 	 *  left  straight  right   right  can't happen
 	 */
 	debug("travel direction is " + dir);
-	let newDir = dir;
-	let frontOuter = move( move(pt, dir, 0.5),
+	newDir = dir;
+	frontOuter = move( move(pt, dir, 0.5),
 			       counterclockwise(dir), 0.5);
 	/*let frontOuterColor = data.getColorAtPt(frontOuter);
 	debug("frontOuter is " + frontOuter.x + ", " + frontOuter.y
 	+ " -> " + frontOuterColor.toStr());*/
 
-	let frontInner = move( move(pt, dir, 0.5), clockwise(dir), 0.5);
+	frontInner = move( move(pt, dir, 0.5), clockwise(dir), 0.5);
 	/*let frontInnerColor = data.getColorAtPt(frontInner);
 	debug("frontInner is " + frontInner.x + ", " + frontInner.y
 	+ " -> " + frontInnerColor.toStr());*/
@@ -355,14 +356,14 @@ Feeler.prototype = {
 	if (this.fillMap.getBoolAt(pt.x, pt.y)) {
 	    return true;
 	}
-	let color = this.data.getColorAtPt(pt);
+	var color = this.data.getColorAtPt(pt);
 	// Tolerance here:
 	return (this.seedColor.diff(color) > this.tolerance);
     },
 
     findEndPoint: function(ctx) {
-	let pt = {x: this.startX, y: this.startY};
-	let nextPt = move(pt, this.direction);
+	var pt = {x: this.startX, y: this.startY};
+	var nextPt = move(pt, this.direction);
 	while(!this._isBoundary(nextPt)) {
 	    this.fillMap.setBoolAt(pt.x, pt.y, true);
 	    pt.x = nextPt.x;
@@ -391,21 +392,22 @@ Feeler.prototype = {
 	// push to add newewst sub feeler to other end
 	// return list of any subfeelers that are live
 
-	let right = clockwise(this.direction);
-	let left = counterclockwise(this.direction);
-	let liveChildren = [];
+	var right = clockwise(this.direction);
+	var left = counterclockwise(this.direction);
+	var liveChildren = [];
+        var children, pt, subFeeler;
 	
-	for each (let dir in [right, left]) {
-            let children = [];
-            let pt = {x: this.startX, y: this.startY};
-            for (let i = 0; i < this.len; i++) {
+	for each (var dir in [right, left]) {
+            children = [];
+            pt = {x: this.startX, y: this.startY};
+            for (var i = 0; i < this.len; i++) {
 	        // TODO move before or after sending out subfeeler?
                 pt = move(pt, this.direction);
-                let subFeeler = new Feeler(pt.x, pt.y, dir,
-                                           this.seedColor,
-                                           this.data,
-                                           this.fillMap,
-                                           this.tolerance);
+                subFeeler = new Feeler(pt.x, pt.y, dir,
+                                       this.seedColor,
+                                       this.data,
+                                       this.fillMap,
+                                       this.tolerance);
 
                 subFeeler.findEndPoint(ctx);
                 children.push(subFeeler);
@@ -435,10 +437,11 @@ Feeler.prototype = {
 };
 
 function BoolMap(width, height) {
+    var row;
     this._data = [];
-    for (let y = 0; y < height; y++) {
-	let row = [];
-	for (let x = 0; x < width; x++) {
+    for (var y = 0; y < height; y++) {
+        row = [];
+	for (var x = 0; x < width; x++) {
 	    row.push(false);
 	}
 	this._data.push(row);
@@ -453,12 +456,11 @@ BoolMap.prototype = {
     }
 };
 
-// UNTESTED
 function betterEdgeFinder(ctx, data, x, y, tolerance) {
-    let liveFeelers = [];
-
-    let fillMap = new BoolMap(data.width, data.height);
-    let seedColor = data.getColorAt(x, y);
+    var liveFeelers = [];
+    var feeler, childFeelers;
+    var fillMap = new BoolMap(data.width, data.height);
+    var seedColor = data.getColorAt(x, y);
     
     liveFeelers.push(new Feeler(x, y, "up", seedColor, 
 				data, fillMap, tolerance));
@@ -467,10 +469,10 @@ function betterEdgeFinder(ctx, data, x, y, tolerance) {
     liveFeelers[0].findEndPoint(ctx);
     liveFeelers[1].findEndPoint(ctx);
     while(liveFeelers.length > 0) {
-	let feeler = liveFeelers.pop();
+	feeler = liveFeelers.pop();
 	if (feeler.len > 0) {
-            let childFeelers = feeler.launchSubFeelers(ctx);
-            for (let i = 0; i < childFeelers.length; i++) {
+            childFeelers = feeler.launchSubFeelers(ctx);
+            for (var i = 0; i < childFeelers.length; i++) {
                liveFeelers.push(childFeelers[i]);
             }
 	}
