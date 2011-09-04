@@ -79,7 +79,7 @@ ProgressBar.prototype = {
     },
 
     update: function(progress) {
-	let innerWidth = this._outerWidth * progress / this._max;
+	var innerWidth = this._outerWidth * progress / this._max;
 	this._innerDiv.css("width", innerWidth + "px");
     }
 };
@@ -89,29 +89,31 @@ function export2() {
     $("#export-image-controls").slideDown();
     // Export each layer as a separate .png, composite them on the
     // server using PIL (Python Image Library)
-    let dim = g_drawInterface.getPageDimensions();
-    let dataUrls = [];
+    var dim = g_drawInterface.getPageDimensions();
+    var layer, dataUrl;
+    var dataUrls = [];
     // Sort layers by z-index:
-    let layers = g_drawInterface.layers.slice();
-    let progressBar = new ProgressBar( "export-prog-bar", layers.length * 2);
+    var layers = g_drawInterface.layers.slice();
+    var progressBar = new ProgressBar( "export-prog-bar", layers.length * 2);
     layers.sort(function(layerA, layerB) {
 	    return layerA.getIndex() - layerB.getIndex();
 	});
-    for (let i = 0; i < layers.length; i++) {
-	let layer = layers[i];
+    for (var i = 0; i < layers.length; i++) {
+        layer = layers[i];
 	if (layer.isHiddenLayer()) {
 	    // Skip hidden layers, like the selection layer
 	    continue;
 	}
-	let dataUrl = layer.pngSnapshot(layer, {left: 0,
-						top: 0,
-						right: dim.width,
-						bottom: dim.height});
+	dataUrl = layer.pngSnapshot(layer,
+                                    {left: 0,
+		                     top: 0,
+				     right: dim.width,
+				     bbottom: dim.height});
 	// everything before comma is metadata: slice off
 	dataUrls.push( dataUrl.split(",")[1] );
 	progressBar.update(i);
     }
-    let postArgs = {data: dataUrls.join(","),
+    var postArgs = {data: dataUrls.join(","),
 		    filename: $("#page-title").html()};
 
     jQuery.ajax({url:"export.py",
@@ -135,12 +137,12 @@ function export2() {
 var g_screenOrientation = "landscape";
 
 function restructureDOM() {
-    let controlDiv = $("#control-div");
-    let penSizeCanvas = $("#pen-size-canvas");
-    let otherControls = $("#other-controls");
-    let textDiv = $("#text-div");
-    let body = $("#the-body");
-    let canvasDiv = $("#canvas-div");
+    var controlDiv = $("#control-div");
+    var penSizeCanvas = $("#pen-size-canvas");
+    var otherControls = $("#other-controls");
+    var textDiv = $("#text-div");
+    var body = $("#the-body");
+    var canvasDiv = $("#canvas-div");
 
     controlDiv.detach();
     textDiv.detach();
@@ -149,7 +151,7 @@ function restructureDOM() {
     otherControls.detach();
 
     // rescue all the layer canvases 
-    let layerCanvases = $(".layer-canvas");
+    var layerCanvases = $(".layer-canvas");
     layerCanvases.detach();
 
     body.empty();
@@ -179,10 +181,10 @@ function restructureDOM() {
 function adjustToScreen() {
     // Set widths and heights dynamically to make optimal
     // use of screen dimensions.
-    let screenWidth = window.innerWidth;
-    let screenHeight = window.innerHeight;
+    var screenWidth = window.innerWidth;
+    var screenHeight = window.innerHeight;
 
-    let mainCanvasWidth, mainCanvasHeight;
+    var mainCanvasWidth, mainCanvasHeight;
     if (screenHeight > screenWidth) {
 	// Portrait mode screen
 	if (g_screenOrientation != "portrait") {
@@ -223,11 +225,10 @@ function importImage(imgUrl) {
     /* TODO also need a way of moving imported image
      * where we want it!!  Maybe treat it as a selection? */
 
-    // TODO trying to select this gives me a security error!!!
     var img = new Image();   // Create new Image object  
     img.onload = function(){  
-	let layer = g_drawInterface.getActiveLayer();
-	let action = new PlopBitmapAction(layer, img, 0, 0, 1);
+	var layer = g_drawInterface.getActiveLayer();
+	var action = new PlopBitmapAction(layer, img, 0, 0, 1);
 	g_history.pushAction(action);
 	layer.doActionNow(action);
     }  
@@ -285,8 +286,8 @@ function clearEverything() {
 }
 
 function onScriptChanged() {
-    let newScript = $("#dialogue-edit-area").val();
-    let action = new ChangeScriptAction(newScript);
+    var newScript = $("#dialogue-edit-area").val();
+    var action = new ChangeScriptAction(newScript);
     g_toolInterface.setTool(textBalloonTool);
     g_history.pushAction(action);
     g_dialogue.dialogueLayer.updateDisplay();
@@ -313,8 +314,8 @@ $(function() {
     g_panels = new PanelManager();
     g_history = new History();
 
-    let title = gup("title");
-    let artist = gup("artist");
+    var title = gup("title");
+    var artist = gup("artist");
     if (artist) {
 	$("#artist").html(artist);
     } else {
@@ -342,7 +343,7 @@ $(function() {
     /* Update text balloons when you edit the script -- but
      * not with every keystroke, that's too much work. Wait until
      * user stops typing for a second.*/
-    let textUpdateTimer = null;
+    var textUpdateTimer = null;
     $("#dialogue-edit-area").bind("keyup", function() {
         if (textUpdateTimer) {
             clearTimeout(textUpdateTimer);
@@ -351,7 +352,7 @@ $(function() {
     });
 
     // Call adjustToScreen if screen size changes
-    let resizeTimer = null;
+    var resizeTimer = null;
     $(window).resize(function() {
         if (resizeTimer) {
             clearTimeout(resizeTimer);
