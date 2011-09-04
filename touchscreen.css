@@ -52,3 +52,21 @@ canvas {
 .tiny {
   font-size: 10pt;
 }
+
+.progress-bar-outer {
+  display: none;
+  position: relative;
+  left: 0px;
+  top: 6px;
+  height: 16px;
+  padding: 0em;
+  border-color: black;
+  border: solid;
+  border-width: 1px;
+}
+
+.progress-bar-inner {
+  background-color: red;
+  height: 16px;
+  margin: 0px;
+}

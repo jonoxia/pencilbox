@@ -56,15 +56,44 @@ function gup( name )
 function debug( str ) {
     $("#debug").html( str );
 }
+
+function ProgressBar(elemId, max) {
+    this.init(elemId, max); //borrow a mob's layer
+}
+ProgressBar.prototype = {
+    init: function(elemId, max) {
+	this._div = $("#" + elemId);
+	this._innerDiv = this._div.children();
+	this._max = max;
+	this._outerWidth = this._div.attr("width");
+	this.update(0);
+	this.show();
+    },
+
+    hide: function() {
+	this._div.css("display", "none");
+    },
+
+    show: function() {
+	this._div.css("display", "block");
+    },
+
+    update: function(progress) {
+	let innerWidth = this._outerWidth * progress / this._max;
+	this._innerDiv.css("width", innerWidth + "px");
+    }
+};
 		    
 
 function export2() {
+    $("#export-image-controls").slideDown();
     // Export each layer as a separate .png, composite them on the
     // server using PIL (Python Image Library)
     let dim = g_drawInterface.getPageDimensions();
     let dataUrls = [];
     // Sort layers by z-index:
     let layers = g_drawInterface.layers.slice();
+    let progressBar = new ProgressBar( "export-prog-bar", layers.length * 2);
     layers.sort(function(layerA, layerB) {
 	    return layerA.getIndex() - layerB.getIndex();
 	});
@@ -80,7 +109,7 @@ function export2() {
 						bottom: dim.height});
 	// everything before comma is metadata: slice off
 	dataUrls.push( dataUrl.split(",")[1] );
-	
+	progressBar.update(i);
     }
     let postArgs = {data: dataUrls.join(","),
 		    filename: $("#page-title").html()};
@@ -89,10 +118,16 @@ function export2() {
 		data: postArgs,
 		type: "POST",
 		success: function(data, textStatus) {
-		  $("#debug").html(data);
+                  progressBar.hide();
+                  $("#export-msg").html("Done! Copy the URL below, or " +
+				      "right-click the preview and Save As.");
+		  $("#export-link").html("http://evilbrainjono.net" + data);
+                  $("#export-img-preview").attr("src", data);
+		  // redraw main canvas
+		  g_drawInterface.updateAllLayerDisplays();
 	        },
 		error: function(req, textStatus, error) {
-		  $("#debug").html("error " + textStatus + "; " + error);
+		  $("#export-msg").html("error " + textStatus + "; " + error);
 	        },
 		dataType: "html"});
 }

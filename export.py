@@ -74,7 +74,7 @@ url = FILE_PUB_URL % (str(artist.id), filename)
 
 print "Content-type: text/html"
 print
-print "Saved as <a href=\"%s\">%s</a>" % (url, filename)
+print url
 #except Exception as e:
 #  print "Content-type: text/html"
 #  print

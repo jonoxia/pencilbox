@@ -33,7 +33,8 @@
       <span class="tiny">Settings</span>
     </div>
     <div id="settings-div" class="control-panel">
-       Global settings go here
+      Global settings go here
+      <button onclick="$('#settings-div').slideUp();">Hide</button>
     </div>
 
     <div class="floatr" onclick="$('#text-div').slideDown();">
@@ -60,14 +61,29 @@
       <button onclick="$('#layer-controls').slideUp();">Hide</button>
     </div>
 
+    <div class="floatr" onclick="export2();">
+      <img src="icons/32x32/Upload image.png"/>
+      <br/>
+      <span class="tiny">Export</span>
+    </div>
+    <div id="export-image-controls" class="control-panel">
+      <span id="export-msg">Exporting...</span><br/>
+      <div id="export-prog-bar" class="progress-bar-outer">
+        <div class="progress-bar-inner"></div>
+      </div>
+      <span id="export-link"></span><br/>
+      Preview:<br/>
+      <img id="export-img-preview" width="300" height="500"/>
+      <button onclick="$('#export-image-controls').slideUp();">Hide</button>
+    </div>
+
     <div class="floatr"
          onclick="$('#import-image-controls').slideDown();">
-      <img src="icons/32x32/Graphic file.png"/>
+      <img src="icons/32x32/Import.png"/>
       <br/>
       <span class="tiny">Import</span>
     </div>
     <div id="import-image-controls" class="control-panel">
-      <button onclick="export2();">Export Img</button><br/>
       From Url:<br/><input id="import-image-url" type="text"/>
       <button onclick="doImportFromUrl()">Import</button><br/>
       From File:<br/>
@@ -79,7 +95,6 @@
       <p><button onclick="doImportFromFile()">Upload</button></p>
       <button onclick="$('#import-image-controls').slideUp();">Cancel</button>
     </div>
-
 
   </div>
 
