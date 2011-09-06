@@ -73,11 +73,13 @@ function GridMenu( canvas, itemList, squareSize, options) {
     }
 
     // Preload images:
-    for (let i = 0; i < this._commands.length; i++) {
-	let commandObj = this._commands[i];
-	let img = new Image();
-	img.onload = function(){ commandObj.img = img  };
-	img.src = commandObj.icon;
+    for (var i = 0; i < this._commands.length; i++) {
+	(function(commandObj) {
+          var img = new Image();
+	// TODO i think closure scope problem here
+          img.onload = function(){ commandObj.img = img  };
+          img.src = commandObj.icon;	    
+	})(this._commands[i]);
     }
 }
 GridMenu.prototype = {
@@ -86,8 +88,8 @@ GridMenu.prototype = {
     },
     onMouseDown: function(evt) {
 	this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
-	let x = evt.pageX - this._offsetX;
-	let y = evt.pageY - this._offsetY;
+	var x = evt.pageX - this._offsetX;
+	var y = evt.pageY - this._offsetY;
 	if (this._visible) {
 	    return;
 	}
@@ -98,14 +100,15 @@ GridMenu.prototype = {
 	this._visible = true;
     },
     onMouseUp: function(evt) {
-	let x = evt.pageX - this._offsetX;
-	let y = evt.pageY - this._offsetY;
+	var x = evt.pageX - this._offsetX;
+	var y = evt.pageY - this._offsetY;
+	var now, index;
 	if (this._visible) {
-	    var now = new Date().getTime();
+	    now = new Date().getTime();
 	    if ( now - this._invokeTime > this._timeDelay ) {
 		//erase:
 		this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
-		let index = this._getCellNumFromPoint( x, y );
+		index = this._getCellNumFromPoint( x, y );
 		// Execute!
 		if (index != null && index < this._commands.length) {
 		    this._commands[index].execute();
@@ -115,8 +118,8 @@ GridMenu.prototype = {
 	}
     },
     onMouseMove: function(evt) {
-	let x = evt.pageX - this._offsetX;
-	let y = evt.pageY - this._offsetY;
+	var x = evt.pageX - this._offsetX;
+	var y = evt.pageY - this._offsetY;
 	if (!this._visible) {
 	    return;
 	}
@@ -143,7 +146,7 @@ GridMenu.prototype = {
 	 * mouse outside of it, you're still treated as touching the
 	 * nearest box.  This makes it much easier to use by making the
 	 * effective target size much larger. */
-	let lots = (this._commands.length > 8);
+	var lots = (this._commands.length > 8);
 	if (col < 0) {
 	    if (lots && (row == 0 || row == 2))
 		col = -1;
@@ -198,7 +201,7 @@ GridMenu.prototype = {
     },
 
     _colRowToCellNum: function(col, row) {
-	let table = this._rowColumnTable;
+	var table = this._rowColumnTable;
 	for ( var i = 0; i < table.length; i++ ) {
 	    if (table[i][0] == col && table[i][1] == row)
 		return i;

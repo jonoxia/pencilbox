@@ -144,8 +144,8 @@ RectanglePanel.prototype = {
 	this._height = height;
     },
     getGrabPt: function(x, y) {
-	let right = this._width + this._left;
-	let bottom = this._height + this._top;
+	var right = this._width + this._left;
+	var bottom = this._height + this._top;
 	if (x - this._left < GRAB_MARGIN && x >= this._left) {
 	    if ( y - this._top < GRAB_MARGIN && y >= this._top) {
 		return "nw";
@@ -191,7 +191,7 @@ PolygonPanel.prototype = {
 	this.borderPath[whichCorner].y += dy;
     },
     move: function(dx, dy) {
-	for (let i = 1; i < this.borderPath.length; i++) {
+	for (var i = 1; i < this.borderPath.length; i++) {
 	    this.borderPath[i].x += dx;
 	    this.borderPath[i].y += dy;
 	}
@@ -210,7 +210,7 @@ PolygonPanel.prototype = {
 	ctx.save();
 	ctx.beginPath();
 	ctx.moveTo(this.borderPath[0].x, this.borderPath[0].y);
-	for (let i = 1; i < this.borderPath.length; i++) {
+	for (var i = 1; i < this.borderPath.length; i++) {
 	    ctx.lineTo(this.borderPath[i].x, this.borderPath[i].y);
 	}
 	// Make sure inside of path is transparent:
@@ -229,7 +229,7 @@ function PanelManager() {
     this.gutterColor = Colors.grey2;
     this.panelLayer = new Layer(-3);
     this.panelLayer.setName("Panels");
-    let manager = this;
+    var manager = this;
     this.panelLayer.onRedraw = function(ctx) {
 	manager.drawEverything(ctx);
     };
@@ -237,8 +237,8 @@ function PanelManager() {
 }
 PanelManager.prototype = {
     getUnusedPanelId: function() {
-	let maxPanelId = 0;
-	for (let i = 0; i < this.panels.length; i++) {
+	var maxPanelId = 0;
+	for (var i = 0; i < this.panels.length; i++) {
 	    if (this.panels[i].getId() > maxPanelId) {
 		maxPanelId = this.panels[i].getId();
 	    }
@@ -246,7 +246,7 @@ PanelManager.prototype = {
 	return maxPanelId + 1;
     },
     getPanelById: function(id) {
-	for (let i = 0; i < this.panels.length; i++) {
+	for (var i = 0; i < this.panels.length; i++) {
 	    if (this.panels[i].getId() == id) {
 		return this.panels[i];
 	    }
@@ -256,9 +256,10 @@ PanelManager.prototype = {
     getGrabPt: function(x, y) {
 	// go through backwards so panels that appear in front
 	// (i.e. drawn last i.e. last in list) are grabbed first.
-	for (let i = this.panels.length - 1; i >= 0; i--) {
-	    let panel = this.panels[i];
-	    let hit = panel.getGrabPt(x, y);
+	var panel, hit;
+	for (var i = this.panels.length - 1; i >= 0; i--) {
+	    panel = this.panels[i];
+	    hit = panel.getGrabPt(x, y);
 	    if (hit != null) {
 		return {panel: panel,
 			controlPoint: hit};
@@ -267,20 +268,20 @@ PanelManager.prototype = {
 	return null;
     },
     createPolygonPanel: function( borderPath ) {
-	let borderPath = this.panelLayer.screenToWorldMulti(borderPath);
+	var borderPath = this.panelLayer.screenToWorldMulti(borderPath);
 	this.panels.push(new PolygonPanel(borderPath));
     },
     createRectanglePanel: function(startPt, endPt) {
-	let pointList = [];
-	let layer = this.panelLayer;
-	let startPt = layer.screenToWorld(startPt.x, startPt.y);
-	let endPt = layer.screenToWorld(endPt.x, endPt.y);
-	let left = startPt.x < endPt.x? startPt.x : endPt.x;
-	let top = startPt.y < endPt.y ? startPt.y : endPt.y;
-	let right = startPt.x > endPt.x? startPt.x : endPt.x;
-	let bottom = startPt.y > endPt.y ? startPt.y : endPt.y;
+	var pointList = [];
+	var layer = this.panelLayer;
+	var startPt = layer.screenToWorld(startPt.x, startPt.y);
+	var endPt = layer.screenToWorld(endPt.x, endPt.y);
+	var left = startPt.x < endPt.x? startPt.x : endPt.x;
+	var top = startPt.y < endPt.y ? startPt.y : endPt.y;
+	var right = startPt.x > endPt.x? startPt.x : endPt.x;
+	var bottom = startPt.y > endPt.y ? startPt.y : endPt.y;
 
-	let newPanel = new RectanglePanel(left, top,
+	var newPanel = new RectanglePanel(left, top,
 					  right-left, bottom-top);
 	this.panels.push(newPanel);
 	this.panelLayer.updateDisplay();
@@ -296,9 +297,9 @@ PanelManager.prototype = {
 	}
 	// fill in gutter:
 	context.fillStyle = this.gutterColor.style;
-	let dim = g_drawInterface.getPageDimensions();
+	var dim = g_drawInterface.getPageDimensions();
 	context.fillRect(0, 0, dim.width, dim.height);
-	for (let i = 0; i < this.panels.length; i++) {
+	for (var i = 0; i < this.panels.length; i++) {
 	    this.panels[i].draw(context); 
 	}
     },
@@ -313,21 +314,21 @@ panelTool.getStrokeStyle = function() {
     return Colors.black;
 };
 panelTool.snapToGrid = function(screenX, screenY) {
-    let layer = g_panels.panelLayer;
-    let worldPt = layer.screenToWorld(screenX, screenY);
-    let worldX = Math.floor(worldPt.x / SNAP_GRID_PIXELS);
-    let worldY = Math.floor(worldPt.y / SNAP_GRID_PIXELS);
-    let worldPt = {x: worldX * SNAP_GRID_PIXELS,
+    var layer = g_panels.panelLayer;
+    var worldPt = layer.screenToWorld(screenX, screenY);
+    var worldX = Math.floor(worldPt.x / SNAP_GRID_PIXELS);
+    var worldY = Math.floor(worldPt.y / SNAP_GRID_PIXELS);
+    var worldPt = {x: worldX * SNAP_GRID_PIXELS,
 		   y: worldY * SNAP_GRID_PIXELS};
-    let screenPt = layer.worldToScreen(worldPt.x, worldPt.y);
+    var screenPt = layer.worldToScreen(worldPt.x, worldPt.y);
     return {screenPt: screenPt, worldPt: worldPt};
 };
 panelTool.down = function(ctx, x, y) {
-    let pts = this.snapToGrid(x, y);
-    let worldPt = pts.worldPt;
-    let screenPt = pts.screenPt;
+    var pts = this.snapToGrid(x, y);
+    var worldPt = pts.worldPt;
+    var screenPt = pts.screenPt;
     
-    let grabbitation = g_panels.getGrabPt(worldPt.x, worldPt.y);
+    var grabbitation = g_panels.getGrabPt(worldPt.x, worldPt.y);
     if (grabbitation) {
 	this.panel = grabbitation.panel;
 	this.controlPoint = grabbitation.controlPoint;
@@ -349,15 +350,15 @@ panelTool.up = function(ctx, x, y) {
     this.controlPoint = null;
 };
 panelTool.drag = function(ctx, x, y) {
-    let pts = this.snapToGrid(x, y);
-    let worldPt = pts.worldPt;
-    let screenPt = pts.screenPt;
-    let layer = g_panels.panelLayer;
-
+    var pts = this.snapToGrid(x, y);
+    var worldPt = pts.worldPt;
+    var screenPt = pts.screenPt;
+    var layer = g_panels.panelLayer;
+    var dx, dy;
     if (this.mode == "manipulate") {
 	$("#debug").html("Manipulating...");
-	let dx = worldPt.x - this.manipStartPt.x;
-	let dy = worldPt.y - this.manipStartPt.y;
+	dx = worldPt.x - this.manipStartPt.x;
+	dy = worldPt.y - this.manipStartPt.y;
 	switch (this.controlPoint) {
 	case "main":
             this.panel.move(dx, dy);
@@ -374,7 +375,7 @@ panelTool.drag = function(ctx, x, y) {
     }
 };
 panelTool.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -399,11 +400,11 @@ panelTool.changeSize = function(delta) {
     // want that to stay consistent.
 };
 panelTool.getRecordedAction = function() {
-    let id = this.panel.getId();
-    let left = this.panel._left;
-    let top = this.panel._top;
-    let width = this.panel._width;
-    let height = this.panel._height;
+    var id = this.panel.getId();
+    var left = this.panel._left;
+    var top = this.panel._top;
+    var width = this.panel._width;
+    var height = this.panel._height;
     return new RectanglePanelAction(id, left, top, width, height);
 };
 panelTool.resetRecordedAction = function() {
