@@ -65,9 +65,9 @@ GestureInterpreter.prototype = {
 	return (this.pieMenu || this.locMenus);
     },
     touchDown: function(evt) {
-	let id = evt.streamId;
-	let x = evt.pageX - this.offsetX;
-	let y = evt.pageY - this.offsetY;
+	var id = evt.streamId;
+	var x = evt.pageX - this.offsetX;
+	var y = evt.pageY - this.offsetY;
 	this.touchPoints[id] = { newX: x,
 				 newY: y,
 				 oldX: x,
@@ -85,10 +85,10 @@ GestureInterpreter.prototype = {
     },
 
     menuMouseDown: function(evt) {
-	let x = evt.pageX - this.offsetX;
-	let y = evt.pageY - this.offsetY;
+	var x = evt.pageX - this.offsetX;
+	var y = evt.pageY - this.offsetY;
 	if (this.locMenus) {
-	    for (let i = 0; i < this.locMenus.length; i++) {
+	    for (var i = 0; i < this.locMenus.length; i++) {
 		if (this.locMenus[i].isPtInside(x, y)) {
 		    this.locMenus[i].onMouseDown(evt);
 		    this.activeMenu = this.locMenus[i];
@@ -103,8 +103,8 @@ GestureInterpreter.prototype = {
     },
 
     touchMove: function(evt) {
-	let id = evt.streamId;
-	let pt = this.touchPoints[id];
+	var id = evt.streamId;
+	var pt = this.touchPoints[id];
 	if (pt) {
 	    // is it possible for this not to be defined at this point?
 	    pt.oldX = pt.newX;
@@ -121,7 +121,7 @@ GestureInterpreter.prototype = {
     },
 
     touchUp: function(evt) {
-	let id = evt.streamId;
+	var id = evt.streamId;
 	if (!this.touchPoints[id]) {
 	    return;
 	}
@@ -139,37 +139,38 @@ GestureInterpreter.prototype = {
     },
 
     interpretGesture: function(movedId) {
-	let tchPts = this.touchPoints;
-	let x;
-	let pts = [tchPts[x] for (x in tchPts)];
+	var tchPts = this.touchPoints;
+	var pts = [tchPts[x] for (x in tchPts)];
+	var x, ptA, ptB, dx, dy, delta, dxA, dyA, dxB, dyB, dist, ratio;
+	var movingPt;
 	if (this.touchPointCount == 2) {
 	    // 2-finger gesture - pinch or drag?
-	    let ptA = pts[0];
-	    let ptB = pts[1];
+	    ptA = pts[0];
+	    ptB = pts[1];
 	    if (!ptA || !ptB) {
 		// Can happen when one finger is outside canvas
 		return;
 	    }
 
 	    // pinch - how much did distance change?
-	    let dx = ptA.oldX - ptB.oldX; 
-	    let dy = ptA.oldY - ptB.oldY;
+	    dx = ptA.oldX - ptB.oldX; 
+	    dy = ptA.oldY - ptB.oldY;
 	    distPre = Math.sqrt(dx*dx + dy*dy);
 	    dx = ptA.newX - ptB.newX;
 	    dy = ptA.newY - ptB.newY;
 	    distPost = Math.sqrt(dx*dx + dy*dy);
 	    
-	    let delta = distPost - distPre;
+	    delta = distPost - distPre;
 
-	    let dxA = ptA.newX - ptA.oldX;
-	    let dyA = ptA.newY - ptA.oldY;
-	    let dxB = ptB.newX - ptB.oldX;
-	    let dyB = ptB.newY - ptB.oldY;
+	    dxA = ptA.newX - ptA.oldX;
+	    dyA = ptA.newY - ptA.oldY;
+	    dxB = ptB.newX - ptB.oldX;
+	    dyB = ptB.newY - ptB.oldY;
 
 	    // either pan OR zoom, don't do both.  Pan if the drag
 	    // distance > change in distance between fingers.
-	    let dist = (Math.sqrt(dxA*dxA + dyA*dyA) +
-			Math.sqrt(dxB*dxB + dyB*dyB)) / 2;
+	    dist = (Math.sqrt(dxA*dxA + dyA*dyA) +
+		    Math.sqrt(dxB*dxB + dyB*dyB)) / 2;
 
 	    if (!this.pinchFirstDist) {
 		this.pinchFirstDist = distPost;
@@ -180,15 +181,15 @@ GestureInterpreter.prototype = {
 						 (dyA + dyB)/4);
 	    }
 	    if (this.library.twoFingers.pinch) {
-		let ratio = (distPost + distPre) / (2 * distPre);
+		ratio = (distPost + distPre) / (2 * distPre);
 		this.library.twoFingers.pinch(ratio);
 	    }
 	}
 	if (this.touchPointCount == 1) {
-	    let movingPt = this.touchPoints[movedId];
+	    movingPt = this.touchPoints[movedId];
 	    // 1-finger gesture -- pie menu to pick tool
-	    let dx = movingPt.newX - movingPt.oldX;
-	    let dy = movingPt.newY - movingPt.oldY;
+	    dx = movingPt.newX - movingPt.oldX;
+	    dy = movingPt.newY - movingPt.oldY;
 
 	    if (dy < -5 && Math.abs(dy) > Math.abs(dx)) {
 		this.gestureDirections.push("up");
@@ -211,15 +212,16 @@ GestureInterpreter.prototype = {
 	if (!this.library.oneFinger) {
 	    return;
 	}
-	let gestures = this.library.oneFinger.directionalGestures;
+	var gestures = this.library.oneFinger.directionalGestures;
+	var curDir, matched, pattern;
 	if (!gestures) {
 	    return;
 	}
-	for each (let gestureCmd in gestures) {
-          let curDir = "";
-          let matched = 0;
-	  let pattern = gestureCmd.directions;
-          for each (let dir in this.gestureDirections) {
+	for each (var gestureCmd in gestures) {
+          curDir = "";
+          matched = 0;
+	  pattern = gestureCmd.directions;
+          for each (var dir in this.gestureDirections) {
 	    if (dir != curDir) {
 	      curDir = dir;
 	      if (dir == pattern[matched]) {
@@ -312,13 +314,12 @@ ColorMenu.prototype = {
 
     onMouseDown: function(evt) {
 	this.startColor = this.color;
-	let rowNum = 0;
-	let x = 0;
-	let y = this.y - this.boxSize;
-	for (let i = 0; i < this.allTheColors.length; i++) {
-	    let theColor = this.allTheColors[i];
-	    let x = ( i % this.boxesPerRow ) * this.boxSize;
-	    let y = this.y - (1 + Math.floor(i / this.boxesPerRow)) * this.boxSize;
+	var rowNum = 0;
+	var x, y, theColor;
+	for (var i = 0; i < this.allTheColors.length; i++) {
+	    theColor = this.allTheColors[i];
+	    x = ( i % this.boxesPerRow ) * this.boxSize;
+	    y = this.y - (1 + Math.floor(i / this.boxesPerRow)) * this.boxSize;
 	    this.ctx.fillStyle = theColor.style;
 	    this.ctx.fillRect(x, y, this.boxSize, this.boxSize);
 	    this.ctx.strokeRect(x, y, this.boxSize, this.boxSize);
@@ -326,9 +327,9 @@ ColorMenu.prototype = {
     },
 
     onMouseMove: function(evt) {
-	let x = Math.floor(evt.pageX / this.boxSize);
-	let y = Math.floor(( this.y - evt.pageY) / this.boxSize);
-	let index = y * this.boxesPerRow + x;
+        var x = Math.floor(evt.pageX / this.boxSize);
+	var y = Math.floor(( this.y - evt.pageY) / this.boxSize);
+	var index = y * this.boxesPerRow + x;
 	if (index >= 0 && index < this.allTheColors.length) {
 	    this.color = this.allTheColors[index];
 	} else {
@@ -354,14 +355,13 @@ ColorMenu.prototype = {
 function ToolAreaInterface() {
     this.toolCanvas = $("#pen-size-canvas").get(0);
     this.penCtx = this.toolCanvas.getContext("2d");
-    let self = this;
+    var self = this;
 
     this.offsetX = this.toolCanvas.offsetLeft;
     this.offsetY = this.toolCanvas.offsetTop;
     this.selectedTool = pen;
 
-    let self = this;
-    let itemList = [{name: "Line", icon: "icons/32x32/Line.png",
+    var itemList = [{name: "Line", icon: "icons/32x32/Line.png",
 		     execute: function() {self.setTool(line);}},
 		    {name: "S. Rect", icon: "icons/32x32/Selection.png",
 		     execute: function() {self.setTool(rectSelect);}},
@@ -409,17 +409,17 @@ function ToolAreaInterface() {
     // Rotation
 
 
-    let toolMenu = new GridMenu( this.toolCanvas, itemList, 64 );
+    var toolMenu = new GridMenu( this.toolCanvas, itemList, 64 );
     // Allow tool menu and pinch gesture to coexist:
     // Send events primarily to GestureInterpreter, do the pie
     // menu in response to the one finger thing.  (If a second
     // finger goes down, cancel the pie menu)
 
     // Make color menus
-    let bottom = this.toolCanvas.height - 60;
-    let penColorMenu = new ColorMenu(this.penCtx, 10, bottom, 50, 50,
+    var bottom = this.toolCanvas.height - 60;
+    var penColorMenu = new ColorMenu(this.penCtx, 10, bottom, 50, 50,
 				      Colors.black);
-    let paintColorMenu = new ColorMenu(this.penCtx, 70, bottom, 50, 50,
+    var paintColorMenu = new ColorMenu(this.penCtx, 70, bottom, 50, 50,
 					Colors.red);
     this.colorMenus = [penColorMenu, paintColorMenu];
 
@@ -488,7 +488,7 @@ ToolAreaInterface.prototype = {
     },
     
     redrawMenus: function() {
-	for (let i = 0; i < this.colorMenus.length; i++) {
+	for (var i = 0; i < this.colorMenus.length; i++) {
 	    this.colorMenus[i].redraw(this.penCtx);
 	}
     },
@@ -509,7 +509,7 @@ ToolAreaInterface.prototype = {
 };
 
 function DrawAreaInterface() {
-    let cursorCanvas = $("#the-canvas").get(0);
+    var cursorCanvas = $("#the-canvas").get(0);
     this.width = cursorCanvas.width;
     this.height = cursorCanvas.height;
 
@@ -527,7 +527,7 @@ function DrawAreaInterface() {
     this._lastTimeDown = 0;
     this._lastTimeUp = 0;
 
-    let self = this;    
+    var self = this;    
     $("#the-canvas").bind("mousedown", function(evt) { 
 	    self.mouseDownHandler(evt); });
     $(window).bind("mouseup", function(evt) {
@@ -535,7 +535,7 @@ function DrawAreaInterface() {
     $("#the-canvas").bind("mousemove", function(evt) {
 	    self.mouseMoveHandler(evt); });
 
-    let library = {
+    var library = {
 	oneFinger: [],
 	twoFingers: {
 	    pinch: function(ratio) {
@@ -554,12 +554,12 @@ function DrawAreaInterface() {
     // or not.  If inside a selection, they'll be resize/rotate commands
     // dispatch to selection manager.  If not, they'll be page zoom/pan
     // commands; process them.
-    let ptInSelection = function(x, y) {
+    var ptInSelection = function(x, y) {
 	if (!g_selection.selectionPresent) {
 	    return
 	};
-	let x = x - self.offsetX;
-	let y = y - self.offsetY;
+	var x = x - self.offsetX;
+	var y = y - self.offsetY;
 	return g_selection.isScreenPtInsideSelection(x, y);
     }
     cursorCanvas.addEventListener("MozTouchDown", function(evt) {
@@ -592,7 +592,7 @@ DrawAreaInterface.prototype = {
 	return {width: this.pageWidth, height: this.pageHeight};
     },
     setActiveLayer: function(index) {
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    if (this.layers[i].getIndex() == index) {
 		this.activeLayer = this.layers[i];
 		break;
@@ -608,21 +608,21 @@ DrawAreaInterface.prototype = {
     newLayer: function() {
 	// New layer needs to have scale, translate set to
 	// same as existing layers
-	let options = null;
+	var options = null;
 	if (this.activeLayer) {
-	    let currentZoom = this.activeLayer.getZoomLevel();
-	    let currentTranslate = this.activeLayer.getTranslation();
+	    var currentZoom = this.activeLayer.getZoomLevel();
+	    var currentTranslate = this.activeLayer.getTranslation();
 	    options = {scale: currentZoom,
 			   translate: currentTranslate};
 	}
 	// create at bottom, for now
-	let lowestLayer = 0;
-	for (let i = 0; i < this.layers.length; i++) {
+	var lowestLayer = 0;
+	for (var i = 0; i < this.layers.length; i++) {
 	    if (this.layers[i].getIndex() < lowestLayer) {
 		lowestLayer = this.layers[i].getIndex();
 	    }
 	}
-	let newLayer = new Layer(lowestLayer - 1, options);
+	var newLayer = new Layer(lowestLayer - 1, options);
 	this.layers.push( newLayer );
 	if (this.activeLayer == null) {
 	    this.activeLayer = newLayer;
@@ -633,14 +633,14 @@ DrawAreaInterface.prototype = {
 	if (this.interpreter.touchPointCount > 0) return;
 	if (!this.mouseIsDown) return;
 
-	let x = evt.pageX - this.offsetX;
-	let y = evt.pageY - this.offsetY;
-	let tool = this.getSelectedTool();
+	var x = evt.pageX - this.offsetX;
+	var y = evt.pageY - this.offsetY;
+	var tool = this.getSelectedTool();
         this.getSelectedTool().up(this.getDrawCtx(), x, y);
 	this.mouseIsDown = false;
 
 	// Record action to undo history
-	let action = tool.getRecordedAction();
+	var action = tool.getRecordedAction();
 	if (action) {
             g_history.pushAction(action);
             tool.resetRecordedAction();
@@ -657,10 +657,10 @@ DrawAreaInterface.prototype = {
 	if (this.interpreter.touchPointCount > 0) return;
 	//this.getSelectedTool().resetRecordedAction();
 
-	let x = evt.pageX - this.offsetX;
-	let y = evt.pageY - this.offsetY;
+	var x = evt.pageX - this.offsetX;
+	var y = evt.pageY - this.offsetY;
 	this.mouseIsDown = true;
-	let isDblClick = false;
+	var isDblClick = false;
 	if (Date.now() - this._lastTimeUp < DBL_CLICK_SPEED &&
 	    this._lastTimeUp - this._lastTimeDown < DBL_CLICK_SPEED) {
 	    isDblClick = true;
@@ -674,8 +674,8 @@ DrawAreaInterface.prototype = {
 	if (this.interpreter.touchPointCount > 0) return;
 
 	this.cursorCtx.clearRect(0, 0, this.width, this.height);
-	let x = evt.pageX - this.offsetX;
-	let y = evt.pageY - this.offsetY;
+	var x = evt.pageX - this.offsetX;
+	var y = evt.pageY - this.offsetY;
 
 	this.getSelectedTool().drawCursor(this.cursorCtx, x, y);
 	if (this.mouseIsDown) {
@@ -684,7 +684,7 @@ DrawAreaInterface.prototype = {
     },
 
     zoom: function(factor) {
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    if (this.layers[i].scale) {
 		this.layers[i].scale(factor);
 	    } else {
@@ -693,35 +693,35 @@ DrawAreaInterface.prototype = {
 	}
     },
     pan: function(xFactor, yFactor) {
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    this.layers[i].pan(xFactor, yFactor);
 	}
     },
     clearAllLayers: function(){
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    this.layers[i].clearLayer();
 	}
     },
     updateAllLayerDisplays: function() {
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    this.layers[i].updateDisplay();
 	}
     },
     exportAllLayers: function(exportCtx) {
 	// TODO deprecated - now using main.js export2() instead
 	// Sort layers - draw them from lowest to highest
-	let layers = this.layers.slice();
+	var layers = this.layers.slice();
 	layers.sort(function(layerA, layerB) {
 		return layerA.getIndex() - layerB.getIndex();
 	    });
-	for (let i = 0; i < layers.length; i++) {
+	for (var i = 0; i < layers.length; i++) {
 	    g_history.replayActionsForLayer(layers[i], exportCtx);
 	    layers[i].onRedraw(exportCtx);
 	}
     },
 
     getLayerByName: function(name) {
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    if (this.layers[i].name == name) {
 		return this.layers[i];
 	    }
@@ -730,11 +730,12 @@ DrawAreaInterface.prototype = {
     },
 
     serializeLayers: function() {
-	let layerObj = {};
-	let layerList = [];
-	let activeLayerIndex = 0;
-	for (let i = 0; i < this.layers.length; i++) {
-	    let layer = this.layers[i];
+	var layerObj = {};
+	var layerList = [];
+	var activeLayerIndex = 0;
+	var layer;
+	for (var i = 0; i < this.layers.length; i++) {
+	    layer = this.layers[i];
 	    if (this.activeLayer == this.layers[i]) {
 		activeLayerIndex = i;
 	    }
@@ -745,19 +746,19 @@ DrawAreaInterface.prototype = {
 	}
 	layerObj.layerList = layerList;
 	layerObj.activeLayerIndex = activeLayerIndex;
-	let str = JSON.stringify(layerObj);
-	return str;
+	return JSON.stringify(layerObj);
     },
     
     recreateLayers: function(layerString) {
-	let layerObj = JSON.parse(layerString);
-	let layerList = layerObj.layerList;
-	for (let i = 0; i < layerList.length; i++) {
+	var layerObj = JSON.parse(layerString);
+	var layerList = layerObj.layerList;
+	var newLayer;
+	for (var i = 0; i < layerList.length; i++) {
 	    /* Ignore instructions to recreate any layer with a
 	     * name we already have (e.g. special layers - 
 	     * dialogue layer, panel layer, etc.) */
 	    if (this.getLayerByName(layerList[i].name) == null) {
-		let newLayer = new Layer(layerList[i].index);
+		newLayer = new Layer(layerList[i].index);
 		if (layerList[i].opacity != undefined) {
 		    newLayer.setOpacity(layerList[i].opacity);
 		}
@@ -767,8 +768,7 @@ DrawAreaInterface.prototype = {
 		this.layers.push(newLayer);
 	    }
 	}
-	let activeLayerIndex = layerObj.activeLayerIndex;
-	this.activeLayer = this.layers[activeLayerIndex];
+	this.activeLayer = this.layers[layerObj.activeLayerIndex];
     },
 
     getZoomLevel: function() {
@@ -780,7 +780,7 @@ DrawAreaInterface.prototype = {
 	this.offsetY = newY;
 	this.width = newWidth;
 	this.height = newHeight;
-	for (let i = 0; i < this.layers.length; i++) {
+	for (var i = 0; i < this.layers.length; i++) {
 	    this.layers[i].resetDimensions(newX, newY,
 					   newWidth, newHeight);
 	}

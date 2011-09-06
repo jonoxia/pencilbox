@@ -37,7 +37,7 @@
 function Layer(index, options) {
   // Create canvas tag for this layer by copying size of
   // original canvas tag
-  let can = $("#the-canvas").get(0);
+  var can = $("#the-canvas").get(0);
   this.width = can.width;
   this.height = can.height;
   this.tag = $("<canvas></canvas>");
@@ -89,29 +89,29 @@ Layer.prototype = {
     createLayerTableInterface: function() {
 	// Create row in the layers table for this layer
 	this.tableRow = $("<tr></tr>");
-	let cell = $("<td></td>");
+	var cell = $("<td></td>");
 	this.radioBtn = $("<input type=\"radio\" name=\"layers-radioset\"></input>");
 	this.radioBtn.attr("value", this.index);
 	this.radioBtn.change(
-			     function() {
-				 let sel = $("input[name='layers-radioset']:checked").val();
-				 g_drawInterface.setActiveLayer(sel);
-			     });
+            function() {
+	      var sel = $("input[name='layers-radioset']:checked").val();
+              g_drawInterface.setActiveLayer(sel);
+            });
 	cell.append(this.radioBtn);
 	this.tableRow.append(cell);
 	this.titleCell = $("<td></td>");
 	this.titleCell.html(this.name);
 	this.tableRow.append(this.titleCell);
 	
-	let self = this;
+	var self = this;
 	cell = $("<td></td>");
-	let selector = $("<select><option value='1.0'>100%</option>" +
+	var selector = $("<select><option value='1.0'>100%</option>" +
 			 "<option value='0.75'>75%</option>" +
 			 "<option value='0.50'>50%</option>" +
 			 "<option value='0.25'>25%</option>" +
 			 "<option value='0'>Hide</option></select>");
 	selector.change(function(){
-		let selected = selector.children("option:selected").first();
+		var selected = selector.children("option:selected").first();
 		self.setOpacity(parseFloat(selected.val()));
 	    });
 	cell.append(selector);
@@ -156,7 +156,7 @@ Layer.prototype = {
 	return this._scale;
     },
     getTranslation: function() {
-	let self = this;
+	var self = this;
 	return {x: self._xTranslate,
 		y: self._yTranslate};
     },
@@ -166,7 +166,7 @@ Layer.prototype = {
 				      this.height);
     },
     _clearPageArea: function() {
-	let dim = g_drawInterface.getPageDimensions();
+	var dim = g_drawInterface.getPageDimensions();
 	this.displayContext.clearRect(0, 0, dim.width, dim.height);
     },
     _setTransformMatrix: function() {
@@ -178,13 +178,13 @@ Layer.prototype = {
     screenToWorld: function(x, y, sizeIsOdd) {
 	// Inverse transform, turns screen coordinates into world
 	// coordinates.
-	let xTrans = this._xTranslate;
-	let yTrans = this._yTranslate;
-	let xCen = this._center.x;
-	let yCen = this._center.y;
-	let scale = this._scale;
-	let worldX = (x - xTrans - xCen* ( 1-scale))/scale;
-	let worldY = (y - yTrans - yCen * (1-scale))/scale;
+	var xTrans = this._xTranslate;
+	var yTrans = this._yTranslate;
+	var xCen = this._center.x;
+	var yCen = this._center.y;
+	var scale = this._scale;
+	var worldX = (x - xTrans - xCen* ( 1-scale))/scale;
+	var worldY = (y - yTrans - yCen * (1-scale))/scale;
 	worldX = Math.floor(worldX);
 	worldY = Math.floor(worldY);
 	if (sizeIsOdd) {
@@ -194,18 +194,18 @@ Layer.prototype = {
 	return {x: worldX, y: worldY };
     },
     screenToWorldMulti: function(pointList, sizeIsOdd) {
-	let pts = [];
-	for each (let pt in pointList) {
+	var pts = [];
+	for each (var pt in pointList) {
           pts.push( this.screenToWorld(pt.x, pt.y, sizeIsOdd) );
 	}
 	return pts;
     },
     worldToScreen: function(x, y) {
-	let xTrans = this._xTranslate;
-	let yTrans = this._yTranslate;
-	let xCen = this._center.x;
-	let yCen = this._center.y;
-	let scale = this._scale;
+	var xTrans = this._xTranslate;
+	var yTrans = this._yTranslate;
+	var xCen = this._center.x;
+	var yCen = this._center.y;
+	var scale = this._scale;
 	return { x: scale * x + xTrans + xCen * (1 - scale),
 		y: scale * y + yTrans + yCen * (1 - scale)};
     },
@@ -244,7 +244,7 @@ Layer.prototype = {
 	this.displayContext.restore();
     },
     scale: function(factor) {
-	let oldScale = this._scale;
+	var oldScale = this._scale;
 	this._scale = this._scale * factor;
 	// Uncomment this line to scale by discrete steps:
 	//this._scale = Math.floor(this._scale * 5) / 5.0;
@@ -279,10 +279,10 @@ Layer.prototype = {
 
 	// shrink canvas to just size of boundary rectangle
 	// for the .png conversion:
-	let oldWidth = this.displayCanvas.width;
-	let oldHeight = this.displayCanvas.height;
-	let width = clipRect.right - clipRect.left;
-	let height = clipRect.bottom - clipRect.top;
+	var oldWidth = this.displayCanvas.width;
+	var oldHeight = this.displayCanvas.height;
+	var width = clipRect.right - clipRect.left;
+	var height = clipRect.bottom - clipRect.top;
 	this.displayCanvas.width = width;
 	this.displayCanvas.height = height;
 
@@ -295,7 +295,7 @@ Layer.prototype = {
 	    this.displayContext.beginPath();
 	    this.displayContext.moveTo(clipPath[0].x,
 				       clipPath[0].y);
-	    for (let i = 1; i < clipPath.length; i++) {
+	    for (var i = 1; i < clipPath.length; i++) {
 		this.displayContext.lineTo(clipPath[i].x,
 					   clipPath[i].y);
 	    }
@@ -309,7 +309,7 @@ Layer.prototype = {
 	parentLayer.onRedraw(this.displayContext);
 	// TODO this produces a Security Error if picture contains
 	// an imported picture
-	let dataUrl = this.displayCanvas.toDataURL("image/png");
+	var dataUrl = this.displayCanvas.toDataURL("image/png");
 
 	// Return canvas to original size:
 	this.displayContext.restore();
