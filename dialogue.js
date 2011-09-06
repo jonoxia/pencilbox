@@ -55,7 +55,7 @@ function SpeechBubble(text, style) {
     this.style = style; // regular, caption, thought?
     
     // Pick a place to start out the bubble:
-    let x = 25 * g_dialogue.numBubbles;
+    var x = 25 * g_dialogue.numBubbles;
     this.center = g_dialogue.dialogueLayer.screenToWorld(200 + x, 200);
     this.tailTip = g_dialogue.dialogueLayer.screenToWorld(300 + x, 400);
     this.maxLineWidth = 200;
@@ -80,9 +80,10 @@ SpeechBubble.prototype = {
 	this.text = newText;
 	// newText is XML; parse out the style tags!
 	// TODO don't recreate the parser every time here
-	let parser = new DOMParser();
-	let dom = parser.parseFromString(newText, "text/xml");
-	let doc = dom.documentElement;
+	var parser = new DOMParser();
+	var dom = parser.parseFromString(newText, "text/xml");
+	var doc = dom.documentElement;
+	var node;
 	if (doc.nodeName == "parsererror") {
 	    // can't parse - take text literally
 	    this.style = "talk";
@@ -93,8 +94,8 @@ SpeechBubble.prototype = {
 	    this.style = doc.nodeName;
 	    // could be "talk", "thought", or "caption".
 	    this.textSpans = [];
-	    for (let i = 0; i < doc.childNodes.length; i++) {
-		let node = doc.childNodes[i];
+	    for (var i = 0; i < doc.childNodes.length; i++) {
+		node = doc.childNodes[i];
 		if (node.nodeValue != null) {
 		    this.textSpans.push( {words: node.nodeValue,
 				style: null} );
@@ -120,8 +121,8 @@ SpeechBubble.prototype = {
 	this.calcTail();
     },
     calcBoundingBox: function() {
-	let width = this.maxLineWidth + 2 * this.padding;
-	let height = this.lines.length * this.lineHeight + 2 * this.padding;
+	var width = this.maxLineWidth + 2 * this.padding;
+	var height = this.lines.length * this.lineHeight + 2 * this.padding;
 	if (width < 2 * (this.cornerRadius + this.padding)) {
 	    width = 2 * (this.cornerRadius + this.padding);
 	}
@@ -135,7 +136,7 @@ SpeechBubble.prototype = {
 	this.bottom = this.center.y + height/2;
     },
     getBoundingBox: function() {
-	let self = this;
+	var self = this;
 	return {left: self.left,
 		right: self.right,
 		top: self.top,
@@ -149,16 +150,17 @@ SpeechBubble.prototype = {
 	let lineWidth = 0;
 	let thisSegment = [];
 	let segmentWidth = 0;
-	for (let i = 0; i < this.textSpans.length; i++) {
-	    let words = this.textSpans[i].words.split(" ");
-	    let style = this.textSpans[i].style;
+	var words, style, thisWidth;
+	for (var i = 0; i < this.textSpans.length; i++) {
+	    words = this.textSpans[i].words.split(" ");
+	    style = this.textSpans[i].style;
 	    ctx.font = this.getFont(style);
-	    for (let j = 0; j < words.length; j++) {
+	    for (var j = 0; j < words.length; j++) {
 		if (words[j].length == 0) {
 		    continue;
 		}
 		// Don't forget to include width of the space!
-		let thisWidth = ctx.measureText(words[j] + " ").width;
+		thisWidth = ctx.measureText(words[j] + " ").width;
 		if (lineWidth + thisWidth > this.maxLineWidth) {
 		    thisLine.push({words: thisSegment.join(" "),
 				style: style,
@@ -194,8 +196,8 @@ SpeechBubble.prototype = {
 	    return;
 	}
 
-	let dx = this.tailTip.x - this.center.x;
-	let dy = this.tailTip.y - this.center.y;
+	var dx = this.tailTip.x - this.center.x;
+	var dy = this.tailTip.y - this.center.y;
 	// Intercept is the point where line from center to tailtip
 	// intersects border of balloon.
 	// Use intercept to calculate left and right tail base;
@@ -203,12 +205,12 @@ SpeechBubble.prototype = {
 	// intercept point unless that would make it too far left
 	// or right, in which case pin it within the bounds of
 	// that side.
-	let intercept = {x: 0, y: 0}; 
-	let interceptL, interceptR, interceptT, interceptB;
-	let interceptSide;
+	var intercept = {x: 0, y: 0}; 
+	var interceptL, interceptR, interceptT, interceptB;
+	var interceptSide;
 
 	// Decide what side of the bubble the tail comes out of:
-	let aspectRatio = (this.right-this.left)/(this.bottom-this.top);
+	var aspectRatio = (this.right-this.left)/(this.bottom-this.top);
 	// Aspect ratio matters because we want to favor the longer
 	// dimension - for bubbles wider than they are tall, we usually
 	// want tail on the top or bottom.
@@ -295,14 +297,15 @@ SpeechBubble.prototype = {
 	}
 	// Render each line in turn: Each line can have multiple
 	// segments (with different styles applied to them).
-	let x = (this.left + this.right)/2; // manual centering
-	let y = this.top + this.padding + (this.lineHeight/2);
+	var x = (this.left + this.right)/2; // manual centering
+	var y = this.top + this.padding + (this.lineHeight/2);
+	var lineWidth, segment;
 	ctx.fillStyle = "rgb(0, 0, 0)";
-	for (let i = 0; i < this.lines.length; i++) {
-	    let lineWidth = this.lineWidths[i];
+	for (var i = 0; i < this.lines.length; i++) {
+	    lineWidth = this.lineWidths[i];
 	    x = (this.left + this.right)/2  - (lineWidth)/2;
-	    for (let j = 0; j < this.lines[i].length; j++) {
-		let segment = this.lines[i][j];
+	    for (var j = 0; j < this.lines[i].length; j++) {
+		segment = this.lines[i][j];
 		ctx.font = this.getFont(segment.style);
 		ctx.fillText(segment.words, x, y);
 		x += segment.width;
@@ -311,8 +314,8 @@ SpeechBubble.prototype = {
 	}
     },
     renderCaption: function(ctx) {
-	let width = this.right - this.left;
-	let height = this.bottom - this.top;
+	var width = this.right - this.left;
+	var height = this.bottom - this.top;
 	ctx.fillRect(this.left, this.top, width, height);
 	ctx.strokeRect(this.left, this.top, width, height);
     },
@@ -321,30 +324,31 @@ SpeechBubble.prototype = {
 	// an outer ellipse, zigzag between them stochastically.
     },
     renderThought: function(ctx) {
-	let width = this.right - this.left;
-	let height = this.bottom - this.top;
-	let tailCenter;
-	let self = this;
+	var width = this.right - this.left;
+	var height = this.bottom - this.top;
+	var tailCenter;
+	var self = this;
 
 	// The curvy outline, using Parametric equation of ellipse:
 	// x = a * cos(t)
 	// y = b * sin(t)
 	// as t goes from 0 to 2pi.
-	let t = 0; 
-	let centerX = this.left + width/2;
-	let centerY = this.top + height/2;
-	let oldX = centerX + (width/2) * Math.cos(t);
-	let oldY = centerY + (height/2) * Math.sin(t);
+	var t = 0; 
+	var centerX = this.left + width/2;
+	var centerY = this.top + height/2;
+	var oldX = centerX + (width/2) * Math.cos(t);
+	var oldY = centerY + (height/2) * Math.sin(t);
+	var step, x, y, radius;
 	ctx.beginPath();
 	while (t < 2 * Math.PI) {
-	    let step = 0.2 + 0.2 * Math.random();
+	    step = 0.2 + 0.2 * Math.random();
 	    t += step;
 	    if (t >= 2*Math.PI) {
 		t = 2*Math.PI;
 	    }
-	    let x = centerX + (width/2) * Math.cos(t);
-	    let y = centerY + (height/2) * Math.sin(t);
-	    let radius = Math.sqrt((x-oldX)*(x-oldX) + (y-oldY)*(y-oldY));
+	    x = centerX + (width/2) * Math.cos(t);
+	    y = centerY + (height/2) * Math.sin(t);
+	    radius = Math.sqrt((x-oldX)*(x-oldX) + (y-oldY)*(y-oldY));
 	    ctx.arc(x, y, 3*radius/4, t - Math.PI/2, t + Math.PI/2, false);
 	    oldX = x;
 	    oldY = y;
@@ -454,8 +458,8 @@ function DialogueManager() {
     this.bubbles = [];
     this.dialogueLayer = new Layer(-1);
     this.dialogueLayer.setName( "Text Layer");
-    let manager = this;
-    let theLayer = this.dialogueLayer;
+    var manager = this;
+    var theLayer = this.dialogueLayer;
     theLayer.onRedraw = function(ctx) {
 	//manager.makeBubblesFromText();
 	manager.renderAllBubbles(ctx);
@@ -471,7 +475,7 @@ DialogueManager.prototype = {
 	if (!ctx) {
 	    ctx = this.dialogueLayer.getContext();
 	}
-	for (let i = 0; i < this.bubbles.length; i++) {
+	for (var i = 0; i < this.bubbles.length; i++) {
 	    this.bubbles[i].render(ctx);
 	}
     },
@@ -485,10 +489,13 @@ DialogueManager.prototype = {
     },
 
     makeBubblesFromText: function() {
-	let lines = this.allSpeech.split("\n");
-	let x;
+	// TODO this behaves oddly if you add a line to the middle
+	// or delete a line from the middle...  it thinks you modified
+	// every line after that.
+	var lines = this.allSpeech.split("\n");
+	var x;
 	lines = [lines[x] for (x in lines) if (lines[x].length > 0)];
-	for (let i = 0; i < lines.length; i++) {
+	for (var i = 0; i < lines.length; i++) {
 	    if (i < this.bubbles.length) {
 		// Modify text in existing bubbles...
 		this.bubbles[i].setText(lines[i]);
@@ -506,13 +513,14 @@ DialogueManager.prototype = {
     getGrabPt: function(x, y) {
 	// Balloons can be grabbed by: tailtip, right edge, left
 	// edge, or main body.
-	let margin = 15;
+	var margin = 15;
 	// go backwards through list so that balloons that appear
 	// frontmost (i.e. drawn last)
 	// get grabbed before ones in the back
-	for (let i = this.bubbles.length -1; i >= 0; i--) {
-	    let balloon = this.bubbles[i];
-	    let box = balloon.getBoundingBox();
+	var balloon, box;
+	for (var i = this.bubbles.length -1; i >= 0; i--) {
+	    balloon = this.bubbles[i];
+	    box = balloon.getBoundingBox();
 	    if (Math.abs( x - box.left) < margin &&
 		y > box.top && y < box.bottom) {
 		return {balloon: i,
@@ -560,9 +568,9 @@ textBalloonTool.getStrokeStyle = function() {
     return null;
 };
 textBalloonTool.down = function(ctx, x, y) {
-    let layer = g_dialogue.dialogueLayer;
-    let worldPt = layer.screenToWorld(x, y);
-    let grabbitation = g_dialogue.getGrabPt(worldPt.x, worldPt.y);
+    var layer = g_dialogue.dialogueLayer;
+    var worldPt = layer.screenToWorld(x, y);
+    var grabbitation = g_dialogue.getGrabPt(worldPt.x, worldPt.y);
     if (grabbitation) {
 	this.balloon = grabbitation.balloon;
 	this.controlPoint = grabbitation.controlPoint;
@@ -578,9 +586,10 @@ textBalloonTool.up = function(ctx, x, y) {
 };
 textBalloonTool.drag = function(ctx, x, y) {
     if ((this.balloon != null) && this.controlPoint) {
-	let balloon = g_dialogue.getBalloonByIndex(this.balloon);
-	let layer = g_dialogue.dialogueLayer;
-	let worldPt = layer.screenToWorld(x, y);
+	var balloon = g_dialogue.getBalloonByIndex(this.balloon);
+	var layer = g_dialogue.dialogueLayer;
+	var worldPt = layer.screenToWorld(x, y);
+	var dx;
 	this.lastControlPoint = this.controlPoint;
 	this.lastActionPoint = worldPt;
 	this.lastBalloon = this.balloon;
@@ -592,7 +601,7 @@ textBalloonTool.drag = function(ctx, x, y) {
             balloon.setCenter(worldPt);
 	    break;
 	case "leftEdge": case "rightEdge":
-            let dx = Math.abs(balloon.center.x - worldPt.x);
+            dx = Math.abs(balloon.center.x - worldPt.x);
 	    if (dx > balloon.cornerRadius) {
 		balloon.setWidth( 2 * dx );
 		this.lastActionPoint = {x: 2*dx, y: 0};
@@ -607,7 +616,7 @@ textBalloonTool.drag = function(ctx, x, y) {
     }
 };
 textBalloonTool.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
