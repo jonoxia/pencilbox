@@ -49,15 +49,13 @@ function StyleRecord(styleInfo) {
 StyleRecord.prototype = {
     apply: function(ctx) {
 	if (this.styleInfo.strokeStyle) {
-	    let strokeColor = this.styleInfo.strokeStyle.copy();
 	    // TODO opacity has to be applied elsewhere now
 	    //strokeColor.a *= opacity;
-	    ctx.strokeStyle = strokeColor.style;
+	    ctx.strokeStyle = this.styleInfo.strokeStyle.style;
 	}
 	if (this.styleInfo.fillStyle) {
-	    let fillColor = this.styleInfo.fillStyle.copy();
 	    //fillColor.a *= opacity;
-	    ctx.fillStyle = fillColor.style;
+	    ctx.fillStyle = this.styleInfo.fillStyle.style;
 	}
 	if (this.styleInfo.lineWidth) {
 	    ctx.lineWidth = this.styleInfo.lineWidth;
@@ -70,8 +68,8 @@ StyleRecord.prototype = {
 	}
     },
     toJSON: function() {
-	let styleInfo = {};
-	let self = this;
+	var styleInfo = {};
+	var self = this;
 	if (self.styleInfo.lineWidth != undefined) {
 	    styleInfo.lw = self.styleInfo.lineWidth;
 	}
@@ -89,6 +87,7 @@ StyleRecord.prototype = {
 	return styleInfo;
     },
     restoreFromJSON: function(styleInfo) {
+	var color;
 	this.styleInfo = {};
 	if (styleInfo.lw != undefined) {
 	    this.styleInfo.lineWidth = styleInfo.lw;
@@ -97,12 +96,12 @@ StyleRecord.prototype = {
 	    this.styleInfo.lineCap = styleInfo.lc;
 	}
 	if (styleInfo.strokeStyle != undefined) {
-	    let color = new Color();
+	    color = new Color();
 	    color.fromJSON(styleInfo.ss);
 	    this.styleInfo.strokeStyle = color;
 	}
 	if (styleInfo.fillStyle != undefined) {
-	    let color = new Color();
+	    color = new Color();
 	    color.fromJSON(styleInfo.fs);
 	    this.styleInfo.fillStyle = color;
 	}
@@ -123,17 +122,18 @@ DrawAction.prototype = {
     replay: function(newCtx) {
 	// call with no arguments to replay in original context, or
 	// pass in a context to draw into that context.
-	let ctx = newCtx ? newCtx : this.ctx;
+	var ctx = newCtx ? newCtx : this.ctx;
+	var opacity;
         if (this.pts.length > 0) {
 	    // TODO next line is slightly wrong: it always uses
 	    // this.layer - in some cases actions are replayed to
 	    // different layers than they started in so need to take
 	    // that into account.
-	    let opacity = this.layer.getOpacity();
+	    opacity = this.layer.getOpacity();
 	    this.styleRecord.apply(ctx);
 	    ctx.beginPath();
 	    ctx.moveTo(this.pts[0].x, this.pts[0].y);
-	    for (let i = 1; i < this.pts.length; i++) {
+	    for (var i = 1; i < this.pts.length; i++) {
 		ctx.lineTo(this.pts[i].x, this.pts[i].y);
 	    }
 	    if (this.isFill) {
@@ -145,17 +145,17 @@ DrawAction.prototype = {
     },
 
     toJSON: function() {
-	let self = this;
+	var self = this;
 	/* Can't save the layer to json as it's a live object ref
 	 * Instead, save the layerName which we can use to match
 	 * the action back up to the layer when reconstructing. */
 	// compress points to single array of ints:
-	let points = [];
-	for (let i = 0; i < self.pts.length; i++) {
+	var points = [];
+	for (var i = 0; i < self.pts.length; i++) {
 	    points.push( self.pts[i].x );
 	    points.push( self.pts[i].y );
 	}
-	let smallJSON = {t: "draw",
+	var smallJSON = {t: "draw",
 			 l: self.layer.getName(),
 			 p: points,
 			 s: self.styleRecord.toJSON()};
@@ -167,7 +167,7 @@ DrawAction.prototype = {
 
     restoreFromJSON: function(actionData) {
 	this.pts = [];
-	for (let i = 0; i < actionData.p.length; i += 2) {
+	for (var i = 0; i < actionData.p.length; i += 2) {
 	    this.pts.push( { x: actionData.p[i],
 			y: actionData.p[i+1]});
 	}
@@ -188,12 +188,12 @@ function EraserStrokeAction(layer, pointsList, size, isRound) {
 }
 EraserStrokeAction.prototype = {
     replay: function(newCtx) {
-	let ctx = newCtx ? newCtx : this.ctx;
+	var ctx = newCtx ? newCtx : this.ctx;
 	ctx.save();
 	if (this.isRound) {
 	    ctx.globalCompositeOperation = 'destination-out';
 	}
-	for (let i= 0; i < this.points.length; i++) {
+	for (var i= 0; i < this.points.length; i++) {
 	    if (this.isRound) {
 		ctx.beginPath();
 		ctx.arc(this.points[i].x,
@@ -211,7 +211,7 @@ EraserStrokeAction.prototype = {
     },
 
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return {t: "eraser",
 		l: self.layer.getName(),
 		p: points,
@@ -222,7 +222,7 @@ EraserStrokeAction.prototype = {
 
     restoreFromJSON: function(actionData) {
 	this.points = [];
-	for (let i = 0; i < actionData.p.length; i += 2) {
+	for (var i = 0; i < actionData.p.length; i += 2) {
 	    this.points.push( { x: actionData.p[i],
 			        y: actionData.p[i+1]});
 	}
@@ -241,7 +241,7 @@ ClearRegionAction.prototype = {
     replay: function(newCtx) {
 	// call with no arguments to replay in original context, or
 	// pass in a context to draw into that context.
-	let ctx = newCtx ? newCtx : this.ctx;
+	var ctx = newCtx ? newCtx : this.ctx;
 	/*let width = this.right - this.left;
 	let height = this.bottom - this.top;
 	ctx.clearRect(this.left, this.top, width, height);*/
@@ -254,7 +254,7 @@ ClearRegionAction.prototype = {
 	// TODO this gets illegal string when trying to recover saved
 	// drawing that has erasure in it?
 	ctx.moveTo(this.points[0].x, this.points[0].y);
-        for (let i= 1; i < this.points.length; i++) {
+        for (var i= 1; i < this.points.length; i++) {
 	    ctx.lineTo(this.points[i].x, this.points[i].y);
 	}
 	ctx.fill();
@@ -262,12 +262,12 @@ ClearRegionAction.prototype = {
     },
 
     toJSON: function() {
-	let self = this;
+	var self = this;
 	/* Can't save the layer to json as it's a live object ref
 	 * Instead, save the layerName which we can use to match
 	 * the action back up to the layer when reconstructing. */
-	let points = [];
-	for (let i = 0; i < self.points.length; i++) {
+	var points = [];
+	for (var i = 0; i < self.points.length; i++) {
 	    points.push( self.points[i].x );
 	    points.push( self.points[i].y );
 	}
@@ -279,7 +279,7 @@ ClearRegionAction.prototype = {
 
     restoreFromJSON: function(actionData) {
 	this.points = [];
-	for (let i = 0; i < actionData.p.length; i += 2) {
+	for (var i = 0; i < actionData.p.length; i += 2) {
 	    this.points.push( { x: actionData.p[i],
 			        y: actionData.p[i+1]});
 	}
@@ -297,8 +297,8 @@ function EllipseAction(layer, center, dx, dy, styleInfo, isFill) {
 }
 EllipseAction.prototype = {
     replay: function(newCtx) {
-	let ctx = newCtx ? newCtx : this.ctx;
-	let opacity = this.layer.getOpacity();
+	var ctx = newCtx ? newCtx : this.ctx;
+	var opacity = this.layer.getOpacity();
 	this.styleRecord.apply(ctx);
 	ctx.save();
 	ctx.translate(this.center.x, this.center.y);
@@ -313,7 +313,7 @@ EllipseAction.prototype = {
 	}
     },
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return {t: "clear",
 		l: self.layer.getName(),
 		x: self.center.x,
@@ -352,7 +352,7 @@ function PlopBitmapAction(layer, img, x, y, scaleFactor) {
 }
 PlopBitmapAction.prototype = {
     replay: function(newCtx) {
-	let ctx = newCtx ? newCtx : this.ctx;
+	var ctx = newCtx ? newCtx : this.ctx;
 	if (this.img != null) {
 	    ctx.save();
 	    ctx.translate( this.importPt.x,this.importPt.y);
@@ -365,7 +365,7 @@ PlopBitmapAction.prototype = {
     },
 
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return {t: "image",
 		l: self.layer.getName(),
 		p: self.importPt,
@@ -374,14 +374,15 @@ PlopBitmapAction.prototype = {
     },
     
     restoreFromJSON: function(actionData) {
-	let self = this;
+	var self = this;
+	var newImg;
 	if (actionData.p) {
 	    this.importPt = {x: actionData.p.x,
 			     y: actionData.p.y};
 	}
 	this.img = null;
 	if (actionData.u) {
-	    let newImg = new Image();
+	    newImg = new Image();
 	    self._url = actionData.u;
 	    newImg.src = actionData.u;
 	    newImg.onload = function() {
@@ -408,7 +409,7 @@ ChangeScriptAction.prototype = {
 
     toJSON: function() {
 
-	let self = this;
+	var self = this;
 	return {t: "script",
 		l: self.layer.getName(),
 	        text: self.newScript};
@@ -423,7 +424,7 @@ function MoveBalloonAction(balloonIndex, controlPoint, point) {
 };
 MoveBalloonAction.prototype = {
     replay: function(newCtx) {
-	let balloon = g_dialogue.getBalloonByIndex(this.balloonIndex);
+	var balloon = g_dialogue.getBalloonByIndex(this.balloonIndex);
 	switch(this.controlPoint) {
 	case "tailTip":
 	    balloon.setTailTip(this.point);
@@ -438,7 +439,7 @@ MoveBalloonAction.prototype = {
     },
 
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return {t: "balloon",
 		l: self.layer.getName(),
 		i: self.balloonIndex,
@@ -459,23 +460,23 @@ RectanglePanelAction.prototype = {
     replay: function(newCtx) {
 	// TODO this only works for rectangle panels -- will need
 	// another type of action for polygon and round panels.
+	var self = this;
 	if (g_panels) {
 	    panel = g_panels.getPanelById(this._panelId);
 	    if (panel) {
 		panel.setLocation(this._left, this._top, 
 				  this._width, this._height);
 	    } else {
-		let id = this._panelId;
 		g_panels.pushPanel( new RectanglePanel(this._left,
 						       this._top,
 						       this._width,
 						       this._height,
-						       {id: id}));
+						       {id: self._panelId}));
 	    }
 	}
     },
     toJSON: function() {
-	let self = this;
+	var self = this;
 	return {t: "rectanglePanel",
 		l: self.layer.getName(),
 		i: self._panelId,
@@ -500,6 +501,7 @@ History.prototype = {
 			 " items, pointer is at " + this.currPtr);
 			 },*/
     pushAction: function( action ) {
+        var self = this;
 	if (!action) {
 	    return;
 	}
@@ -513,7 +515,6 @@ History.prototype = {
 	debug("Action pushed - currPtr now " + this.currPtr);
 
 	// History modified, so start autosave timer
-        let self = this;
         $("#autosave-status").html("needs autosave");
         if (this._autosaveTimer) {
             clearTimeout(this._autosaveTimer);
@@ -524,8 +525,8 @@ History.prototype = {
     },
 
     replayActions: function() {
-	let str = "Replaying actions ";
-	for (let i = 0; i < this.currPtr; i++) {
+	var str = "Replaying actions ";
+	for (var i = 0; i < this.currPtr; i++) {
 	    this.actionList[i].replay();
 	    str += i + ", ";
 	}
@@ -534,7 +535,7 @@ History.prototype = {
     replayActionsForLayer: function(layer, overrideCtx) {
 	// If overrideCtx is not provided, it will replay the actions
 	// to the layer's own context.
-	for (let i = 0; i < this.currPtr; i++) {
+	for (var i = 0; i < this.currPtr; i++) {
 	    if (!this.actionList[i]) {
 		//$("#debug").html("Null action at " + i);
 		// TODO confirmed: Panel move actions and speechbubble move actions
@@ -574,11 +575,12 @@ History.prototype = {
 	 * serialize the checkpoint bitmap plus any actions past
 	 * the checkpoint...) */
 
-	let historyObj = {};
+	var historyObj = {};
+	var jsonObj;
 	historyObj.currPtr = this.currPtr;
 	historyObj.actions = [];
-	for (let i = 0; i < this.actionList.length; i++) {
-	    let jsonObj = this.actionList[i].toJSON();
+	for (var i = 0; i < this.actionList.length; i++) {
+	    var jsonObj = this.actionList[i].toJSON();
 	    historyObj.actions.push(jsonObj);
 	}
 	return JSON.stringify(historyObj);
@@ -586,18 +588,19 @@ History.prototype = {
 
     recreate: function(historyString) {
 	debug("History string is " + historyString);
-	let historyObj = JSON.parse(historyString);
+	var historyObj = JSON.parse(historyString);
+	var actionData, layerName, layer, action;
 	// Layers must already have been recreated when this
 	// is called.
 	this.actionList = [];
-	for (let i = 0; i < historyObj.actions.length; i++) {
-	    let actionData = historyObj.actions[i];
-	    let layerName = actionData.l;
-	    let layer = g_drawInterface.getLayerByName(layerName);
+	for (var i = 0; i < historyObj.actions.length; i++) {
+	    actionData = historyObj.actions[i];
+	    layerName = actionData.l;
+	    layer = g_drawInterface.getLayerByName(layerName);
 	    if (!layer) {
 		continue;
 	    }
-	    let action;
+	    action;
 	    // TODO all action constructors should be able to be called
 	    // with just layer as an argument and all the others undefined,
 	    // and then restore using the restoreFromJSON function. That
@@ -650,8 +653,8 @@ History.prototype = {
     saveToLocalStorage: function() {
 	// TODO this needs to save based on name!
 	debug("Saving to local storage...");
-	let historyString = this.serialize();
-	let layerString = g_drawInterface.serializeLayers();
+	var historyString = this.serialize();
+	var layerString = g_drawInterface.serializeLayers();
 	window.localStorage.setItem("history", historyString);
 	window.localStorage.setItem("layers", layerString);
 	$("#debug").html("Saved.");
@@ -660,10 +663,11 @@ History.prototype = {
 
     loadFromLocalStorage: function() {
 	$("#debug").html("Loading from local storage...");
-	let layerString = window.localStorage.getItem("layers");
-	let historyString = window.localStorage.getItem("history");
+	var layerString = window.localStorage.getItem("layers");
+	var historyString = window.localStorage.getItem("history");
+	var str;
 	if (!layerString || !historyString || layerString == "" || historyString == "") {
-	    let str = "";
+	    str = "";
 	    if (!layerString || layerString == "") {
 		str += "No layer string.";
 	    }
@@ -679,10 +683,10 @@ History.prototype = {
     },
 
     saveToServer: function(title, callback) {
-	let historyString = this.serialize();
-	let size = Math.floor( historyString.length / 1000 );
-	let layerString = g_drawInterface.serializeLayers();
-	let json = {title: title,
+	var historyString = this.serialize();
+	var size = Math.floor( historyString.length / 1000 );
+	var layerString = g_drawInterface.serializeLayers();
+	var json = {title: title,
 		    history: historyString,
 		    layers: layerString};
 	jQuery.ajax({url: "save.py",
@@ -700,11 +704,12 @@ History.prototype = {
     },
 
     loadFromServer: function(title, callback) {
-	let self = this;
+	var self = this;
+	var size;
 	jQuery.getJSON("load.py", {title: title}, function(data) {
 		if (data.layers != "" && data.history != "") {
 		    g_drawInterface.recreateLayers(data.layers);
-		    let size = Math.floor( data.history.length / 1000 );
+		    size = Math.floor( data.history.length / 1000 );
 		    self.recreate(data.history);
 		    debug("Loaded from server! " + size + "kb");
 		    callback();
@@ -723,7 +728,7 @@ History.prototype = {
     restartAutosaveTimer: function() {
         // TODO have interface.js call this when panning, zooming,
         // switching tools, and other non-modifying activities
-        let self = this;
+        var self = this;
         if (this._autosaveTimer) {
             clearTimeout(this._autosaveTimer);
             this._autosaveTimer = setTimeout(function() {
@@ -733,7 +738,7 @@ History.prototype = {
     },
 
     autosave: function() {
-        let title = $("#page-title").html();
+        var title = $("#page-title").html();
         debug("Autosaving as " + title);
 	this._autosaveTimer = null;
         this.saveToServer(title, function(success) {
