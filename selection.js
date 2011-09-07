@@ -104,7 +104,7 @@ function SelectionManager() {
 
     this.selectionLayer = new Layer(-2, {hidden: true});
     this.selectionLayer.setName("Selection");
-    let manager = this;
+    var manager = this;
     this.selectionLayer.onRedraw = function(ctx) {
 	manager.drawSelection(ctx);
     };
@@ -112,8 +112,8 @@ function SelectionManager() {
     this._selectionCtx = this.selectionLayer.getContext();
 
     // Selection Menu:
-    let self = this;
-    let selectionMenuItemList = [
+    var self = this;
+    var selectionMenuItemList = [
                     {name: "Clear", icon: "icons/32x32/Erase.png",
 		     execute: function() {self.clearSelectionCmd();}},
 		    {name: "Rotate", icon: "icons/32x32/Rotation.png",
@@ -147,7 +147,7 @@ function SelectionManager() {
      */
 
     // Two-finger gestures on selection:
-    let library = {
+    var library = {
 	oneFinger: [],
 	twoFingers: {
 	    pinch: function(ratio) {
@@ -188,17 +188,17 @@ SelectionManager.prototype = {
 	}
     },
     isScreenPtInsideSelection: function(x, y) {
-	let pt = this.selectionLayer.screenToWorld(x, y);
+	var pt = this.selectionLayer.screenToWorld(x, y);
 	return this.isWorldPtInsideSelection(pt.x, pt.y);
     },
 
     _getBoundingRectForPath: function(clippingPath) {
-	let clipRect = {left:  clippingPath[0].x,
+	var clipRect = {left:  clippingPath[0].x,
 			right: clippingPath[0].x,
 			top: clippingPath[0].y,
 			bottom: clippingPath[0].y};
 
-	for (let i = 1; i < clippingPath.length; i++) {
+	for (var i = 1; i < clippingPath.length; i++) {
 	    if (clipRect.left > clippingPath[i].x) 
 		clipRect.left = clippingPath[i].x;
 	    if (clipRect.right < clippingPath[i].x) 
@@ -212,8 +212,8 @@ SelectionManager.prototype = {
     },
 
     deepCopyPath: function(path) {
-	let newPath = [];
-	for (let i = 0; i < path.length; i++) {
+	var newPath = [];
+	for (var i = 0; i < path.length; i++) {
 	    newPath.push({x: path[i].x, y: path[i].y});
 	}
 	return newPath;
@@ -228,13 +228,13 @@ SelectionManager.prototype = {
 	this._selectionPresent = true;
 
 	// new selections need to start at 100%
-	let currentZoom = g_drawInterface.activeLayer.getZoomLevel();
+	var currentZoom = g_drawInterface.activeLayer.getZoomLevel();
 	this.selectionLayer._scale = currentZoom; // breaks encapsulation
 
 	// For now assume clippingPath is a rectangle.
 	// what we actually get passed is a list of points.
 	this._clippingPath = clippingPath;
-	let clipRect = this._getBoundingRectForPath(clippingPath);
+	var clipRect = this._getBoundingRectForPath(clippingPath);
 	this._clipRect = clipRect;
 	this._parentLayer = parentLayer;
 
@@ -242,19 +242,19 @@ SelectionManager.prototype = {
 	// clearing of the region, of course!) into the selection
 	// context with the clip region set, then snapshot that
 	// as a PNG:
-	let imgDataUrl = this.selectionLayer.pngSnapshot(parentLayer,
+	var imgDataUrl = this.selectionLayer.pngSnapshot(parentLayer,
 							 clipRect,
 							 clippingPath);
 
 	// Clear clipping path on parent layer!
-	let clearPath = this.deepCopyPath(clippingPath);
-	let clear = new ClearRegionAction(parentLayer, clearPath);
+	var clearPath = this.deepCopyPath(clippingPath);
+	var clear = new ClearRegionAction(parentLayer, clearPath);
 	g_history.pushAction(clear);
 	parentLayer.doActionNow(clear);
 	
 	// Draw image in selection layer:
 	this._selectionImg = new Image();
-	let self = this;
+	var self = this;
 	this._selectionImg.onload = function() {
 	    self.selectionLayer.updateDisplay();
 	}
@@ -266,7 +266,7 @@ SelectionManager.prototype = {
 	this._clipRect.right += dx;
 	this._clipRect.top += dy;
 	this._clipRect.bottom += dy;
-        for (let i= 0; i < this._clippingPath.length; i++) {
+        for (var i= 0; i < this._clippingPath.length; i++) {
 	    this._clippingPath[i].x += dx;
 	    this._clippingPath[i].y += dy;
 	}
@@ -283,9 +283,9 @@ SelectionManager.prototype = {
 	// Create a new action in history importing the dropped
 	// selection picture contents into the target layer, with the
 	// transforms applied!
-	let wpt = this.selectionLayer.screenToWorld( this._clipRect.left,
+	var wpt = this.selectionLayer.screenToWorld( this._clipRect.left,
                                                      this._clipRect.top);
-	let action = new PlopBitmapAction(targetLayer,
+	var action = new PlopBitmapAction(targetLayer,
 		                          this._selectionImg,
                                           wpt.x, wpt.y,
 					  this._scaleFactor);
@@ -305,13 +305,13 @@ SelectionManager.prototype = {
 	if (!this._selectionPresent || !this._selectionImg) {
 	    return;
 	}
-	let clipRect = this._clipRect;
+	var clipRect = this._clipRect;
 	ctx.drawImage(this._selectionImg, clipRect.left, clipRect.top);
 	// Draw translucent black square around selection
 	ctx.fillStyle = Colors.translucentYellow.style;
 	ctx.beginPath();
 	ctx.moveTo(this._clippingPath[0].x, this._clippingPath[0].y);
-        for (let i= 1; i < this._clippingPath.length; i++) {
+        for (var i= 1; i < this._clippingPath.length; i++) {
 	    ctx.lineTo(this._clippingPath[i].x, this._clippingPath[i].y);
 	}
 	ctx.fill();
@@ -332,7 +332,7 @@ SelectionManager.prototype = {
     dupeSelectionCmd: function() {
 	// Create a new action in history importing the dropped
 	// selection picture contents into the target layer.
-	let action = new PlopBitmapAction(this._parentLayer,
+	var action = new PlopBitmapAction(this._parentLayer,
 					  this._selectionImg,
 					  this._clipRect.left,
 					  this._clipRect.top,
@@ -431,9 +431,9 @@ selectionMovingTool.drag = function(ctx, x, y) {
 	if (g_selection.selectionPresent) {
 	    // convert screen to world so the drag distance
 	    // is correct even if zoomed
-	    let layer = g_selection.selectionLayer;
-	    let oldPt = layer.screenToWorld(this.lastX, this.lastY);
-	    let newPt = layer.screenToWorld(x, y);
+	    var layer = g_selection.selectionLayer;
+	    var oldPt = layer.screenToWorld(this.lastX, this.lastY);
+	    var newPt = layer.screenToWorld(x, y);
 	    g_selection.moveSelection(newPt.x - oldPt.x,
 				      newPt.y - oldPt.y);
 	    this.lastX = x;
@@ -456,7 +456,7 @@ selectionMovingTool.resetRecordedAction = function() {
 rectSelect = new Tool(0);
 rectSelect._moveMode = false;
 rectSelect.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -479,8 +479,8 @@ rectSelect.up = function(ctx, x, y) {
 	this.endX = x;
 	this.endY = y;
 
-	let pointList = [];
-	let layer = g_selection.selectionLayer;
+	var pointList = [];
+	var layer = g_selection.selectionLayer;
 	pointList.push(layer.screenToWorld(this.startX, this.startY));
 	pointList.push(layer.screenToWorld(this.startX, this.endY));
 	pointList.push(layer.screenToWorld(this.endX, this.endY));
@@ -488,7 +488,7 @@ rectSelect.up = function(ctx, x, y) {
 	pointList.push(layer.screenToWorld(this.startX, this.startY));
 	
 	if (g_selection) {
-	    let activeLayer = g_drawInterface.getActiveLayer();
+	    var activeLayer = g_drawInterface.getActiveLayer();
 	    g_selection.createSelection(pointList,
 					activeLayer);
 	}
@@ -527,7 +527,7 @@ rectSelect.resetRecordedAction = function() {
 lasso = new Tool(0);
 lasso._moveMode = false;
 lasso.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -547,16 +547,16 @@ lasso.up = function(ctx, x, y) {
     if (this._moveMode) {
 	selectionMovingTool.up(ctx, x, y);
     } else if (this.inProgress) {
-	let layer = g_selection.selectionLayer;
+	var layer = g_selection.selectionLayer;
 	this.points.push({x: x, y: y});
 
-	let worldPts = [];
-        for (let i= 0; i < this.points.length; i++) {
+	var worldPts = [];
+        for (var i= 0; i < this.points.length; i++) {
 	    worldPts.push(layer.screenToWorld(this.points[i].x,
 					      this.points[i].y));
 	}	
 	if (g_selection) {
-	    let activeLayer = g_drawInterface.getActiveLayer();
+	    var activeLayer = g_drawInterface.getActiveLayer();
 	    g_selection.createSelection(worldPts, activeLayer);
 	}
     }
@@ -572,7 +572,7 @@ lasso.drag = function(ctx, x, y) {
 	ctx.beginPath();
 	ctx.strokeStyle = Colors.yellow.style;
 	ctx.lineWidth = 1.0;
-	let lastPt = this.points[this.points.length - 1];
+	var lastPt = this.points[this.points.length - 1];
 	ctx.moveTo(lastPt.x, lastPt.y);
 	ctx.lineTo(x, y);
 	ctx.stroke();
@@ -601,7 +601,7 @@ magicWand = new Tool(1.0, [{name: "tolerance",
 			   type: "scale", defawlt: 0}]);
 magicWand._moveMode = false;
 magicWand.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -620,14 +620,14 @@ magicWand.up = function(ctx, x, y) {
 	$("#debug").html("Magic wand up (select mode)");
 	// do it here: Find borders of region of same color, turn it
 	// into a selection.
-	let layer = g_drawInterface.getActiveLayer();
-	let ctx = layer.getContext();
-	let bm = new BitManipulator(ctx, layer.width, layer.height);
-	let tolerance = this.options.getValue("tolerance");
-	let megaPoints = edgeFindingAlgorithm(bm, x, y, tolerance);
+	var layer = g_drawInterface.getActiveLayer();
+	var ctx = layer.getContext();
+	var bm = new BitManipulator(ctx, layer.width, layer.height);
+	var tolerance = this.options.getValue("tolerance");
+	var megaPoints = edgeFindingAlgorithm(bm, x, y, tolerance);
 
-	let worldPts = [];
-        for (let i= 0; i < megaPoints.length; i++) {
+	var worldPts = [];
+        for (var i= 0; i < megaPoints.length; i++) {
 	    worldPts.push(layer.screenToWorld(megaPoints[i].x,
 					      megaPoints[i].y));
 	}	

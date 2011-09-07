@@ -143,13 +143,13 @@ SpeechBubble.prototype = {
 		bottom: self.bottom};
     },
     wrapText: function() {
-	let ctx = g_dialogue.dialogueLayer.getContext();
-	let lines = [];
+	var ctx = g_dialogue.dialogueLayer.getContext();
+	var lines = [];
 	this.lineWidths = [];
-	let thisLine = [];
-	let lineWidth = 0;
-	let thisSegment = [];
-	let segmentWidth = 0;
+	var thisLine = [];
+	var lineWidth = 0;
+	var thisSegment = [];
+	var segmentWidth = 0;
 	var words, style, thisWidth;
 	for (var i = 0; i < this.textSpans.length; i++) {
 	    words = this.textSpans[i].words.split(" ");

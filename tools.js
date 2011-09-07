@@ -1,57 +1,100 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License
+ * at http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Pencilbox.
+ *
+ * The Initial Developer of the Original Code is Jono Xia.
+ * Portions created by the Initial Developer are Copyright (C) 2007
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ *   Jono X <jono@mozilla.com>
+ *
+ * Alternatively, the contents of this file may be used under the
+ * terms of either the GNU General Public License Version 2 or later
+ * (the "GPL"), or the GNU Lesser General Public License Version 2.1
+ * or later (the "LGPL"), in which case the provisions of the GPL or
+ * the LGPL are applicable instead of those above. If you wish to
+ * allow use of your version of this file only under the terms of
+ * either the GPL or the LGPL, and not to allow others to use your
+ * version of this file under the terms of the MPL, indicate your
+ * decision by deleting the provisions above and replace them with the
+ * notice and other provisions required by the GPL or the LGPL. If you
+ * do not delete the provisions above, a recipient may use your
+ * version of this file under the terms of any one of the MPL, the GPL
+ * or the LGPL.
+ *
+ * ***** END LICENSE BLOCK ***** */
+
 function ToolOptions(optList) {
     // expects like [{name: "filled", type: "bool", defawlt: false}]
     this._optList = optList;
     this._values = {};
-    for (let x = 0; x < optList.length; x++) {
+    for (var x = 0; x < optList.length; x++) {
 	this._values[optList[x].name] = optList[x].defawlt;
     }
 }
 ToolOptions.prototype = {
-    generateHtml: function(rootElem) {
-	$("#tool-opts").empty();
-	let self = this;
-	for (let x = 0; x < this._optList.length; x++) {
-	    let ctrl;
-	    let key = this._optList[x].name;
-	    let curVal = this._values[key];
-	    switch (this._optList[x].type) {
-	    case "bool":
+    _generateHtmlForKey: function(key, type) {
+        var ctrl;
+	var self = this;
+	var curVal = this._values[key];
+	switch (type) {
+	case "bool":
 	    ctrl = $("<input type=\"checkbox\">");
 	    ctrl.change(function() {
-		    self.setValue(key, ctrl.attr("checked"));
-		    g_toolInterface.updateToolImage();
-		});
+               self.setValue(key, ctrl.attr("checked"));
+               g_toolInterface.updateToolImage();
+            });
 	    if (curVal) {
 		ctrl.attr("checked", true);
 	    } else {
 		ctrl.attr("checked", false);
 	    }
 	    break;
-	    case "scale":
-	    // A 0 - 100 scale
-		// TODO make this some kind of draggable slider thing
-		// instead of a drop-down box, and give it more
-		// inbetween values!
-		ctrl = $("<select><option value='100'>100%</option>" +
-			 "<option value='75'>75%</option>" +
-			 "<option value='50'>50%</option>" +
-			 "<option value='25'>25%</option>" +
-			 "<option value='0'>0%</option></select>");
-		ctrl.change(function() {
-		  let selected = ctrl.children("option:selected").first();
-		  self.setValue(key, parseInt(selected.val()));
-		  g_toolInterface.updateToolImage();
-	        });
-		// Initially select the option corresponding to
-		// current value:
-		ctrl.children().each(function() {
-			if ($(this).attr("value") == curVal) {
-			    $(this).attr("selected", true);
-			}
-		    });
+        case "scale":
+         // A 0 - 100 scale
+         // TODO make this some kind of draggable slider thing
+         // instead of a drop-down box, and give it more
+         // inbetween values!
+            ctrl = $("<select><option value='100'>100%</option>" +
+		     "<option value='75'>75%</option>" +
+                     "<option value='50'>50%</option>" +
+                     "<option value='25'>25%</option>" +
+                     "<option value='0'>0%</option></select>");
+            ctrl.change(function() {
+                var selected = ctrl.children("option:selected").first();
+                self.setValue(key, parseInt(selected.val()));
+                g_toolInterface.updateToolImage();
+            });
+            // Initially select the option corresponding to
+            // current value:
+            ctrl.children().each(function() {
+                if ($(this).attr("value") == curVal) {
+                    $(this).attr("selected", true);
+                }
+            });
 	    break;
-	    }
-	    $("#tool-opts").append(ctrl);
+        }
+        return ctrl;
+    },
+    generateHtml: function() {
+	$("#tool-opts").empty();
+	var key, type;
+	for (var x = 0; x < this._optList.length; x++) {
+	    key = this._optList[x].name;
+	    type = this._optList[x].type;
+            $("#tool-opts").append(this._generateHtmlForKey(key, type));
 	    $("#tool-opts").append($("<span>" + key + "</span><br/>"));
 	}
     },
@@ -79,8 +122,9 @@ function Tool(defaultSize, optList) {
 }
 Tool.prototype = {
     generateOptionHtml: function(rootElem) {
+	// TODO rootElem not used
 	if (this.options) {
-	    this.options.generateHtml(rootElem);
+	    this.options.generateHtml();
 	} else {
 	    $("#tool-opts").empty();
 	}
@@ -144,19 +188,19 @@ Tool.prototype = {
     },
 
     getRecordedAction: function() {
-	let activeLayer = g_drawInterface.getActiveLayer();
-	let self = this;
-	let fill = false;
+	var activeLayer = g_drawInterface.getActiveLayer();
+	var self = this;
+	var fill = false;
 	if (this.options && this.options.getValue("fill")) {
 	    fill = true;
 	}
 
-	let styles = {lineWidth: self.size,
+	var styles = {lineWidth: self.size,
 		      strokeStyle: self.getStrokeStyle(),
 		      lineCap: self.getLineCap(),
 	              lineJoin: self.getLineJoin(),
 		      fillStyle: g_toolInterface.getPaintColor()};
-	let worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
+	var worldPts = activeLayer.screenToWorldMulti(this.actionPoints,
 						      this.sizeIsOdd());
 	return new DrawAction(activeLayer, worldPts, styles, fill);
     },
@@ -170,7 +214,7 @@ Tool.prototype = {
     }
 }
 
-let pen = new Tool(1.0, [{name: "fill",
+var pen = new Tool(1.0, [{name: "fill",
 			   type: "bool", defawlt: false}]);
 pen.display = function(penCtx, x, y) {
     penCtx.beginPath();
@@ -181,7 +225,7 @@ pen.display = function(penCtx, x, y) {
 pen.drawCursor = pen.display;
 
 
-let eraser = new Tool(10.0, [{name: "round",
+var eraser = new Tool(10.0, [{name: "round",
 			      type: "bool", defawlt: false}]);
 // This is a square eraser that erases to transparent
 // Could also have round one: beginPath() arc() clearPath())
@@ -216,18 +260,18 @@ eraser.drag = function(ctx, x, y) {
     this.actionPoints.push( {x: x, y: y} );
 };
 eraser.getRecordedAction = function() {
-    let activeLayer = g_drawInterface.getActiveLayer();
+    var activeLayer = g_drawInterface.getActiveLayer();
     // Scale down the eraser when you zoom in, so it stays the
     // same size on screen and you can do precision erasing:
-    let width = this.size / g_drawInterface.getZoomLevel();
+    var width = this.size / g_drawInterface.getZoomLevel();
     // TODO round off width to some kind of whole number?
-    let points = activeLayer.screenToWorldMulti(this.actionPoints, false);
+    var points = activeLayer.screenToWorldMulti(this.actionPoints, false);
     return new EraserStrokeAction(activeLayer, points,
 				  width, this.options.getValue("round"));
 };
 
 
-let line = new Tool(1.0);
+var line = new Tool(1.0);
 line.display = function(penCtx, x, y) {
     penCtx.strokeStyle= this.getStrokeStyle().style;
     penCtx.lineWidth = this.size;
@@ -265,7 +309,7 @@ line.drawCursor = function(ctx, x, y) {
     }
 };
 
-let bucket = new Tool(0, [{name: "tolerance",
+var bucket = new Tool(0, [{name: "tolerance",
 			   type: "scale", defawlt: 0},
                           {name: "ignore other layers",
                            type: "bool", defawlt: true}]);
@@ -273,7 +317,7 @@ let bucket = new Tool(0, [{name: "tolerance",
 bucket.paintAction = null;
 bucket.tmpLayer = null;
 bucket.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -282,8 +326,8 @@ bucket.display = function(penCtx, x, y) {
 bucket.down = function(ctx, x, y, isDblClick) {
 };
 bucket.up = function(ctx, x, y) {
-    let parentLayer = g_drawInterface.getActiveLayer();
-    let tolerance = this.options.getValue("tolerance");
+    var parentLayer = g_drawInterface.getActiveLayer();
+    var tolerance = this.options.getValue("tolerance");
 
     // Create the temp layer if it doesn't already exist:
     if (this.tmpLayer == null) {
@@ -300,13 +344,13 @@ bucket.up = function(ctx, x, y) {
      * the paint fill, which will be captured as a data url and turned 
      * into a plopBitmapAction. */
     this.tmpLayer.clearLayer();
-    let paintCtx = this.tmpLayer.getContext();
+    var paintCtx = this.tmpLayer.getContext();
 
     // TODO if the obey lines from other layers option is turned on,
     // then also replay those other layers into the paint context.
     g_history.replayActionsForLayer(parentLayer, paintCtx);
 
-    let bm = new BitManipulator(paintCtx, this.tmpLayer.width,
+    var bm = new BitManipulator(paintCtx, this.tmpLayer.width,
                                 this.tmpLayer.height);
 
     // We've got the bit data, now clear the tmp layer and paint it in
@@ -314,17 +358,17 @@ bucket.up = function(ctx, x, y) {
     paintCtx.strokeStyle = g_toolInterface.getPaintColor().style;
     // tmpLayer doesn't share parentLayer's transform, so de-transform
     // the location of the click:
-    let worldPt = parentLayer.screenToWorld(x, y);
-    let fillMap = betterEdgeFinder(paintCtx, bm, worldPt.x, worldPt.y,
+    var worldPt = parentLayer.screenToWorld(x, y);
+    var fillMap = betterEdgeFinder(paintCtx, bm, worldPt.x, worldPt.y,
                                    tolerance);
 
     // TODO optimization: clip layer to size of bounding rectangle
     // of filled region (see layer.pngSnapshot) to make the
     // resulting png smaller
-    let pngDataUrl = this.tmpLayer.displayCanvas.toDataURL("image/png");
+    var pngDataUrl = this.tmpLayer.displayCanvas.toDataURL("image/png");
 
-    let paintPng = new Image();
-    let paintAction = new PlopBitmapAction(parentLayer, paintPng,
+    var paintPng = new Image();
+    var paintAction = new PlopBitmapAction(parentLayer, paintPng,
                                            0, 0, 1);
     paintPng.onload = function() {
 	parentLayer.doActionNow(paintAction);
@@ -347,7 +391,7 @@ bucket.getRecordedAction = function() {
     return null;
 };
 
-let rectangle = new Tool(1.0, [{name: "fill", type: "bool",
+var rectangle = new Tool(1.0, [{name: "fill", type: "bool",
 				defawlt: false}]);
 rectangle.display = function(penCtx, x, y) {
     penCtx.clearRect(x - 20, y - 20, 40, 40);
@@ -400,7 +444,7 @@ rectangle.drawCursor = function(ctx, x, y) {
     }
 };
 rectangle.getRecordedAction = function() {
-    let self = this;
+    var self = this;
     this.actionPoints = [
         {x: self.startX, y: self.startY},
         {x: self.startX, y: self.endY},
@@ -413,7 +457,7 @@ rectangle.resetRecordedAction = function() {
     // Nothing to do
 };
 
-let ellipse = new Tool(1.0, [{name: "fill", type: "bool",
+var ellipse = new Tool(1.0, [{name: "fill", type: "bool",
 			      defawlt: false},
 {name: "circle", type: "bool", defawlt: false},
 {name: "center", type: "bool", defawlt: true}]);
@@ -450,8 +494,8 @@ ellipse.drawCursor = function(ctx, x, y) {
     }
 };
 ellipse._getDimensions = function(x, y) {
-    let dx = Math.abs(x - this.startX);
-    let dy = Math.abs(y - this.startY);
+    var dx = Math.abs(x - this.startX);
+    var dy = Math.abs(y - this.startY);
     if (dx == 0 || dy == 0) {
 	return null;
     }
@@ -465,7 +509,7 @@ ellipse._getDimensions = function(x, y) {
     return {dx: dx, dy: dy};
 };
 ellipse._drawEllipse = function(ctx, x, y) {
-    let dimensions = this._getDimensions(x, y);
+    var dimensions = this._getDimensions(x, y);
     if (dimensions == null) {
 	return;
     }
@@ -485,23 +529,23 @@ ellipse._drawEllipse = function(ctx, x, y) {
     }
 };
 ellipse.getRecordedAction = function() {
-    let activeLayer = g_drawInterface.getActiveLayer();
-    let dimensions = this._getDimensions(this.endX, this.endY);
+    var activeLayer = g_drawInterface.getActiveLayer();
+    var dimensions = this._getDimensions(this.endX, this.endY);
     if (dimensions == null) {
 	return null;
     }
-    let dx = dimensions.dx / g_drawInterface.getZoomLevel();
-    let dy = dimensions.dy / g_drawInterface.getZoomLevel();
-    let worldCenter = activeLayer.screenToWorld(this.startX,
+    var dx = dimensions.dx / g_drawInterface.getZoomLevel();
+    var dy = dimensions.dy / g_drawInterface.getZoomLevel();
+    var worldCenter = activeLayer.screenToWorld(this.startX,
 						this.startY);
-    let self = this;
-    let styleInfo = {
+    var self = this;
+    var styleInfo = {
 	lineWidth: self.size,
 	strokeStyle: self.getStrokeStyle(),
 	lineCap: self.getLineCap(),
 	lineJoin: self.getLineJoin(),
 	fillStyle: g_toolInterface.getPaintColor()};
-    let isFill = this.options.getValue("fill");
+    var isFill = this.options.getValue("fill");
     return new EllipseAction(activeLayer, worldCenter, dx, dy,
 			     styleInfo, isFill);
 };
@@ -510,12 +554,12 @@ ellipse.resetRecordedAction = function() {
 };
 
 
-let paintbrush = new Tool(10.0, [{name: "opacity", type: "scale",
+var paintbrush = new Tool(10.0, [{name: "opacity", type: "scale",
 				  defawlt: 50}]);
 // TODO paintbrush needs a way to set messiness
 // as well as size and opacity... but we have to define 'messiness' first.
 paintbrush.getStrokeStyle = function() {
-    let color = g_toolInterface.getPaintColor().copy();
+    var color = g_toolInterface.getPaintColor().copy();
     color.a = this.options.getValue("opacity") / 100;
     return color;
 };
@@ -526,7 +570,7 @@ paintbrush.getLineJoin = function() {
     return "round";
 };
 paintbrush.display = function(penCtx, x, y) {
-    let displaySize = this.size * g_drawInterface.getZoomLevel();
+    var displaySize = this.size * g_drawInterface.getZoomLevel();
     penCtx.beginPath();
     penCtx.arc(x, y, displaySize/2, 0, 2*Math.PI, true);
     penCtx.fillStyle=this.getStrokeStyle().style;
@@ -538,14 +582,14 @@ paintbrush.display = function(penCtx, x, y) {
 paintbrush.drawCursor = paintbrush.display;
 paintbrush.drag = function(ctx, x, y) {
     // Preview on cursor context, not main draw context!
-    let ctx = g_drawInterface.cursorCtx;
+    var ctx = g_drawInterface.cursorCtx;
     // Multiply lineWidth by current scaling factor for preview width:
     ctx.lineWidth = this.size * g_drawInterface.getZoomLevel();
     ctx.lineCap = this.getLineCap();
     ctx.lineJoin = this.getLineJoin();
     ctx.beginPath();
     ctx.moveTo(this.actionPoints[0].x, this.actionPoints[0].y);
-    for (let i = 1; i < this.actionPoints.length; i++) {
+    for (var i = 1; i < this.actionPoints.length; i++) {
 	ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
     }
     ctx.strokeStyle = this.getStrokeStyle().style;
@@ -554,9 +598,9 @@ paintbrush.drag = function(ctx, x, y) {
 };
 
 
-let eyedropper = new Tool(1.0);
+var eyedropper = new Tool(1.0);
 eyedropper.display = function(penCtx, x, y) {
-    let img = new Image();  
+    var img = new Image();  
     img.onload = function(){  
 	penCtx.drawImage(img, 60, 60);  
     }  
@@ -566,9 +610,9 @@ eyedropper.down = function(ctx, x, y, isDblClick) {
 };
 eyedropper.up = function(ctx, x, y) {
     // do it here
-    let layer = g_drawInterface.getActiveLayer();
-    let bm = new BitManipulator(ctx, layer.width, layer.height);
-    let color = bm.getColorAt(x, y);
+    var layer = g_drawInterface.getActiveLayer();
+    var bm = new BitManipulator(ctx, layer.width, layer.height);
+    var color = bm.getColorAt(x, y);
     color.a = 1.0;
     g_toolInterface.setPaintColor(color);
 };
@@ -585,7 +629,7 @@ eyedropper.resetRecordedAction = function() {
 };
 
 
-let polygon = new Tool(1.0, [{name: "close", type: "bool", defawlt: true},
+var polygon = new Tool(1.0, [{name: "close", type: "bool", defawlt: true},
                              {name:"fill", type: "bool", defawlt: false}
                       ]);
 polygon.firstPoint = null;
@@ -615,7 +659,7 @@ polygon.down = function(ctx, x, y, isDblClick) {
 	    $("#debug").html("Ended polygon");
             if (this.options.getValue("close")) {
                 // close the loop:
-                let fp = this.firstPoint;
+                var fp = this.firstPoint;
                 this.actionPoints.push({x: fp.x, y: fp.y});
 	    }
         }
@@ -651,7 +695,7 @@ polygon.drawCursor = function(ctx, x, y) {
       ctx.beginPath();
       ctx.moveTo(this.firstPoint.x, this.firstPoint.y);
       //$("#debug").html("Len is " + this.actionPoints.length);
-      for (let i = 0; i < this.actionPoints.length; i++) {
+      for (var i = 0; i < this.actionPoints.length; i++) {
 	  ctx.lineTo(this.actionPoints[i].x, this.actionPoints[i].y);
       }
       ctx.lineTo(x, y);
