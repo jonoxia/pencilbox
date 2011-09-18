@@ -140,9 +140,14 @@ GestureInterpreter.prototype = {
 
     interpretGesture: function(movedId) {
 	var tchPts = this.touchPoints;
-	var pts = [tchPts[x] for (x in tchPts)];
 	var x, ptA, ptB, dx, dy, delta, dxA, dyA, dxB, dyB, dist, ratio;
 	var movingPt;
+	var pts = [];
+	// make an array of the points (values from object tchPts)
+	for (x in tchPts) {
+	    pts.append(tchPts[x]);
+	}
+
 	if (this.touchPointCount == 2) {
 	    // 2-finger gesture - pinch or drag?
 	    ptA = pts[0];
@@ -217,11 +222,14 @@ GestureInterpreter.prototype = {
 	if (!gestures) {
 	    return;
 	}
-	for each (var gestureCmd in gestures) {
+	var i, j, gestureCmd, dir;
+	for (i in gestures) {
+	  gestureCmd = gestures[i];
           curDir = "";
           matched = 0;
 	  pattern = gestureCmd.directions;
-          for each (var dir in this.gestureDirections) {
+          for (j in this.gestureDirections) {
+            dir = this.gestureDirections[j];
 	    if (dir != curDir) {
 	      curDir = dir;
 	      if (dir == pattern[matched]) {

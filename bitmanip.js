@@ -396,8 +396,10 @@ Feeler.prototype = {
 	var left = counterclockwise(this.direction);
 	var liveChildren = [];
         var children, pt, subFeeler;
-	
-	for each (var dir in [right, left]) {
+	var dirs = [right, left];
+	var dir;
+	for (var d in dirs) {
+	    dir = dirs[d];
             children = [];
             pt = {x: this.startX, y: this.startY};
             for (var i = 0; i < this.len; i++) {

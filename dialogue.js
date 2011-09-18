@@ -493,20 +493,25 @@ DialogueManager.prototype = {
 	// or delete a line from the middle...  it thinks you modified
 	// every line after that.
 	var lines = this.allSpeech.split("\n");
-	var x;
-	lines = [lines[x] for (x in lines) if (lines[x].length > 0)];
-	for (var i = 0; i < lines.length; i++) {
+	var validLines = [];
+	var i;
+	for (i = 0; i < lines.length; i++) {
+	    if (lines[i].length > 0) {
+		validLines.push(lines[i]);
+	    }
+	}
+	for (i = 0; i < validLines.length; i++) {
 	    if (i < this.bubbles.length) {
 		// Modify text in existing bubbles...
-		this.bubbles[i].setText(lines[i]);
+		this.bubbles[i].setText(validLines[i]);
 	    } else {
 		// And add new bubbles for new lines:
-		this.addBubble(lines[i]);
+		this.addBubble(validLines[i]);
 	    }
 	}
 	// Remove bubbles if number of lines has decreased:
-	if (this.bubbles.length > lines.length) {
-	    this.bubbles = this.bubbles.slice(0, lines.length);
+	if (this.bubbles.length > validLines.length) {
+	    this.bubbles = this.bubbles.slice(0, validLines.length);
 	}
     },
 
