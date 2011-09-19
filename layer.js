@@ -194,10 +194,10 @@ Layer.prototype = {
 	return {x: worldX, y: worldY };
     },
     screenToWorldMulti: function(pointList, sizeIsOdd) {
-	var pts = [];
+        var pts = [];
 	var pt, i;
 	for(i in pointList) {
-          pt = pts[i];
+          pt = pointList[i];
           pts.push( this.screenToWorld(pt.x, pt.y, sizeIsOdd) );
 	}
 	return pts;

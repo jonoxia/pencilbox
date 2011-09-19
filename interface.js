@@ -145,7 +145,7 @@ GestureInterpreter.prototype = {
 	var pts = [];
 	// make an array of the points (values from object tchPts)
 	for (x in tchPts) {
-	    pts.append(tchPts[x]);
+	    pts.push(tchPts[x]);
 	}
 
 	if (this.touchPointCount == 2) {
