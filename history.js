@@ -56,6 +56,7 @@ StyleRecord.prototype = {
 	if (this.styleInfo.fillStyle) {
 	    //fillColor.a *= opacity;
 	    ctx.fillStyle = this.styleInfo.fillStyle.style;
+	    debug("Applied fill color: " + this.styleInfo.fillStyle.toJSON());
 	}
 	if (this.styleInfo.lineWidth) {
 	    ctx.lineWidth = this.styleInfo.lineWidth;
@@ -92,15 +93,15 @@ StyleRecord.prototype = {
 	if (styleInfo.lw != undefined) {
 	    this.styleInfo.lineWidth = styleInfo.lw;
 	}
-	if (styleInfo.lineCap != undefined) {
+	if (styleInfo.lc != undefined) {
 	    this.styleInfo.lineCap = styleInfo.lc;
 	}
-	if (styleInfo.strokeStyle != undefined) {
+	if (styleInfo.ss != undefined) {
 	    color = new Color();
 	    color.fromJSON(styleInfo.ss);
 	    this.styleInfo.strokeStyle = color;
 	}
-	if (styleInfo.fillStyle != undefined) {
+	if (styleInfo.fs != undefined) {
 	    color = new Color();
 	    color.fromJSON(styleInfo.fs);
 	    this.styleInfo.fillStyle = color;
@@ -160,7 +161,7 @@ DrawAction.prototype = {
 			 p: points,
 			 s: self.styleRecord.toJSON()};
 	if (self.isFill) {
-	    smallJson.f = 1;
+	    smallJSON.f = 1;
 	}
 	return smallJSON;
     },
@@ -289,11 +290,13 @@ ClearRegionAction.prototype = {
 function EllipseAction(layer, center, dx, dy, styleInfo, isFill) {
     this.layer = layer;
     this.ctx = layer.getContext();
-    this.center = center;
-    this.dx = dx;
-    this.dy = dy;
-    this.styleRecord = new StyleRecord(styleInfo);
-    this.isFill = isFill;
+    if (center) {
+      this.center = center;
+      this.dx = dx;
+      this.dy = dy;
+      this.styleRecord = new StyleRecord(styleInfo);
+      this.isFill = isFill;
+    }
 }
 EllipseAction.prototype = {
     replay: function(newCtx) {
@@ -314,7 +317,7 @@ EllipseAction.prototype = {
     },
     toJSON: function() {
 	var self = this;
-	return {t: "clear",
+	return {t: "ellipse",
 		l: self.layer.getName(),
 		x: self.center.x,
 		y: self.center.y,
@@ -332,6 +335,7 @@ EllipseAction.prototype = {
 	this.isFill = actionData.f;
 	this.styleRecord = new StyleRecord();
 	this.styleRecord.restoreFromJSON(actionData.s);
+        
     }
 };
 
@@ -639,6 +643,10 @@ History.prototype = {
 		action = new MoveBalloonAction(actionData.i,
 					       actionData.c,
 					       actionData.p);
+		break;
+	    case "ellipse":
+		action = new EllipseAction(layer);
+		action.restoreFromJSON(actionData);
 		break;
 	    default:
 		throw "Bad action type: " + actionData.t;
