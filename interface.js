@@ -38,6 +38,47 @@
 
 const DBL_CLICK_SPEED = 250;  //maximum milliseconds
 
+
+function registerTouchXBrowser(element, touchapi, handler) {
+    if (touchapi == "gecko") {
+	// Set up touch API callbacks Firefox style:
+      element.addEventListener("MozTouchDown", function(evt) {
+              handler.touchDown(evt.streamId, evt.pageX, evt.pageY);
+	  }, false);
+      element.addEventListener("MozTouchMove", function(evt) {
+	      handler.touchMove(evt.streamId, evt.pageX, evt.pageY);
+	  }, false);
+      window.addEventListener("MozTouchUp", function(evt) {
+	      handler.touchUp(evt.streamId, evt.pageX, evt.pageY);
+	  }, false);
+    } else if (touchapi == "webkit") {
+	// Setup touch API callbacks Webkit style:
+	element.ontouchstart = function(e) {
+          for (var i = 0; i < e.changedTouches.length; ++i) {  
+            var t = e.changedTouches[i];
+	    handler.touchDown(t.identifier, t.clientX, t.clientY); // maybe?
+          }
+	};
+	element.ontouchmove = function(e) {
+          for (var i = 0; i < e.changedTouches.length; ++i) { 
+	    var t = e.changedTouches[i];
+	    handler.touchMove(t.identifier, t.clientX, t.clientY); // maybe?
+          }
+	};
+	element.ontouchend = function(e) {
+          for (var i = 0; i < e.changedTouches.length; ++i) { 
+            var t = e.changedTouches[i];
+	    handler.touchUp(t.identifier, t.clientX, t.clientY); // maybe?
+          }
+	};
+	element.ongesturechange = function() {
+	    return false;
+	};
+    }
+}
+
+
+
 function GestureInterpreter(gestureLibrary, offsetX, offsetY) {
     this.offsetX = offsetX;
     this.offsetY = offsetY;
@@ -59,24 +100,25 @@ function GestureInterpreter(gestureLibrary, offsetX, offsetY) {
 	    this.locMenus = gestureLibrary.oneFinger.locationMenus;
 	}
     }
+    // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
+    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
 }
 GestureInterpreter.prototype = {
     hasMenus: function() {
 	return (this.pieMenu || this.locMenus);
     },
-    touchDown: function(evt) {
-	var id = evt.streamId;
-	var x = evt.pageX - this.offsetX;
-	var y = evt.pageY - this.offsetY;
-	this.touchPoints[id] = { newX: x,
-				 newY: y,
-				 oldX: x,
-				 oldY: y,
+    touchDown: function(id, x, y) {
+	var rel_x = x - this.offsetX;
+	var rel_y = y - this.offsetY;
+	this.touchPoints[id] = { newX: rel_x,
+				 newY: rel_y,
+				 oldX: rel_x,
+				 oldY: rel_y,
 				 id: id};
 	this.touchPointCount ++;
 
 	if (this.touchPointCount == 1 && this.hasMenus()) {
-	    this.menuMouseDown(evt);
+	    this.menuMouseDown(id, x, y);
 	}
 	if (this.touchPointCount == 2 && this.activeMenu) {
 	    this.activeMenu.cancel();
@@ -84,44 +126,42 @@ GestureInterpreter.prototype = {
 	}
     },
 
-    menuMouseDown: function(evt) {
-	var x = evt.pageX - this.offsetX;
-	var y = evt.pageY - this.offsetY;
+    menuMouseDown: function(id, x, y) {
+	var rel_x = x - this.offsetX;
+	var rel_y = y - this.offsetY;
 	if (this.locMenus) {
 	    for (var i = 0; i < this.locMenus.length; i++) {
-		if (this.locMenus[i].isPtInside(x, y)) {
-		    this.locMenus[i].onMouseDown(evt);
+		if (this.locMenus[i].isPtInside(rel_x, rel_y)) {
+		    this.locMenus[i].onMouseDown(rel_x, rel_y);
 		    this.activeMenu = this.locMenus[i];
 		    return;
 		}
 	    }
 	}
 	if (this.pieMenu) {
-	    this.pieMenu.onMouseDown(evt);
+	    this.pieMenu.onMouseDown(x, y);
 	    this.activeMenu = this.pieMenu;
 	}
     },
 
-    touchMove: function(evt) {
-	var id = evt.streamId;
+    touchMove: function(id, x, y) {
 	var pt = this.touchPoints[id];
 	if (pt) {
 	    // is it possible for this not to be defined at this point?
 	    pt.oldX = pt.newX;
 	    pt.oldY = pt.newY;
-	    pt.newX = evt.pageX - this.offsetX;
-	    pt.newY = evt.pageY - this.offsetY;
+	    pt.newX = x - this.offsetX;
+	    pt.newY = y - this.offsetY;
 
 	    if (this.touchPointCount == 1 && this.activeMenu) {
-		this.activeMenu.onMouseMove(evt);
+		this.activeMenu.onMouseMove(x, y);
 	    }
 	    this.interpretGesture(id);
 	    
 	} 
     },
 
-    touchUp: function(evt) {
-	var id = evt.streamId;
+    touchUp: function(id, x, y) {
 	if (!this.touchPoints[id]) {
 	    return;
 	}
@@ -132,7 +172,7 @@ GestureInterpreter.prototype = {
 	    this.gestureDirections = [];
 	    this.pinchFirstDist = null;
 	    if (this.activeMenu) {
-		this.activeMenu.onMouseUp(evt);
+		this.activeMenu.onMouseUp(x, y);
 		this.activeMenu = null;
 	    }
 	}
@@ -320,10 +360,10 @@ ColorMenu.prototype = {
 	ctx.strokeRect(this.x, this.y, this.width, this.height);
     },
 
-    onMouseDown: function(evt) {
+    onMouseDown: function(x, y) {
 	this.startColor = this.color;
 	var rowNum = 0;
-	var x, y, theColor;
+	var theColor;
 	for (var i = 0; i < this.allTheColors.length; i++) {
 	    theColor = this.allTheColors[i];
 	    x = ( i % this.boxesPerRow ) * this.boxSize;
@@ -334,9 +374,9 @@ ColorMenu.prototype = {
 	}
     },
 
-    onMouseMove: function(evt) {
-        var x = Math.floor(evt.pageX / this.boxSize);
-	var y = Math.floor(( this.y - evt.pageY) / this.boxSize);
+    onMouseMove: function(x, y) {
+        x = Math.floor(x / this.boxSize);
+	y = Math.floor(( this.y - y) / this.boxSize);
 	var index = y * this.boxesPerRow + x;
 	if (index >= 0 && index < this.allTheColors.length) {
 	    this.color = this.allTheColors[index];
@@ -346,7 +386,7 @@ ColorMenu.prototype = {
 	this.redraw(this.ctx);
     },
 
-    onMouseUp: function(evt) {
+    onMouseUp: function(x, y) {
 	g_toolInterface.updateToolImage();
     },
 
@@ -360,7 +400,8 @@ ColorMenu.prototype = {
     }
 };
 
-function ToolAreaInterface() {
+function ToolAreaInterface(touchapi) {
+    // touchapi is one of "gecko" or "webkit"
     this.toolCanvas = $("#pen-size-canvas").get(0);
     this.penCtx = this.toolCanvas.getContext("2d");
     var self = this;
@@ -469,16 +510,9 @@ function ToolAreaInterface() {
 					      this.offsetX,
 					      this.offsetY);
 
-
-    this.toolCanvas.addEventListener("MozTouchDown", function(evt) {
-	    self.interpreter.touchDown(evt); }, false);
-    this.toolCanvas.addEventListener("MozTouchMove", function(evt) {
-	    self.interpreter.touchMove(evt); }, false);
-    window.addEventListener("MozTouchUp", function(evt) {
-	    self.interpreter.touchUp(evt); }, false);
-    // There's supposed to be mozInputSource that tells us "pen or finger" but I don't seem to have it.
-    // However, I only seem to get MozTouch events when I touch with finger, not when I touch with pen*/
-
+    registerTouchXBrowser(this.toolCanvas, touchapi,
+			  this.interpreter);
+    
     this.redrawMenus();
 }
 ToolAreaInterface.prototype = {
@@ -516,7 +550,7 @@ ToolAreaInterface.prototype = {
     }
 };
 
-function DrawAreaInterface() {
+function DrawAreaInterface(touchapi) {
     var cursorCanvas = $("#the-canvas").get(0);
     this.width = cursorCanvas.width;
     this.height = cursorCanvas.height;
@@ -570,24 +604,27 @@ function DrawAreaInterface() {
 	var y = y - self.offsetY;
 	return g_selection.isScreenPtInsideSelection(x, y);
     }
-    cursorCanvas.addEventListener("MozTouchDown", function(evt) {
-	    if (ptInSelection(evt.pageX, evt.pageY)) {
-		g_selection.interpreter.touchDown(evt);
-	    } else {
-		self.interpreter.touchDown(evt); 
+    registerTouchXBrowser(cursorCanvas, touchapi, {
+	    touchDown: function(id, x, y) {
+		if (ptInSelection(x, y)) {
+		    g_selection.interpreter.touchDown(id, x, y);
+		} else {
+		    self.interpreter.touchDown(id, x, y); 
+		}
+	    },
+	    touchMove: function(id, x, y) {
+		if (ptInSelection(x, y)) {
+		    g_selection.interpreter.touchMove(id, x, y);
+		} else {
+		    self.interpreter.touchMove(id, x, y); 
+		}
+	    },
+            touchUp: function(id, x, y) {
+                self.interpreter.touchUp(id, x, y);
+                g_selection.interpreter.touchUp(id, x, y);
 	    }
-	}, false);
-    cursorCanvas.addEventListener("MozTouchMove", function(evt) {
-	    if (ptInSelection(evt.pageX, evt.pageY)) {
-		g_selection.interpreter.touchMove(evt);
-	    } else {
-		self.interpreter.touchMove(evt); 
-	    }
-	}, false);
-    window.addEventListener("MozTouchUp", function(evt) {
-	    self.interpreter.touchUp(evt);
-	    g_selection.interpreter.touchUp(evt);
-	}, false);
+	    });
+    
 }
 DrawAreaInterface.prototype = {
     getSelectedTool: function() {

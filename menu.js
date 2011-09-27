@@ -86,10 +86,10 @@ GridMenu.prototype = {
     get visible() {
 	return this._visible;
     },
-    onMouseDown: function(evt) {
+    onMouseDown: function(x, y) {
 	this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
-	var x = evt.pageX - this._offsetX;
-	var y = evt.pageY - this._offsetY;
+	x -= this._offsetX;
+	y -= this._offsetY;
 	if (this._visible) {
 	    return;
 	}
@@ -99,9 +99,9 @@ GridMenu.prototype = {
 	this._draw();
 	this._visible = true;
     },
-    onMouseUp: function(evt) {
-	var x = evt.pageX - this._offsetX;
-	var y = evt.pageY - this._offsetY;
+    onMouseUp: function(x, y) {
+	x -= this._offsetX;
+	y -= this._offsetY;
 	var now, index;
 	if (this._visible) {
 	    now = new Date().getTime();
@@ -117,9 +117,9 @@ GridMenu.prototype = {
 	    }
 	}
     },
-    onMouseMove: function(evt) {
-	var x = evt.pageX - this._offsetX;
-	var y = evt.pageY - this._offsetY;
+    onMouseMove: function(x, y) {
+	x -= this._offsetX;
+	y -= this._offsetY;
 	if (!this._visible) {
 	    return;
 	}
@@ -230,7 +230,11 @@ GridMenu.prototype = {
 	if (commandObj.img) {
 	    var x = this._left + this._squareSize * col + margin;
 	    var y = this._top + this._squareSize * row + margin;
+	    try {
 	    this._ctx.drawImage(commandObj.img, x, y);
+	    } catch(e) {
+		debug("error drawing menu: " + e);
+	    }
 	}
     },
 

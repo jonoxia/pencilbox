@@ -303,11 +303,17 @@ function changeTitle() {
 }
 
 $(function() {
-    document.multitouchData = true;
+    var touchapi;
+    if ("ontouchstart" in document.documentElement) {
+	touchapi = "webkit";
+    } else {
+	touchapi = "gecko";
+	document.multitouchData = true;
+    }
     adjustToScreen();
 
-    g_toolInterface = new ToolAreaInterface();
-    g_drawInterface = new DrawAreaInterface();
+    g_toolInterface = new ToolAreaInterface(touchapi);
+    g_drawInterface = new DrawAreaInterface(touchapi);
     g_drawInterface.clearAllLayers();
     g_dialogue = new DialogueManager();
     g_selection = new SelectionManager();
