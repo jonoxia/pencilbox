@@ -54,18 +54,21 @@ function registerTouchXBrowser(element, touchapi, handler) {
     } else if (touchapi == "webkit") {
 	// Setup touch API callbacks Webkit style:
 	element.ontouchstart = function(e) {
+          e.preventDefault();
           for (var i = 0; i < e.changedTouches.length; ++i) {  
             var t = e.changedTouches[i];
 	    handler.touchDown(t.identifier, t.clientX, t.clientY); // maybe?
           }
 	};
 	element.ontouchmove = function(e) {
+          e.preventDefault();
           for (var i = 0; i < e.changedTouches.length; ++i) { 
 	    var t = e.changedTouches[i];
 	    handler.touchMove(t.identifier, t.clientX, t.clientY); // maybe?
           }
 	};
 	element.ontouchend = function(e) {
+          e.preventDefault();
           for (var i = 0; i < e.changedTouches.length; ++i) { 
             var t = e.changedTouches[i];
 	    handler.touchUp(t.identifier, t.clientX, t.clientY); // maybe?
