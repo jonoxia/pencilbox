@@ -601,7 +601,7 @@ function DrawAreaInterface(touchapi) {
     // commands; process them.
     var ptInSelection = function(x, y) {
 	if (!g_selection.selectionPresent) {
-	    return
+	    return false;
 	};
 	var x = x - self.offsetX;
 	var y = y - self.offsetY;

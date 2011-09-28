@@ -76,7 +76,6 @@ function GridMenu( canvas, itemList, squareSize, options) {
     for (var i = 0; i < this._commands.length; i++) {
 	(function(commandObj) {
           var img = new Image();
-	// TODO i think closure scope problem here
           img.onload = function(){ commandObj.img = img  };
           img.src = commandObj.icon;	    
 	})(this._commands[i]);
@@ -88,14 +87,14 @@ GridMenu.prototype = {
     },
     onMouseDown: function(x, y) {
 	this._ctx.clearRect(0, 0, this._maxWidth, this._maxHeight);
-	x -= this._offsetX;
-	y -= this._offsetY;
+	var rel_x = x - this._offsetX;
+	var rel_y = y - this._offsetY;
 	if (this._visible) {
 	    return;
 	}
 	this._invokeTime = new Date().getTime();
-	this._left = x - this._squareSize * 1.5;
-	this._top = y - this._squareSize * 1.5;
+	this._left = rel_x - this._squareSize * 1.5;
+	this._top = rel_y - this._squareSize * 1.5;
 	this._draw();
 	this._visible = true;
     },
@@ -233,7 +232,7 @@ GridMenu.prototype = {
 	    try {
 	    this._ctx.drawImage(commandObj.img, x, y);
 	    } catch(e) {
-		debug("error drawing menu: " + e);
+		debug("col=" + col +" left=" + this._left + " size=" + this._squareSize + " margin=" + margin);
 	    }
 	}
     },

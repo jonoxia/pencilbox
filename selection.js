@@ -401,10 +401,10 @@ selectionMovingTool.mode = null;
 selectionMovingTool.display = function(penCtx, x, y) {
 };
 selectionMovingTool.down = function(ctx, x, y, isDblClick) {
-    $("#debug").html("Selection mousedown dblclick? " + isDblClick);
+    //$("#debug").html("Selection mousedown dblclick? " + isDblClick);
     if (isDblClick) {
 	this.mode = "menu";
-	g_selection.selectionMenu.onMouseDown({pageX: x, pageY: y});
+	g_selection.selectionMenu.onMouseDown(x, y);
     } else {
 	if (g_selection.selectionPresent) {
 	    this.startX = x;
@@ -423,7 +423,7 @@ selectionMovingTool.up = function(ctx, x, y) {
 	    this.mode = null;
 	}
     } else if (this.mode == "menu") {
-	g_selection.selectionMenu.onMouseUp({pageX: x, pageY: y});
+	g_selection.selectionMenu.onMouseUp(x, y);
     }
 };
 selectionMovingTool.drag = function(ctx, x, y) {
@@ -440,7 +440,7 @@ selectionMovingTool.drag = function(ctx, x, y) {
 	    this.lastY = y;
 	}
     } else if (this.mode == "menu") {
-	g_selection.selectionMenu.onMouseMove({pageX: x, pageY: y});
+	g_selection.selectionMenu.onMouseMove(x, y);
     } 
 };
 selectionMovingTool.drawCursor = function(ctx, x, y) {
