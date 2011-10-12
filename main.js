@@ -136,47 +136,6 @@ function export2() {
 
 var g_screenOrientation = "landscape";
 
-function restructureDOM() {
-    var controlDiv = $("#control-div");
-    var penSizeCanvas = $("#pen-size-canvas");
-    var otherControls = $("#other-controls");
-    var textDiv = $("#text-div");
-    var body = $("#the-body");
-    var canvasDiv = $("#canvas-div");
-
-    controlDiv.detach();
-    textDiv.detach();
-    canvasDiv.detach();
-    penSizeCanvas.detach();
-    otherControls.detach();
-
-    // rescue all the layer canvases 
-    var layerCanvases = $(".layer-canvas");
-    layerCanvases.detach();
-
-    body.empty();
-    controlDiv.empty();
-
-    if (g_screenOrientation == "landscape") {
-	controlDiv.append(penSizeCanvas);
-	controlDiv.append("<br/>");
-	controlDiv.append(otherControls);
-	body.append(controlDiv);
-	body.append(canvasDiv);
-	body.append(textDiv);
-    } else {
-	body.append(penSizeCanvas);
-	penSizeCanvas.css("float", "left");
-	controlDiv.append(otherControls);
-	controlDiv.css("float", "left");
-	body.append(controlDiv);
-	body.append(textDiv);
-	body.append("<br/>");
-	body.append(canvasDiv);
-    }
-
-    layerCanvases.appendTo(body);
-}
 
 function adjustToScreen() {
     // Set widths and heights dynamically to make optimal
@@ -184,40 +143,19 @@ function adjustToScreen() {
     var screenWidth = window.innerWidth;
     var screenHeight = window.innerHeight;
 
-    var mainCanvasWidth, mainCanvasHeight;
-    if (screenHeight > screenWidth) {
-	// Portrait mode screen
-	if (g_screenOrientation != "portrait") {
-	    g_screenOrientation = "portrait";
-	    restructureDOM();
-	}
-	mainCanvasWidth = screenWidth;
-	mainCanvasHeight = screenHeight * 0.65;
-	$("#pen-size-canvas").attr("width", screenWidth * 0.4);
-	$("#pen-size-canvas").attr("height", screenHeight * 0.25);
-    } else {
-	// Landscape mode screen
-	if (g_screenOrientation != "landscape") {
-	    g_screenOrientation = "landscape";
-	    restructureDOM();
-	}
-	mainCanvasWidth = screenWidth * 0.75;
-	mainCanvasHeight = screenHeight;
-	$("#pen-size-canvas").attr("width", screenWidth * 0.2);
-	$("#pen-size-canvas").attr("height", screenHeight * 0.85);
-    }
-    // subtract a little from height to prevent vertical scroll bar
-    // from appearing:
-    mainCanvasHeight -= 25;
-    $("#the-canvas").attr("width", mainCanvasWidth);
-    $("#the-canvas").attr("height", mainCanvasHeight);
+    $("#pen-size-canvas").attr("width", screenWidth * 0.2);
+    $("#pen-size-canvas").attr("height", screenHeight * 0.85);
+
+    $("#the-canvas").attr("width", screenWidth * 0.75);
+    $("#the-canvas").attr("height", screenHeight);
 
     if (g_drawInterface) {
 	g_drawInterface.resetDimensions($("#the-canvas").offset().left,
 					$("#the-canvas").offset().top,
-					mainCanvasWidth,
-					mainCanvasHeight);
+					screenWidth,
+					screenHeight);
 	g_drawInterface.updateAllLayerDisplays();
+	// TODO do we need to adjust the toolInterface here??
     }
 }
 
