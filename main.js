@@ -146,7 +146,7 @@ function adjustToScreen() {
     $("#pen-size-canvas").attr("width", screenWidth * 0.2);
     $("#pen-size-canvas").attr("height", screenHeight * 0.85);
 
-    $("#the-canvas").attr("width", screenWidth * 0.75);
+    $("#the-canvas").attr("width", screenWidth * 0.78);
     $("#the-canvas").attr("height", screenHeight);
 
     if (g_drawInterface) {

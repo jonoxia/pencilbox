@@ -36,7 +36,7 @@
   top: 450px;
 }
 
-canvas {
+#pen-size-canvas {
   border-style:solid;
 }
 
@@ -69,4 +69,19 @@ canvas {
   background-color: red;
   height: 16px;
   margin: 0px;
+}
+
+#the-canvas {
+  margin: 0px;
+  padding: 0px;
+}
+
+#canvas-div {
+  margin: 0px;
+  padding: 0px;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
 }
