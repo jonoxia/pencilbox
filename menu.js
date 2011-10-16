@@ -51,8 +51,8 @@ function GridMenu( canvas, itemList, squareSize, options) {
 	if (options.x != undefined) this._offsetX = options.x;
 	if (options.y != undefined) this._offsetY = options.y;
     } else {
-	this._offsetX = canvas.offsetLeft;
-	this._offsetY = canvas.offsetTop;
+	this._offsetX = 0;
+	this._offsetY = 0;
     }
     this._maxWidth = canvas.width;
     this._maxHeight = canvas.height;

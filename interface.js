@@ -121,7 +121,7 @@ GestureInterpreter.prototype = {
 	this.touchPointCount ++;
 
 	if (this.touchPointCount == 1 && this.hasMenus()) {
-	    this.menuMouseDown(id, x, y);
+	    this.menuMouseDown(id, rel_x, rel_y);
 	}
 	if (this.touchPointCount == 2 && this.activeMenu) {
 	    this.activeMenu.cancel();
@@ -129,9 +129,7 @@ GestureInterpreter.prototype = {
 	}
     },
 
-    menuMouseDown: function(id, x, y) {
-	var rel_x = x - this.offsetX;
-	var rel_y = y - this.offsetY;
+    menuMouseDown: function(id, rel_x, rel_y) {
 	if (this.locMenus) {
 	    for (var i = 0; i < this.locMenus.length; i++) {
 		if (this.locMenus[i].isPtInside(rel_x, rel_y)) {
@@ -142,22 +140,24 @@ GestureInterpreter.prototype = {
 	    }
 	}
 	if (this.pieMenu) {
-	    this.pieMenu.onMouseDown(x, y);
+	    this.pieMenu.onMouseDown(rel_x, rel_y);
 	    this.activeMenu = this.pieMenu;
 	}
     },
 
     touchMove: function(id, x, y) {
 	var pt = this.touchPoints[id];
+	var rel_x = x - this.offsetX;
+	var rel_y = y - this.offsetY;
 	if (pt) {
 	    // is it possible for this not to be defined at this point?
 	    pt.oldX = pt.newX;
 	    pt.oldY = pt.newY;
-	    pt.newX = x - this.offsetX;
-	    pt.newY = y - this.offsetY;
+	    pt.newX = rel_x;
+	    pt.newY = rel_y;
 
 	    if (this.touchPointCount == 1 && this.activeMenu) {
-		this.activeMenu.onMouseMove(x, y);
+		this.activeMenu.onMouseMove(rel_x, rel_y);
 	    }
 	    this.interpretGesture(id);
 	    
@@ -168,6 +168,8 @@ GestureInterpreter.prototype = {
 	if (!this.touchPoints[id]) {
 	    return;
 	}
+	var rel_x = x - this.offsetX;
+	var rel_y = y - this.offsetY;
 	delete this.touchPoints[id];
 	this.touchPointCount --;
 	if (this.touchPointCount == 0) {
@@ -175,7 +177,7 @@ GestureInterpreter.prototype = {
 	    this.gestureDirections = [];
 	    this.pinchFirstDist = null;
 	    if (this.activeMenu) {
-		this.activeMenu.onMouseUp(x, y);
+		this.activeMenu.onMouseUp(rel_x, rel_y);
 		this.activeMenu = null;
 	    }
 	}
