@@ -56,7 +56,6 @@ StyleRecord.prototype = {
 	if (this.styleInfo.fillStyle) {
 	    //fillColor.a *= opacity;
 	    ctx.fillStyle = this.styleInfo.fillStyle.style;
-	    debug("Applied fill color: " + this.styleInfo.fillStyle.toJSON());
 	}
 	if (this.styleInfo.lineWidth) {
 	    ctx.lineWidth = this.styleInfo.lineWidth;
@@ -344,8 +343,9 @@ function PlopBitmapAction(layer, img, x, y, scaleFactor) {
     this.layer = layer;
     this.ctx = layer.getContext();
     this.importPt = {x: x, y: y};
-    this.img = img;
+    this.img = img;    
     this.scaleFactor = scaleFactor;
+    this._listener = null;
     if (img && img.src) {
 	this._url = img.src
     } else {
@@ -376,6 +376,10 @@ PlopBitmapAction.prototype = {
 		u: self._url
 		};
     },
+
+    registerListener: function(listener) {
+	this._listener = listener;
+    },
     
     restoreFromJSON: function(actionData) {
 	var self = this;
@@ -391,6 +395,9 @@ PlopBitmapAction.prototype = {
 	    newImg.src = actionData.u;
 	    newImg.onload = function() {
 		self.img = newImg;
+		if (self._listener) {
+		    self._listener.onImgLoad();
+		}
 	    }
 	}
     }
@@ -591,9 +598,19 @@ History.prototype = {
     },
 
     recreate: function(historyString) {
-	debug("History string is " + historyString);
+	//debug("History string is " + historyString);
 	var historyObj = JSON.parse(historyString);
 	var actionData, layerName, layer, action;
+	var imgLoadListener = {
+	    numToLoad: 0,
+	    imgsLoaded: 0,
+	    onImgLoad: function() {
+		this.imgsLoaded ++;
+		if (this.imgsLoaded == this.numToLoad) {
+                  g_drawInterface.updateAllLayerDisplays();
+		}
+	    }
+	};
 	// Layers must already have been recreated when this
 	// is called.
 	this.actionList = [];
@@ -627,6 +644,8 @@ History.prototype = {
 		break;
 	    case "image":
 		action = new PlopBitmapAction(layer);
+		action.registerListener(imgLoadListener);
+		imgLoadListener.numToLoad ++;
 		action.restoreFromJSON(actionData);
 		break;
 	    case "rectanglePanel":
