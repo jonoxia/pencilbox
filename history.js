@@ -390,6 +390,9 @@ PlopBitmapAction.prototype = {
 	}
 	this.img = null;
 	if (actionData.u) {
+	    if (this._listener) {
+		this._listener.numToLoad ++;
+	    }
 	    newImg = new Image();
 	    self._url = actionData.u;
 	    newImg.src = actionData.u;
@@ -645,7 +648,6 @@ History.prototype = {
 	    case "image":
 		action = new PlopBitmapAction(layer);
 		action.registerListener(imgLoadListener);
-		imgLoadListener.numToLoad ++;
 		action.restoreFromJSON(actionData);
 		break;
 	    case "rectanglePanel":
