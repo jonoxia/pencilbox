@@ -45,7 +45,6 @@ function Layer(index, options) {
   this.tag.addClass("layer-canvas");
   this.tag.attr("width", this.width);
   this.tag.attr("height", this.height);
-  this.tag.css("position", "absolute");
   this.tag.css("z-index", "" + index);
   this.tag.css("left", $("#the-canvas").offset().left);
   this.tag.css("top", $("#the-canvas").offset().top);

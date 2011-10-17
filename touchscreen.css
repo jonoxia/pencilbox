@@ -74,11 +74,15 @@
 #the-canvas {
   margin: 0px;
   padding: 0px;
+  position: absolute;
+  top: 0px;
 }
 
-#canvas-div {
+.layer-canvas {
   margin: 0px;
   padding: 0px;
+  position: absolute;
+  top: 0px;
 }
 
 body {

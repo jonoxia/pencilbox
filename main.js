@@ -54,7 +54,8 @@ function gup( name )
 }
 
 function debug( str ) {
-    $("#debug").html( str );
+    var old = $("#debug").html();
+    $("#debug").html( old + "<br/>" + str );
 }
 
 function ProgressBar(elemId, max) {
@@ -143,17 +144,20 @@ function adjustToScreen() {
     var screenWidth = window.innerWidth;
     var screenHeight = window.innerHeight;
 
+    var drawCanvasWidth = screenWidth * 0.75;
+    var drawCanvasHeight = screenHeight;
+
     $("#pen-size-canvas").attr("width", screenWidth * 0.2);
     $("#pen-size-canvas").attr("height", screenHeight * 0.85);
 
-    $("#the-canvas").attr("width", screenWidth * 0.78);
-    $("#the-canvas").attr("height", screenHeight);
+    $("#the-canvas").attr("width", drawCanvasWidth);
+    $("#the-canvas").attr("height", drawCanvasHeight);
 
     if (g_drawInterface) {
 	g_drawInterface.resetDimensions($("#the-canvas").offset().left,
 					$("#the-canvas").offset().top,
-					screenWidth,
-					screenHeight);
+					drawCanvasWidth,
+					drawCanvasHeight);
 	g_drawInterface.updateAllLayerDisplays();
 	// TODO do we need to adjust the toolInterface here??
     }
