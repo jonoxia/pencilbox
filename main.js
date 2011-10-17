@@ -147,15 +147,21 @@ function adjustToScreen() {
     var drawCanvasWidth = screenWidth * 0.75;
     var drawCanvasHeight = screenHeight;
 
-    $("#pen-size-canvas").attr("width", screenWidth * 0.2);
-    $("#pen-size-canvas").attr("height", screenHeight * 0.85);
+    var toolCanvasWidth = screenWidth * 0.2;
+    var toolCanvasHeight = screenHeight * 0.85;
 
+    $("#pen-size-canvas").attr("width", toolCanvasWidth);
+    $("#pen-size-canvas").attr("height", toolCanvasHeight);
     $("#the-canvas").attr("width", drawCanvasWidth);
     $("#the-canvas").attr("height", drawCanvasHeight);
+    $("#the-canvas").css("left", toolCanvasWidth + 4);
+    $("#the-canvas").css("top", 0);
 
     if (g_drawInterface) {
-	g_drawInterface.resetDimensions($("#the-canvas").offset().left,
-					$("#the-canvas").offset().top,
+	// left is at right edge of tool canvas (plus border width);
+	// top is always at 0.
+	g_drawInterface.resetDimensions(toolCanvasWidth + 4,
+                                        0,
 					drawCanvasWidth,
 					drawCanvasHeight);
 	g_drawInterface.updateAllLayerDisplays();
